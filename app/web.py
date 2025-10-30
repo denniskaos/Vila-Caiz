@@ -28,6 +28,16 @@ def create_app() -> Flask:
         formatted = formatted.replace("_", ".")
         return f"€{formatted}"
 
+    def _split_categories(summary: Dict[str, float]) -> Tuple[Dict[str, float], Dict[str, float]]:
+        revenue_categories: Dict[str, float] = {}
+        expense_categories: Dict[str, float] = {}
+        for key, value in summary.items():
+            if key.startswith("revenue:"):
+                revenue_categories[key.split(":", 1)[1]] = value
+            elif key.startswith("expense:"):
+                expense_categories[key.split(":", 1)[1]] = value
+        return revenue_categories, expense_categories
+
     @app.get("/")
     def dashboard():
         service = get_service()
@@ -36,31 +46,112 @@ def create_app() -> Flask:
         physios = service.list_physiotherapists()
         youth_teams = service.list_youth_teams()
         members = service.list_members()
-        revenues, expenses = service.list_financial_records()
         summary = service.financial_summary()
-        coach_lookup = {coach.id: coach.name for coach in coaches}
-        revenue_categories: Dict[str, float] = {}
-        expense_categories: Dict[str, float] = {}
-        for key, value in summary.items():
-            if key.startswith("revenue:"):
-                revenue_categories[key.split(":", 1)[1]] = value
-            elif key.startswith("expense:"):
-                expense_categories[key.split(":", 1)[1]] = value
         return render_template(
             "dashboard.html",
             title="Centro Operacional",
+            active_page="dashboard",
             players=players,
             coaches=coaches,
             physios=physios,
             youth_teams=youth_teams,
             members=members,
+            summary=summary,
+        )
+
+    @app.get("/jogadores")
+    def players_page():
+        service = get_service()
+        players = service.list_players()
+        return render_template(
+            "players.html",
+            title="Jogadores",
+            active_group="plantel",
+            active_page="players",
+            players=players,
+        )
+
+    @app.get("/equipa-tecnica")
+    def coaches_page():
+        service = get_service()
+        coaches = service.list_coaches()
+        return render_template(
+            "coaches.html",
+            title="Equipa Técnica",
+            active_group="plantel",
+            active_page="coaches",
+            coaches=coaches,
+        )
+
+    @app.get("/departamento-medico")
+    def physios_page():
+        service = get_service()
+        physios = service.list_physiotherapists()
+        return render_template(
+            "physios.html",
+            title="Departamento Médico",
+            active_group="plantel",
+            active_page="physios",
+            physios=physios,
+        )
+
+    @app.get("/camadas-jovens")
+    def youth_page():
+        service = get_service()
+        youth_teams = service.list_youth_teams()
+        coaches = service.list_coaches()
+        coach_lookup = {coach.id: coach.name for coach in coaches}
+        return render_template(
+            "youth.html",
+            title="Camadas Jovens",
+            active_group="plantel",
+            active_page="youth",
+            youth_teams=youth_teams,
+            coaches=coaches,
+            coach_lookup=coach_lookup,
+        )
+
+    @app.get("/socios")
+    def members_page():
+        service = get_service()
+        members = service.list_members()
+        return render_template(
+            "members.html",
+            title="Sócios",
+            active_group="plantel",
+            active_page="members",
+            members=members,
+        )
+
+    def _render_finances(active_page: str, focus_section: str | None = None):
+        service = get_service()
+        revenues, expenses = service.list_financial_records()
+        summary = service.financial_summary()
+        revenue_categories, expense_categories = _split_categories(summary)
+        return render_template(
+            "finances.html",
+            title="Finanças",
+            active_group="financas",
+            active_page=active_page,
+            focus_section=focus_section,
             revenues=revenues,
             expenses=expenses,
             summary=summary,
-            coach_lookup=coach_lookup,
             revenue_categories=revenue_categories,
             expense_categories=expense_categories,
         )
+
+    @app.get("/financas")
+    def finances_page():
+        return _render_finances("finances-overview")
+
+    @app.get("/financas/receitas")
+    def finances_revenue_page():
+        return _render_finances("finances-revenue", "receitas")
+
+    @app.get("/financas/despesas")
+    def finances_expense_page():
+        return _render_finances("finances-expense", "despesas")
 
     def _handle_date(field: str) -> Tuple[bool, date | None]:
         value = request.form.get(field)
@@ -83,17 +174,17 @@ def create_app() -> Flask:
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o jogador.")
-            return redirect(url_for("dashboard") + "#jogadores")
+            return redirect(url_for("players_page"))
         shirt_number = None
         if shirt_number_raw:
             try:
                 shirt_number = int(shirt_number_raw)
             except ValueError:
                 _flash_invalid("Número da camisola inválido.")
-                return redirect(url_for("dashboard") + "#jogadores")
+                return redirect(url_for("players_page"))
         if not name or not position:
             _flash_invalid("Nome e posição são obrigatórios.")
-            return redirect(url_for("dashboard") + "#jogadores")
+            return redirect(url_for("players_page"))
         service = get_service()
         service.add_player(
             name=name,
@@ -104,7 +195,7 @@ def create_app() -> Flask:
             shirt_number=shirt_number,
         )
         flash("Jogador registado com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#jogadores")
+        return redirect(url_for("players_page"))
 
     @app.post("/coaches")
     def add_coach():
@@ -115,10 +206,10 @@ def create_app() -> Flask:
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o treinador.")
-            return redirect(url_for("dashboard") + "#equipa-tecnica")
+            return redirect(url_for("coaches_page"))
         if not name or not role:
             _flash_invalid("Nome e função são obrigatórios.")
-            return redirect(url_for("dashboard") + "#equipa-tecnica")
+            return redirect(url_for("coaches_page"))
         service = get_service()
         service.add_coach(
             name=name,
@@ -128,7 +219,7 @@ def create_app() -> Flask:
             contact=contact,
         )
         flash("Treinador registado com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#equipa-tecnica")
+        return redirect(url_for("coaches_page"))
 
     @app.post("/physios")
     def add_physio():
@@ -138,10 +229,10 @@ def create_app() -> Flask:
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o profissional.")
-            return redirect(url_for("dashboard") + "#fisioterapia")
+            return redirect(url_for("physios_page"))
         if not name:
             _flash_invalid("O nome do profissional é obrigatório.")
-            return redirect(url_for("dashboard") + "#fisioterapia")
+            return redirect(url_for("physios_page"))
         service = get_service()
         service.add_physiotherapist(
             name=name,
@@ -150,7 +241,7 @@ def create_app() -> Flask:
             contact=contact,
         )
         flash("Profissional registado com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#fisioterapia")
+        return redirect(url_for("physios_page"))
 
     @app.post("/youth-teams")
     def add_youth_team():
@@ -163,10 +254,10 @@ def create_app() -> Flask:
                 coach_id = int(coach_id_raw)
             except ValueError:
                 _flash_invalid("ID do treinador inválido.")
-                return redirect(url_for("dashboard") + "#formacao")
+                return redirect(url_for("youth_page"))
         if not name or not age_group:
             _flash_invalid("Nome e escalão da equipa são obrigatórios.")
-            return redirect(url_for("dashboard") + "#formacao")
+            return redirect(url_for("youth_page"))
         service = get_service()
         service.add_youth_team(
             name=name,
@@ -174,7 +265,7 @@ def create_app() -> Flask:
             coach_id=coach_id,
         )
         flash("Equipa de formação criada!", "success")
-        return redirect(url_for("dashboard") + "#formacao")
+        return redirect(url_for("youth_page"))
 
     @app.post("/members")
     def add_member():
@@ -184,11 +275,11 @@ def create_app() -> Flask:
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o sócio.")
-            return redirect(url_for("dashboard") + "#socios")
+            return redirect(url_for("members_page"))
         dues_paid = request.form.get("dues_paid") == "on"
         if not name or not membership_type:
             _flash_invalid("Nome e tipo de quota são obrigatórios.")
-            return redirect(url_for("dashboard") + "#socios")
+            return redirect(url_for("members_page"))
         service = get_service()
         service.add_member(
             name=name,
@@ -198,7 +289,7 @@ def create_app() -> Flask:
             birthdate=birthdate,
         )
         flash("Sócio registado com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#socios")
+        return redirect(url_for("members_page"))
 
     def _parse_amount(field: str) -> float | None:
         raw = request.form.get(field, "").strip()
@@ -224,14 +315,14 @@ def create_app() -> Flask:
         amount = _parse_amount("amount")
         if amount is None or amount <= 0:
             _flash_invalid("Montante da receita inválido.")
-            return redirect(url_for("dashboard") + "#receitas")
+            return redirect(url_for("finances_revenue_page"))
         try:
             record_date = _handle_financial_date()
         except ValueError:
-            return redirect(url_for("dashboard") + "#receitas")
+            return redirect(url_for("finances_revenue_page"))
         if not description or not category:
             _flash_invalid("Descrição e categoria são obrigatórias.")
-            return redirect(url_for("dashboard") + "#receitas")
+            return redirect(url_for("finances_revenue_page"))
         service = get_service()
         service.add_revenue(
             description=description,
@@ -241,7 +332,7 @@ def create_app() -> Flask:
             source=source,
         )
         flash("Receita registada com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#receitas")
+        return redirect(url_for("finances_revenue_page"))
 
     @app.post("/finance/expense")
     def add_expense():
@@ -251,14 +342,14 @@ def create_app() -> Flask:
         amount = _parse_amount("amount")
         if amount is None or amount <= 0:
             _flash_invalid("Montante da despesa inválido.")
-            return redirect(url_for("dashboard") + "#despesas")
+            return redirect(url_for("finances_expense_page"))
         try:
             record_date = _handle_financial_date()
         except ValueError:
-            return redirect(url_for("dashboard") + "#despesas")
+            return redirect(url_for("finances_expense_page"))
         if not description or not category:
             _flash_invalid("Descrição e categoria são obrigatórias.")
-            return redirect(url_for("dashboard") + "#despesas")
+            return redirect(url_for("finances_expense_page"))
         service = get_service()
         service.add_expense(
             description=description,
@@ -268,7 +359,7 @@ def create_app() -> Flask:
             vendor=vendor,
         )
         flash("Despesa registada com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#despesas")
+        return redirect(url_for("finances_expense_page"))
 
     return app
 

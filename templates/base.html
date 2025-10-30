@@ -146,6 +146,19 @@
         transform: scaleX(1);
       }
 
+      nav a.active,
+      nav summary.active {
+        color: var(--primary);
+      }
+
+      nav a.active::after {
+        transform: scaleX(1);
+      }
+
+      nav details.is-active > summary {
+        color: var(--primary);
+      }
+
       nav details ul {
         position: absolute;
         inset-inline-start: 0;
@@ -184,6 +197,24 @@
       h4 {
         font-weight: 700;
         margin-top: 0;
+      }
+
+      .page-header {
+        margin-bottom: 2.5rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .page-header p {
+        margin: 0;
+        color: rgba(24, 24, 24, 0.74);
+        max-width: 60ch;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .page-header p {
+          color: rgba(254, 245, 199, 0.75);
+        }
       }
 
       section {
@@ -458,7 +489,7 @@
       }
     </style>
   </head>
-  <body>
+  <body data-active-group="{{ active_group or '' }}">
     <header>
       <div class="container">
         <div class="identity">
@@ -467,26 +498,28 @@
         </div>
         <nav aria-label="Secções principais">
           <ul>
-            <li><a href="#resumo">Resumo Geral</a></li>
             <li>
-              <details class="menu-group">
+              <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
+            </li>
+            <li>
+              <details class="menu-group{% if active_group == 'plantel' %} is-active{% endif %}" data-menu="plantel" {% if active_group == 'plantel' %}open{% endif %}>
                 <summary aria-haspopup="true" aria-expanded="false">Plantel &amp; Staff</summary>
                 <ul>
-                  <li><a href="#jogadores">Jogadores</a></li>
-                  <li><a href="#equipa-tecnica">Equipa Técnica</a></li>
-                  <li><a href="#fisioterapia">Departamento Médico</a></li>
-                  <li><a href="#formacao">Camadas Jovens</a></li>
-                  <li><a href="#socios">Sócios</a></li>
+                  <li><a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a></li>
+                  <li><a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a></li>
+                  <li><a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a></li>
+                  <li><a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a></li>
+                  <li><a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a></li>
                 </ul>
               </details>
             </li>
             <li>
-              <details class="menu-group">
+              <details class="menu-group{% if active_group == 'financas' %} is-active{% endif %}" data-menu="financas" {% if active_group == 'financas' %}open{% endif %}>
                 <summary aria-haspopup="true" aria-expanded="false">Finanças</summary>
                 <ul>
-                  <li><a href="#financas">Visão Geral</a></li>
-                  <li><a href="#receitas">Receitas</a></li>
-                  <li><a href="#despesas">Despesas</a></li>
+                  <li><a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a></li>
+                  <li><a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a></li>
+                  <li><a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a></li>
                 </ul>
               </details>
             </li>
@@ -515,6 +548,10 @@
         const setExpanded = () => {
           summary.setAttribute('aria-expanded', menu.hasAttribute('open') ? 'true' : 'false');
         };
+        if (menu.classList.contains('is-active')) {
+          menu.setAttribute('open', '');
+          setExpanded();
+        }
         summary.addEventListener('click', () => {
           requestAnimationFrame(setExpanded);
         });
@@ -523,6 +560,7 @@
           setExpanded();
         });
         menu.addEventListener('mouseleave', () => {
+          if (menu.classList.contains('is-active')) return;
           menu.removeAttribute('open');
           setExpanded();
         });
@@ -532,6 +570,7 @@
         });
         summary.addEventListener('blur', () => {
           window.setTimeout(() => {
+            if (menu.classList.contains('is-active')) return;
             if (!menu.matches(':hover') && !menu.contains(document.activeElement)) {
               menu.removeAttribute('open');
               setExpanded();

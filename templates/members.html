@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Sócios</h2>
+  <p>Registe e acompanhe a família vila-caizense.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-members">
+    <h3 id="form-members">Adicionar Sócio</h3>
+    <form method="post" action="{{ url_for('add_member') }}">
+      <label for="member-name">Nome</label>
+      <input id="member-name" name="name" type="text" required />
+
+      <label for="member-birthdate">Data de Nascimento</label>
+      <input id="member-birthdate" name="birthdate" type="date" required />
+
+      <label for="member-type">Tipo de Quota</label>
+      <input id="member-type" name="membership_type" type="text" placeholder="Ex.: Anual" required />
+
+      <label for="member-contact">Contacto</label>
+      <input id="member-contact" name="contact" type="tel" placeholder="Telefone ou email" />
+
+      <label class="checkbox-label">
+        <input type="checkbox" name="dues_paid" /> Quotas em dia
+      </label>
+
+      <button type="submit">Registar Sócio</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Comunidade Vila-Caiz</h3>
+    {% if members %}
+      <table aria-label="Lista de sócios">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Quotas</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr>
+              <td>{{ member.name }}</td>
+              <td>{{ member.membership_type }}</td>
+              <td>{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
+              <td>{{ member.birthdate or '-' }}</td>
+              <td>{{ member.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Sem sócios registados neste momento.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

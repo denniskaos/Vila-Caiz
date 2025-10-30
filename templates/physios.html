@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Departamento Médico</h2>
+  <p>Controle os especialistas que apoiam a recuperação dos atletas.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-physio">
+    <h3 id="form-physio">Adicionar Profissional</h3>
+    <form method="post" action="{{ url_for('add_physio') }}">
+      <label for="physio-name">Nome</label>
+      <input id="physio-name" name="name" type="text" required />
+
+      <label for="physio-birthdate">Data de Nascimento</label>
+      <input id="physio-birthdate" name="birthdate" type="date" required />
+
+      <label for="physio-specialization">Especialidade</label>
+      <input id="physio-specialization" name="specialization" type="text" placeholder="Ex.: Fisioterapia Desportiva" />
+
+      <label for="physio-contact">Contacto</label>
+      <input id="physio-contact" name="contact" type="tel" placeholder="Telefone ou email" />
+
+      <button type="submit">Registar Profissional</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Equipa Clínica</h3>
+    {% if physios %}
+      <table aria-label="Lista de fisioterapeutas">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Especialidade</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for physio in physios %}
+            <tr>
+              <td>{{ physio.name }}</td>
+              <td>{{ physio.specialization or '-' }}</td>
+              <td>{{ physio.birthdate or '-' }}</td>
+              <td>{{ physio.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem profissionais registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

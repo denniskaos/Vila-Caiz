@@ -1,491 +1,52 @@
 {% extends "base.html" %}
 {% block content %}
 <section id="resumo">
-  <h2>Resumo Geral</h2>
-  <div class="card-grid">
+  <div class="page-header">
+    <h2>Resumo Geral</h2>
+    <p>Visão rápida do pulso desportivo e financeiro do G.C.D. Vila Caiz.</p>
+  </div>
+  <div class="card-grid" style="margin-bottom: 2rem;">
     <article class="card">
       <h3>Jogadores</h3>
       <p><strong>{{ players|length }}</strong></p>
-      <p>Ativos no plantel</p>
+      <p>Ativos no plantel sénior e formação.</p>
     </article>
     <article class="card">
       <h3>Equipa Técnica</h3>
       <p><strong>{{ coaches|length }}</strong></p>
-      <p>Elementos a liderar</p>
+      <p>Elementos que lideram o coletivo.</p>
     </article>
     <article class="card">
       <h3>Departamento Médico</h3>
       <p><strong>{{ physios|length }}</strong></p>
-      <p>Profissionais dedicados</p>
+      <p>Profissionais dedicados ao bem-estar.</p>
     </article>
     <article class="card">
-      <h3>Formação</h3>
+      <h3>Camadas Jovens</h3>
       <p><strong>{{ youth_teams|length }}</strong></p>
-      <p>Equipas em desenvolvimento</p>
+      <p>Equipas em desenvolvimento contínuo.</p>
     </article>
     <article class="card">
-      <h3>Sócios</h3>
+      <h3>Sócios Ativos</h3>
       <p><strong>{{ members|length }}</strong></p>
-      <p>Voz ativa do clube</p>
+      <p>Comunidade que apoia o clube.</p>
     </article>
+  </div>
+  <div class="card-grid">
     <article class="card">
       <h3>Saldo Atual</h3>
       <p><strong>{{ summary.balance | format_currency }}</strong></p>
-      <p>Resultado financeiro acumulado</p>
+      <p>Resultado entre receitas e despesas.</p>
     </article>
-  </div>
-</section>
-
-<section id="jogadores">
-  <h2>Jogadores</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-jogadores">
-      <h3 id="form-jogadores">Adicionar Jogador</h3>
-      <form method="post" action="{{ url_for('add_player') }}">
-        <label for="player-name">Nome</label>
-        <input id="player-name" name="name" type="text" required />
-
-        <label for="player-birthdate">Data de Nascimento</label>
-        <input id="player-birthdate" name="birthdate" type="date" required />
-
-        <label for="player-position">Posição</label>
-        <input id="player-position" name="position" type="text" placeholder="Ex.: Médio Centro" required />
-
-        <label for="player-squad">Escalão</label>
-        <select id="player-squad" name="squad">
-          <option value="senior">Seniores</option>
-          <option value="juniores">Juniores</option>
-          <option value="juvenis">Juvenis</option>
-          <option value="iniciados">Iniciados</option>
-          <option value="infantis">Infantis</option>
-        </select>
-
-        <label for="player-shirt">Número da Camisola</label>
-        <input id="player-shirt" name="shirt_number" type="number" min="0" />
-
-        <label for="player-contact">Contacto</label>
-        <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" />
-
-        <button type="submit">Registar Jogador</button>
-      </form>
-    </article>
-
-    <article class="card" aria-live="polite">
-      <h3>Plantel Atual</h3>
-      {% if players %}
-        <table aria-label="Lista de jogadores">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Nome</th>
-              <th>Posição</th>
-              <th>Escalão</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for player in players %}
-              <tr>
-                <td>{{ player.shirt_number or '-' }}</td>
-                <td>{{ player.name }}</td>
-                <td>{{ player.position }}</td>
-                <td>{{ player.squad|title }}</td>
-                <td>{{ player.birthdate or '-' }}</td>
-                <td>{{ player.contact or '-' }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Ainda não existem jogadores registados.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="equipa-tecnica">
-  <h2>Equipa Técnica</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-coaches">
-      <h3 id="form-coaches">Adicionar Treinador</h3>
-      <form method="post" action="{{ url_for('add_coach') }}">
-        <label for="coach-name">Nome</label>
-        <input id="coach-name" name="name" type="text" required />
-
-        <label for="coach-birthdate">Data de Nascimento</label>
-        <input id="coach-birthdate" name="birthdate" type="date" required />
-
-        <label for="coach-role">Função</label>
-        <input id="coach-role" name="role" type="text" placeholder="Ex.: Treinador Principal" required />
-
-        <label for="coach-license">Licença</label>
-        <input id="coach-license" name="license_level" type="text" placeholder="UEFA B" />
-
-        <label for="coach-contact">Contacto</label>
-        <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" />
-
-        <button type="submit">Registar Treinador</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Staff Técnico</h3>
-      {% if coaches %}
-        <table aria-label="Lista de treinadores">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Função</th>
-              <th>Licença</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for coach in coaches %}
-              <tr>
-                <td>{{ coach.name }}</td>
-                <td>{{ coach.role }}</td>
-                <td>{{ coach.license_level or '-' }}</td>
-                <td>{{ coach.birthdate or '-' }}</td>
-                <td>{{ coach.contact or '-' }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Ainda não existem elementos técnicos registados.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="fisioterapia">
-  <h2>Departamento Médico</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-physio">
-      <h3 id="form-physio">Adicionar Profissional</h3>
-      <form method="post" action="{{ url_for('add_physio') }}">
-        <label for="physio-name">Nome</label>
-        <input id="physio-name" name="name" type="text" required />
-
-        <label for="physio-birthdate">Data de Nascimento</label>
-        <input id="physio-birthdate" name="birthdate" type="date" required />
-
-        <label for="physio-specialization">Especialidade</label>
-        <input id="physio-specialization" name="specialization" type="text" placeholder="Ex.: Fisioterapia Desportiva" />
-
-        <label for="physio-contact">Contacto</label>
-        <input id="physio-contact" name="contact" type="tel" placeholder="Telefone ou email" />
-
-        <button type="submit">Registar Profissional</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Equipa Clínica</h3>
-      {% if physios %}
-        <table aria-label="Lista de fisioterapeutas">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Especialidade</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for physio in physios %}
-              <tr>
-                <td>{{ physio.name }}</td>
-                <td>{{ physio.specialization or '-' }}</td>
-                <td>{{ physio.birthdate or '-' }}</td>
-                <td>{{ physio.contact or '-' }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Ainda não existem profissionais registados.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="formacao">
-  <h2>Camadas Jovens</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-youth">
-      <h3 id="form-youth">Criar Equipa</h3>
-      <form method="post" action="{{ url_for('add_youth_team') }}">
-        <label for="youth-name">Nome da Equipa</label>
-        <input id="youth-name" name="name" type="text" required />
-
-        <label for="youth-age">Escalão</label>
-        <input id="youth-age" name="age_group" type="text" placeholder="Ex.: Sub-17" required />
-
-        <label for="youth-coach">Treinador Responsável</label>
-        <select id="youth-coach" name="coach_id">
-          <option value="">Selecionar</option>
-          {% for coach in coaches %}
-            <option value="{{ coach.id }}">{{ coach.name }}</option>
-          {% endfor %}
-        </select>
-
-        <button type="submit">Criar Equipa</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Equipas em Atividade</h3>
-      {% if youth_teams %}
-        <table aria-label="Lista de equipas de formação">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Escalão</th>
-              <th>Treinador</th>
-              <th>Atletas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for team in youth_teams %}
-              <tr>
-                <td>{{ team.name }}</td>
-                <td>{{ team.age_group }}</td>
-                <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
-                <td>{{ team.player_ids | length }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Sem equipas de formação registadas.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="socios">
-  <h2>Sócios</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-members">
-      <h3 id="form-members">Adicionar Sócio</h3>
-      <form method="post" action="{{ url_for('add_member') }}">
-        <label for="member-name">Nome</label>
-        <input id="member-name" name="name" type="text" required />
-
-        <label for="member-birthdate">Data de Nascimento</label>
-        <input id="member-birthdate" name="birthdate" type="date" required />
-
-        <label for="member-type">Tipo de Quota</label>
-        <input id="member-type" name="membership_type" type="text" placeholder="Ex.: Anual" required />
-
-        <label for="member-contact">Contacto</label>
-        <input id="member-contact" name="contact" type="tel" placeholder="Telefone ou email" />
-
-        <label class="checkbox-label">
-          <input type="checkbox" name="dues_paid" /> Quotas em dia
-        </label>
-
-        <button type="submit">Registar Sócio</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Comunidade Vila-Caiz</h3>
-      {% if members %}
-        <table aria-label="Lista de sócios">
-          <thead>
-            <tr>
-              <th>Nome</th>
-              <th>Tipo</th>
-              <th>Quotas</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for member in members %}
-              <tr>
-                <td>{{ member.name }}</td>
-                <td>{{ member.membership_type }}</td>
-                <td>{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
-                <td>{{ member.birthdate or '-' }}</td>
-                <td>{{ member.contact or '-' }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Sem sócios registados neste momento.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="financas">
-  <h2>Detalhe Financeiro</h2>
-  <div class="card-grid" style="margin-bottom: 1.5rem;">
     <article class="card">
       <h3>Total de Receitas</h3>
       <p><strong>{{ summary.total_revenue | format_currency }}</strong></p>
+      <p>Entradas acumuladas no período.</p>
     </article>
     <article class="card">
       <h3>Total de Despesas</h3>
       <p><strong>{{ summary.total_expense | format_currency }}</strong></p>
-    </article>
-    <article class="card">
-      <h3>Saldo Operacional</h3>
-      <p><strong>{{ (summary.total_revenue - summary.total_expense) | format_currency }}</strong></p>
-    </article>
-  </div>
-
-  {% if revenue_categories or expense_categories %}
-    <div class="card" style="margin-bottom: 2rem;">
-      <h3>Distribuição por Categoria</h3>
-      <div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
-        <div>
-          <h4>Receitas</h4>
-          {% if revenue_categories %}
-            <ul>
-              {% for label, value in revenue_categories.items() %}
-                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="empty-state">Sem dados de receitas por categoria.</p>
-          {% endif %}
-        </div>
-        <div>
-          <h4>Despesas</h4>
-          {% if expense_categories %}
-            <ul>
-              {% for label, value in expense_categories.items() %}
-                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="empty-state">Sem dados de despesas por categoria.</p>
-          {% endif %}
-        </div>
-      </div>
-    </div>
-  {% endif %}
-
-</section>
-
-<section id="receitas">
-  <h2>Receitas</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-revenue">
-      <h3 id="form-revenue">Registar Receita</h3>
-      <form method="post" action="{{ url_for('add_revenue') }}">
-        <label for="revenue-date">Data</label>
-        <input id="revenue-date" name="record_date" type="date" required />
-
-        <label for="revenue-description">Descrição</label>
-        <input id="revenue-description" name="description" type="text" required />
-
-        <label for="revenue-category">Categoria</label>
-        <input id="revenue-category" name="category" type="text" placeholder="Bilheteira, Patrocínio..." required />
-
-        <label for="revenue-source">Origem</label>
-        <input id="revenue-source" name="source" type="text" placeholder="Empresa, Sócio..." />
-
-        <label for="revenue-amount">Montante (€)</label>
-        <input id="revenue-amount" name="amount" type="number" step="0.01" min="0" required />
-
-        <button type="submit">Adicionar Receita</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Histórico de Receitas</h3>
-      {% if revenues %}
-        <table aria-label="Lista de receitas">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Origem</th>
-              <th>Montante</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in revenues %}
-              <tr>
-                <td>{{ entry.record_date }}</td>
-                <td>{{ entry.description }}</td>
-                <td>{{ entry.category }}</td>
-                <td>{{ entry.source or '-' }}</td>
-                <td>{{ entry.amount | format_currency }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Sem receitas registadas.</p>
-      {% endif %}
-    </article>
-  </div>
-</section>
-
-<section id="despesas">
-  <h2>Despesas</h2>
-  <div class="section-grid">
-    <article class="card form-card" aria-labelledby="form-expense">
-      <h3 id="form-expense">Registar Despesa</h3>
-      <form method="post" action="{{ url_for('add_expense') }}">
-        <label for="expense-date">Data</label>
-        <input id="expense-date" name="record_date" type="date" required />
-
-        <label for="expense-description">Descrição</label>
-        <input id="expense-description" name="description" type="text" required />
-
-        <label for="expense-category">Categoria</label>
-        <input id="expense-category" name="category" type="text" placeholder="Logística, Equipamentos..." required />
-
-        <label for="expense-vendor">Fornecedor</label>
-        <input id="expense-vendor" name="vendor" type="text" placeholder="Nome do fornecedor" />
-
-        <label for="expense-amount">Montante (€)</label>
-        <input id="expense-amount" name="amount" type="number" step="0.01" min="0" required />
-
-        <button type="submit">Adicionar Despesa</button>
-      </form>
-    </article>
-
-    <article class="card">
-      <h3>Histórico de Despesas</h3>
-      {% if expenses %}
-        <table aria-label="Lista de despesas">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Fornecedor</th>
-              <th>Montante</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in expenses %}
-              <tr>
-                <td>{{ entry.record_date }}</td>
-                <td>{{ entry.description }}</td>
-                <td>{{ entry.category }}</td>
-                <td>{{ entry.vendor or '-' }}</td>
-                <td>{{ entry.amount | format_currency }}</td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      {% else %}
-        <p class="empty-state">Sem despesas registadas.</p>
-      {% endif %}
+      <p>Investimentos realizados no clube.</p>
     </article>
   </div>
 </section>

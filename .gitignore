@@ -1,3 +1,41 @@
+# Ambientes virtuais Python
+venv/
+.venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Bytecode / cache
 __pycache__/
 *.pyc
-data/club.json
+*.pyo
+*.pyd
+
+# Bases de dados locais / dumps
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.sqlite-journal
+*.sqlite3-journal
+*.log
+
+# Modelos / ficheiros pesados
+*.pth
+*.pt
+*.onnx
+*.h5
+*.bin
+*.pkl
+*.pickle
+*.tar
+*.tar.gz
+*.zip
+
+# Credenciais
+.env
+*.env
+.env.*
+*.key
+*.pem

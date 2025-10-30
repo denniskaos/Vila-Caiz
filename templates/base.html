@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Vila-Caiz" }}</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --primary: #f5c400;
+        --primary-dark: #181818;
+        --surface: rgba(255, 249, 223, 0.9);
+        --surface-dark: rgba(30, 30, 30, 0.9);
+        --border: rgba(24, 24, 24, 0.15);
+        --border-dark: rgba(245, 196, 0, 0.35);
+        --success: #0b7d2a;
+        --error: #c62828;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(circle at top left, rgba(245, 196, 0, 0.16), transparent 55%),
+          radial-gradient(circle at bottom right, rgba(24, 24, 24, 0.85), #050505);
+        color: #0d0d0d;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: linear-gradient(170deg, #050505 0%, #171717 40%, #f5c400 140%);
+          color: #f9f6ea;
+        }
+      }
+
+      header {
+        background: var(--primary-dark);
+        color: #f5c400;
+        padding: 1.2rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        border-bottom: 4px solid var(--primary);
+      }
+
+      header .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+      }
+
+      header .identity {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      header .identity img {
+        width: 64px;
+        height: auto;
+        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+      }
+
+      header .identity h1 {
+        margin: 0;
+        font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .container {
+        width: min(1100px, 92vw);
+        margin: 0 auto;
+      }
+
+      nav ul {
+        display: flex;
+        gap: 1.2rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        align-items: center;
+      }
+
+      nav a,
+      nav summary {
+        color: #f5c400;
+        text-decoration: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        position: relative;
+        padding-bottom: 0.2rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      nav summary::before {
+        content: "▾";
+        font-size: 0.85em;
+        transition: transform 0.2s ease;
+        display: inline-block;
+        transform: translateY(-5%);
+      }
+
+      nav details[open] summary::before {
+        transform: rotate(180deg) translateY(5%);
+      }
+
+      nav a::after,
+      nav summary::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        height: 2px;
+        background: var(--primary);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.2s ease;
+      }
+
+      nav a:hover::after,
+      nav a:focus-visible::after,
+      nav summary:hover::after,
+      nav summary:focus-visible::after {
+        transform: scaleX(1);
+      }
+
+      nav details {
+        position: relative;
+      }
+
+      nav details summary {
+        list-style: none;
+      }
+
+      nav summary::-webkit-details-marker {
+        display: none;
+      }
+
+      nav details[open] > summary::after {
+        transform: scaleX(1);
+      }
+
+      nav a.active,
+      nav summary.active {
+        color: var(--primary);
+      }
+
+      nav a.active::after {
+        transform: scaleX(1);
+      }
+
+      nav details.is-active > summary {
+        color: var(--primary);
+      }
+
+      nav details ul {
+        position: absolute;
+        inset-inline-start: 0;
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        list-style: none;
+        background: rgba(5, 5, 5, 0.94);
+        border: 1px solid rgba(245, 196, 0, 0.4);
+        border-radius: 12px;
+        display: grid;
+        gap: 0.6rem;
+        min-width: 220px;
+        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.55);
+        z-index: 200;
+      }
+
+      nav details ul li {
+        margin: 0;
+      }
+
+      nav details a {
+        display: block;
+        padding: 0;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        text-transform: none;
+      }
+
+      main {
+        padding: 2.5rem 0 4rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-weight: 700;
+        margin-top: 0;
+      }
+
+      .page-header {
+        margin-bottom: 2.5rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .page-header p {
+        margin: 0;
+        color: rgba(24, 24, 24, 0.74);
+        max-width: 60ch;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .page-header p {
+          color: rgba(254, 245, 199, 0.75);
+        }
+      }
+
+      section {
+        margin-bottom: 3.5rem;
+      }
+
+      section h2 {
+        margin-bottom: 1.2rem;
+        color: var(--primary-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        section h2 {
+          color: var(--primary);
+        }
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.1rem;
+      }
+
+      .card {
+        background: var(--surface);
+        border-radius: 18px;
+        padding: 1.4rem 1.2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card {
+          background: var(--surface-dark);
+          border-color: var(--border-dark);
+        }
+      }
+
+      .section-grid {
+        display: grid;
+        gap: 1.6rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: start;
+      }
+
+      .form-card {
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      form {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        label {
+          color: var(--primary);
+        }
+      }
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .checkbox-label {
+          color: var(--primary);
+        }
+      }
+
+      .checkbox-label input {
+        width: auto;
+        margin: 0;
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(24, 24, 24, 0.25);
+        font: inherit;
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        input,
+        select,
+        textarea {
+          background: rgba(12, 12, 12, 0.75);
+          border-color: rgba(245, 196, 0, 0.45);
+          color: #f7f2d4;
+        }
+      }
+
+      button {
+        justify-self: start;
+        background: linear-gradient(120deg, var(--primary), #f7d54d);
+        color: #181818;
+        border: none;
+        border-radius: 999px;
+        padding: 0.65rem 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(245, 196, 0, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover,
+      button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(245, 196, 0, 0.45);
+      }
+
+      button:focus-visible {
+        outline: 2px solid #fef5c7;
+        outline-offset: 3px;
+      }
+
+      .card h3 {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--primary-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card h3 {
+          color: var(--primary);
+        }
+      }
+
+      .card strong {
+        font-size: 1.8rem;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card strong {
+          color: #fef5c7;
+        }
+      }
+
+      .card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.6rem 0 0;
+      }
+
+      .card ul li {
+        padding: 0.45rem 0;
+        border-bottom: 1px solid rgba(24, 24, 24, 0.12);
+      }
+
+      .card ul li:last-child {
+        border-bottom: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card ul li {
+          border-bottom-color: rgba(245, 196, 0, 0.3);
+        }
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--surface);
+        border-radius: 18px;
+        overflow: hidden;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      table thead {
+        background: linear-gradient(120deg, #0d0d0d, #2d2d2d);
+        color: #f5c400;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      th,
+      td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:nth-child(even) {
+        background: rgba(245, 196, 0, 0.08);
+      }
+
+      .flash-messages {
+        margin: 1.5rem 0;
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .flash {
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        font-weight: 600;
+      }
+
+      .flash.success {
+        background: rgba(11, 125, 42, 0.2);
+        color: #0b7d2a;
+      }
+
+      .flash.error {
+        background: rgba(198, 40, 40, 0.2);
+        color: #8b1010;
+      }
+
+      .empty-state {
+        padding: 1rem;
+        text-align: center;
+        font-style: italic;
+        color: rgba(13, 13, 13, 0.66);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .empty-state {
+          color: rgba(254, 245, 199, 0.7);
+        }
+      }
+
+      @media (max-width: 720px) {
+        header {
+          padding: 1rem 0;
+        }
+
+        header .container {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        nav ul {
+          justify-content: center;
+        }
+
+        nav details ul {
+          position: static;
+          margin-top: 0.5rem;
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body data-active-group="{{ active_group or '' }}">
+    <header>
+      <div class="container">
+        <div class="identity">
+          <img src="{{ url_for('static', filename='crest.svg') }}" alt="Emblema do G.C.D. Vila Caiz" />
+          <h1>G.C.D. Vila Caiz</h1>
+        </div>
+        <nav aria-label="Secções principais">
+          <ul>
+            <li>
+              <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
+            </li>
+            <li>
+              <details class="menu-group{% if active_group == 'plantel' %} is-active{% endif %}" data-menu="plantel" {% if active_group == 'plantel' %}open{% endif %}>
+                <summary aria-haspopup="true" aria-expanded="false">Plantel &amp; Staff</summary>
+                <ul>
+                  <li><a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a></li>
+                  <li><a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a></li>
+                  <li><a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a></li>
+                  <li><a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a></li>
+                  <li><a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a></li>
+                </ul>
+              </details>
+            </li>
+            <li>
+              <details class="menu-group{% if active_group == 'financas' %} is-active{% endif %}" data-menu="financas" {% if active_group == 'financas' %}open{% endif %}>
+                <summary aria-haspopup="true" aria-expanded="false">Finanças</summary>
+                <ul>
+                  <li><a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a></li>
+                  <li><a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a></li>
+                  <li><a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a></li>
+                </ul>
+              </details>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </header>
+    <main>
+      <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            <div class="flash-messages" role="status">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+    <script>
+      document.querySelectorAll('details.menu-group').forEach((menu) => {
+        const summary = menu.querySelector('summary');
+        if (!summary) return;
+        const setExpanded = () => {
+          summary.setAttribute('aria-expanded', menu.hasAttribute('open') ? 'true' : 'false');
+        };
+        if (menu.classList.contains('is-active')) {
+          menu.setAttribute('open', '');
+          setExpanded();
+        }
+        summary.addEventListener('click', () => {
+          requestAnimationFrame(setExpanded);
+        });
+        menu.addEventListener('mouseenter', () => {
+          menu.setAttribute('open', '');
+          setExpanded();
+        });
+        menu.addEventListener('mouseleave', () => {
+          if (menu.classList.contains('is-active')) return;
+          menu.removeAttribute('open');
+          setExpanded();
+        });
+        summary.addEventListener('focus', () => {
+          menu.setAttribute('open', '');
+          setExpanded();
+        });
+        summary.addEventListener('blur', () => {
+          window.setTimeout(() => {
+            if (menu.classList.contains('is-active')) return;
+            if (!menu.matches(':hover') && !menu.contains(document.activeElement)) {
+              menu.removeAttribute('open');
+              setExpanded();
+            }
+          }, 120);
+        });
+        menu.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            menu.removeAttribute('open');
+            setExpanded();
+            summary.focus();
+          }
+        });
+        setExpanded();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 260">
+  <defs>
+    <linearGradient id="shield" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f9d438" />
+      <stop offset="100%" stop-color="#d4a200" />
+    </linearGradient>
+    <linearGradient id="shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1a1a1a" />
+      <stop offset="100%" stop-color="#000000" />
+    </linearGradient>
+  </defs>
+  <g fill="none" fill-rule="evenodd">
+    <path d="M110 4 L202 44 L184 188 L110 254 L36 188 L18 44 Z" fill="url(#shield)" stroke="#111" stroke-width="8" stroke-linejoin="round" />
+    <path d="M110 18 L190 54 L174 182 L110 240 L46 182 L30 54 Z" fill="url(#shadow)" stroke="#f9d438" stroke-width="6" stroke-linejoin="round" />
+    <path d="M70 48 H150 L150 212 L70 212 Z" fill="#f9d438" opacity="0.18" />
+    <path d="M92 44 H108 V216 H92 Z" fill="#f9d438" />
+    <path d="M112 44 H128 V216 H112 Z" fill="#f9d438" />
+    <path d="M54 82 H166 V98 H54 Z" fill="#f9d438" />
+    <path d="M54 160 H166 V176 H54 Z" fill="#f9d438" />
+    <circle cx="110" cy="128" r="44" fill="url(#shield)" stroke="#111" stroke-width="6" />
+    <path d="M110 86 L126 86 L126 170 L110 170 Z" fill="#111" />
+    <path d="M110 86 L94 86 L94 170 L110 170 Z" fill="#111" />
+    <path d="M74 118 H146 V138 H74 Z" fill="#111" />
+    <path d="M74 118 H90 V138 H74 Z" fill="#111" />
+    <path d="M130 118 H146 V138 H130 Z" fill="#111" />
+    <circle cx="110" cy="128" r="18" fill="#111" stroke="#f9d438" stroke-width="4" />
+    <text x="110" y="72" text-anchor="middle" font-family="'Cinzel', serif" font-size="18" fill="#f9d438" letter-spacing="4">G C D</text>
+    <text x="110" y="212" text-anchor="middle" font-family="'Cinzel', serif" font-size="20" fill="#f9d438">VC</text>
+    <g fill="#f9d438" stroke="#111" stroke-width="4" stroke-linejoin="round">
+      <path d="M56 18 L74 18 L82 40 L64 40 Z" />
+      <path d="M90 18 L108 18 L116 40 L98 40 Z" />
+      <path d="M124 18 L142 18 L150 40 L132 40 Z" />
+      <path d="M158 18 L176 18 L184 40 L166 40 Z" />
+    </g>
+  </g>
+</svg>

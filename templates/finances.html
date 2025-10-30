@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Finanças</h2>
+  <p>Controle a saúde financeira do clube e registe novos movimentos.</p>
+</section>
+<section id="financas">
+  <div class="card-grid" style="margin-bottom: 1.5rem;">
+    <article class="card">
+      <h3>Saldo Atual</h3>
+      <p><strong>{{ summary.balance | format_currency }}</strong></p>
+      <p>Resultado acumulado.</p>
+    </article>
+    <article class="card">
+      <h3>Total de Receitas</h3>
+      <p><strong>{{ summary.total_revenue | format_currency }}</strong></p>
+      <p>Entradas registadas.</p>
+    </article>
+    <article class="card">
+      <h3>Total de Despesas</h3>
+      <p><strong>{{ summary.total_expense | format_currency }}</strong></p>
+      <p>Saídas contabilizadas.</p>
+    </article>
+  </div>
+
+  {% if revenue_categories or expense_categories %}
+    <div class="card" style="margin-bottom: 2rem;">
+      <h3>Distribuição por Categoria</h3>
+      <div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div>
+          <h4>Receitas</h4>
+          {% if revenue_categories %}
+            <ul>
+              {% for label, value in revenue_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de receitas por categoria.</p>
+          {% endif %}
+        </div>
+        <div>
+          <h4>Despesas</h4>
+          {% if expense_categories %}
+            <ul>
+              {% for label, value in expense_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de despesas por categoria.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<section id="receitas" aria-labelledby="heading-receitas">
+  <h2 id="heading-receitas">Receitas</h2>
+  <div class="section-grid">
+    <article class="card form-card" aria-labelledby="form-revenue">
+      <h3 id="form-revenue">Registar Receita</h3>
+      <form method="post" action="{{ url_for('add_revenue') }}">
+        <label for="revenue-date">Data</label>
+        <input id="revenue-date" name="record_date" type="date" required />
+
+        <label for="revenue-description">Descrição</label>
+        <input id="revenue-description" name="description" type="text" required />
+
+        <label for="revenue-category">Categoria</label>
+        <input id="revenue-category" name="category" type="text" placeholder="Bilheteira, Patrocínio..." required />
+
+        <label for="revenue-source">Origem</label>
+        <input id="revenue-source" name="source" type="text" placeholder="Empresa, Sócio..." />
+
+        <label for="revenue-amount">Montante (€)</label>
+        <input id="revenue-amount" name="amount" type="number" step="0.01" min="0" required />
+
+        <button type="submit">Adicionar Receita</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <h3>Histórico de Receitas</h3>
+      {% if revenues %}
+        <table aria-label="Lista de receitas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Origem</th>
+              <th>Montante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in revenues %}
+              <tr>
+                <td>{{ entry.record_date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.source or '-' }}</td>
+                <td>{{ entry.amount | format_currency }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-state">Sem receitas registadas.</p>
+      {% endif %}
+    </article>
+  </div>
+</section>
+
+<section id="despesas" aria-labelledby="heading-despesas">
+  <h2 id="heading-despesas">Despesas</h2>
+  <div class="section-grid">
+    <article class="card form-card" aria-labelledby="form-expense">
+      <h3 id="form-expense">Registar Despesa</h3>
+      <form method="post" action="{{ url_for('add_expense') }}">
+        <label for="expense-date">Data</label>
+        <input id="expense-date" name="record_date" type="date" required />
+
+        <label for="expense-description">Descrição</label>
+        <input id="expense-description" name="description" type="text" required />
+
+        <label for="expense-category">Categoria</label>
+        <input id="expense-category" name="category" type="text" placeholder="Logística, Equipamentos..." required />
+
+        <label for="expense-vendor">Fornecedor</label>
+        <input id="expense-vendor" name="vendor" type="text" placeholder="Nome do fornecedor" />
+
+        <label for="expense-amount">Montante (€)</label>
+        <input id="expense-amount" name="amount" type="number" step="0.01" min="0" required />
+
+        <button type="submit">Adicionar Despesa</button>
+      </form>
+    </article>
+
+    <article class="card">
+      <h3>Histórico de Despesas</h3>
+      {% if expenses %}
+        <table aria-label="Lista de despesas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Fornecedor</th>
+              <th>Montante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in expenses %}
+              <tr>
+                <td>{{ entry.record_date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.vendor or '-' }}</td>
+                <td>{{ entry.amount | format_currency }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-state">Sem despesas registadas.</p>
+      {% endif %}
+    </article>
+  </div>
+</section>
+{% if focus_section %}
+<script>
+  const target = document.getElementById('{{ focus_section }}');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+</script>
+{% endif %}
+{% endblock %}

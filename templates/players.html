@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Jogadores</h2>
+  <p>Gestão completa do plantel amarelo e preto.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-jogadores">
+    <h3 id="form-jogadores">Adicionar Jogador</h3>
+    <form method="post" action="{{ url_for('add_player') }}">
+      <label for="player-name">Nome</label>
+      <input id="player-name" name="name" type="text" required />
+
+      <label for="player-birthdate">Data de Nascimento</label>
+      <input id="player-birthdate" name="birthdate" type="date" required />
+
+      <label for="player-position">Posição</label>
+      <input id="player-position" name="position" type="text" placeholder="Ex.: Médio Centro" required />
+
+      <label for="player-squad">Escalão</label>
+      <select id="player-squad" name="squad">
+        <option value="senior">Seniores</option>
+        <option value="juniores">Juniores</option>
+        <option value="juvenis">Juvenis</option>
+        <option value="iniciados">Iniciados</option>
+        <option value="infantis">Infantis</option>
+      </select>
+
+      <label for="player-shirt">Número da Camisola</label>
+      <input id="player-shirt" name="shirt_number" type="number" min="0" />
+
+      <label for="player-contact">Contacto</label>
+      <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" />
+
+      <button type="submit">Registar Jogador</button>
+    </form>
+  </article>
+
+  <article class="card" aria-live="polite">
+    <h3>Plantel Atual</h3>
+    {% if players %}
+      <table aria-label="Lista de jogadores">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Posição</th>
+            <th>Escalão</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in players %}
+            <tr>
+              <td>{{ player.shirt_number or '-' }}</td>
+              <td>{{ player.name }}</td>
+              <td>{{ player.position }}</td>
+              <td>{{ player.squad|title }}</td>
+              <td>{{ player.birthdate or '-' }}</td>
+              <td>{{ player.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem jogadores registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

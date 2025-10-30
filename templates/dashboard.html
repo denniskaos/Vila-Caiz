@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block content %}
+<section id="resumo">
+  <h2>Resumo Geral</h2>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Jogadores</h3>
+      <p><strong>{{ players|length }}</strong></p>
+      <p>Ativos no plantel</p>
+    </article>
+    <article class="card">
+      <h3>Equipa Técnica</h3>
+      <p><strong>{{ coaches|length }}</strong></p>
+      <p>Elementos a liderar</p>
+    </article>
+    <article class="card">
+      <h3>Departamento Médico</h3>
+      <p><strong>{{ physios|length }}</strong></p>
+      <p>Profissionais dedicados</p>
+    </article>
+    <article class="card">
+      <h3>Formação</h3>
+      <p><strong>{{ youth_teams|length }}</strong></p>
+      <p>Equipas em desenvolvimento</p>
+    </article>
+    <article class="card">
+      <h3>Sócios</h3>
+      <p><strong>{{ members|length }}</strong></p>
+      <p>Voz ativa do clube</p>
+    </article>
+    <article class="card">
+      <h3>Saldo Atual</h3>
+      <p><strong>{{ summary.balance | format_currency }}</strong></p>
+      <p>Resultado financeiro acumulado</p>
+    </article>
+  </div>
+</section>
+
+<section id="financas">
+  <h2>Detalhe Financeiro</h2>
+  <div class="card-grid" style="margin-bottom: 1.5rem;">
+    <article class="card">
+      <h3>Total de Receitas</h3>
+      <p><strong>{{ summary.total_revenue | format_currency }}</strong></p>
+    </article>
+    <article class="card">
+      <h3>Total de Despesas</h3>
+      <p><strong>{{ summary.total_expense | format_currency }}</strong></p>
+    </article>
+    <article class="card">
+      <h3>Saldo Operacional</h3>
+      <p><strong>{{ (summary.total_revenue - summary.total_expense) | format_currency }}</strong></p>
+    </article>
+  </div>
+
+  {% if revenue_categories or expense_categories %}
+    <div class="card" style="margin-bottom: 2rem;">
+      <h3>Distribuição por Categoria</h3>
+      <div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div>
+          <h4>Receitas</h4>
+          {% if revenue_categories %}
+            <ul>
+              {% for label, value in revenue_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de receitas por categoria.</p>
+          {% endif %}
+        </div>
+        <div>
+          <h4>Despesas</h4>
+          {% if expense_categories %}
+            <ul>
+              {% for label, value in expense_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de despesas por categoria.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div style="display: grid; gap: 2rem;">
+    <div>
+      <h3>Receitas</h3>
+      {% if revenues %}
+        <table aria-label="Lista de receitas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Origem</th>
+              <th>Montante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in revenues %}
+              <tr>
+                <td>{{ entry.record_date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.source or '-' }}</td>
+                <td>{{ entry.amount | format_currency }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-state">Sem receitas registadas.</p>
+      {% endif %}
+    </div>
+
+    <div>
+      <h3>Despesas</h3>
+      {% if expenses %}
+        <table aria-label="Lista de despesas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Fornecedor</th>
+              <th>Montante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in expenses %}
+              <tr>
+                <td>{{ entry.record_date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.vendor or '-' }}</td>
+                <td>{{ entry.amount | format_currency }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty-state">Sem despesas registadas.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

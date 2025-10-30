@@ -475,7 +475,37 @@ class ClubService:
         return [payment for payment in payments if payment.member_id == member_id]
 
     def remove_membership_payment(self, payment_id: int) -> None:
-        self._remove_entity("membership_payments", payment_id)
+        payment_record = self._find_entity("membership_payments", payment_id)
+        if payment_record is None:
+            raise ValueError(f"Membership payment with id {payment_id} not found")
+
+        member_id = int(payment_record.get("member_id", 0))
+
+        payments = self._data["membership_payments"]
+        self._data["membership_payments"] = [
+            item for item in payments if int(item.get("id", 0)) != payment_id
+        ]
+        self._persist()
+
+        if member_id:
+            remaining_payments = [
+                storage.instantiate(models.MembershipPayment, item)
+                for item in self._data["membership_payments"]
+                if int(item.get("member_id", 0)) == member_id
+            ]
+            dues_paid = bool(remaining_payments)
+            dues_paid_until: Optional[str]
+            if remaining_payments:
+                latest_payment = max(remaining_payments, key=lambda payment: payment.paid_on)
+                dues_paid_until = latest_payment.period
+            else:
+                dues_paid_until = None
+
+            updates = {
+                "dues_paid": dues_paid,
+                "dues_paid_until": dues_paid_until,
+            }
+            self._update_entity("members", member_id, updates)
 
     # Finance ---------------------------------------------------------
     def add_revenue(

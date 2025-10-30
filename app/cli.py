@@ -278,7 +278,7 @@ def _configure_finance_commands(subparsers: argparse._SubParsersAction, service:
 
 def build_parser(service: services.ClubService) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Gestão completa para o clube Vila-Caiz")
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command")
 
     _configure_player_commands(subparsers, service)
     _configure_coach_commands(subparsers, service)
@@ -295,6 +295,9 @@ def main(argv: Optional[list[str]] = None) -> None:
     service = services.ClubService()
     parser = build_parser(service)
     args = parser.parse_args(argv)
+    if getattr(args, "command", None) is None:
+        parser.print_help()
+        return
     handler: Callable[[argparse.Namespace], None] = getattr(args, "func", None)
     if handler is None:
         parser.print_help()

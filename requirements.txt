@@ -1,1 +1,1 @@
-# Aplicação usa apenas bibliotecas da biblioteca padrão.
+Flask==3.0.3

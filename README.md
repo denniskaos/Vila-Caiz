@@ -1,6 +1,7 @@
 # Vila-Caiz
 
-Aplicação em linha de comandos para gerir o clube de futebol Vila-Caiz.
+Aplicação em linha de comandos e interface web para gerir o clube de futebol
+Vila-Caiz.
 
 ## Funcionalidades
 
@@ -8,6 +9,7 @@ Aplicação em linha de comandos para gerir o clube de futebol Vila-Caiz.
 * Registo de equipas das camadas jovens e associação de jogadores.
 * Gestão de sócios e do estado de quotas.
 * Registo de receitas e despesas com resumo financeiro automático.
+* Painel web com formulários e visualização dos dados do clube.
 
 Os dados são armazenados em `data/club.json` num formato legível (JSON).
 
@@ -32,6 +34,19 @@ python app.py
 No modo interativo escreva os mesmos comandos que usaria na linha de comandos
 (`players list`, `finance summary`, etc.). Utilize `help` para ver a ajuda e
 `exit`/`quit` para terminar.
+
+### Interface web
+
+Instale as dependências e arranque o servidor Flask com:
+
+```bash
+pip install -r requirements.txt
+python -m app.web --port 8000
+```
+
+Depois aceda a `http://localhost:8000` para utilizar o painel visual com
+formulários para todas as secções do clube (plantel, equipa técnica, saúde,
+formação, sócios e finanças).
 
 ### Exemplo de fluxo
 

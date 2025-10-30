@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+{% block content %}
+<section id="resumo">
+  <h2>Resumo Geral</h2>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Jogadores</h3>
+      <p><strong>{{ players|length }}</strong> registados</p>
+    </article>
+    <article class="card">
+      <h3>Equipa Técnica</h3>
+      <p><strong>{{ coaches|length }}</strong> treinadores</p>
+    </article>
+    <article class="card">
+      <h3>Fisioterapia</h3>
+      <p><strong>{{ physios|length }}</strong> profissionais</p>
+    </article>
+    <article class="card">
+      <h3>Formação</h3>
+      <p><strong>{{ youth_teams|length }}</strong> equipas jovens</p>
+    </article>
+    <article class="card">
+      <h3>Sócios</h3>
+      <p><strong>{{ members|length }}</strong> associados</p>
+    </article>
+    <article class="card">
+      <h3>Saldo</h3>
+      <p><strong>{{ summary.balance | format_currency }}</strong></p>
+    </article>
+  </div>
+  <div class="card" style="margin-top: 1.5rem;">
+    <h3>Detalhe Financeiro</h3>
+    <p>Total de receitas: <strong>{{ summary.total_revenue | format_currency }}</strong></p>
+    <p>Total de despesas: <strong>{{ summary.total_expense | format_currency }}</strong></p>
+    {% if revenue_categories or expense_categories %}
+      <div class="layout">
+        <div>
+          <h4>Receitas por categoria</h4>
+          {% if revenue_categories %}
+            <ul>
+              {% for label, value in revenue_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de receitas por categoria.</p>
+          {% endif %}
+        </div>
+        <div>
+          <h4>Despesas por categoria</h4>
+          {% if expense_categories %}
+            <ul>
+              {% for label, value in expense_categories.items() %}
+                <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="empty-state">Sem dados de despesas por categoria.</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<section id="jogadores">
+  <h2>Plantel Principal</h2>
+  <div class="layout">
+    <form method="post" action="{{ url_for('add_player') }}">
+      <h3>Adicionar Jogador</h3>
+      <label>Nome
+        <input name="name" required />
+      </label>
+      <label>Posição
+        <input name="position" required />
+      </label>
+      <label>Escalão
+        <select name="squad">
+          <option value="senior">Sénior</option>
+          <option value="sub23">Sub-23</option>
+          <option value="sub19">Sub-19</option>
+        </select>
+      </label>
+      <label>Data de nascimento
+        <input type="date" name="birthdate" />
+      </label>
+      <label>Contacto
+        <input name="contact" placeholder="Email ou telefone" />
+      </label>
+      <label>Número
+        <input name="shirt_number" type="number" min="1" />
+      </label>
+      <button type="submit">Guardar jogador</button>
+    </form>
+    {% if players %}
+      <table aria-label="Lista de jogadores">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Posição</th>
+            <th>Escalão</th>
+            <th>N.º</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for player in players %}
+            <tr>
+              <td>{{ player.id }}</td>
+              <td>{{ player.name }}</td>
+              <td>{{ player.position }}</td>
+              <td>{{ player.squad }}</td>
+              <td>{{ player.shirt_number or '-' }}</td>
+              <td>{{ player.birthdate or '-' }}</td>
+              <td>{{ player.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem jogadores registados.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="equipa-tecnica">
+  <h2>Equipa Técnica</h2>
+  <div class="layout">
+    <form method="post" action="{{ url_for('add_coach') }}">
+      <h3>Adicionar Treinador</h3>
+      <label>Nome
+        <input name="name" required />
+      </label>
+      <label>Função
+        <input name="role" placeholder="Ex.: Treinador Adjunto" required />
+      </label>
+      <label>Nível UEFA
+        <input name="license_level" placeholder="UEFA B" />
+      </label>
+      <label>Data de nascimento
+        <input type="date" name="birthdate" />
+      </label>
+      <label>Contacto
+        <input name="contact" />
+      </label>
+      <button type="submit">Guardar treinador</button>
+    </form>
+    {% if coaches %}
+      <table aria-label="Lista de treinadores">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Função</th>
+            <th>Nível</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for coach in coaches %}
+            <tr>
+              <td>{{ coach.id }}</td>
+              <td>{{ coach.name }}</td>
+              <td>{{ coach.role }}</td>
+              <td>{{ coach.license_level or '-' }}</td>
+              <td>{{ coach.birthdate or '-' }}</td>
+              <td>{{ coach.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem elementos na equipa técnica.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="fisioterapia">
+  <h2>Departamento Médico</h2>
+  <div class="layout">
+    <form method="post" action="{{ url_for('add_physio') }}">
+      <h3>Adicionar Profissional</h3>
+      <label>Nome
+        <input name="name" required />
+      </label>
+      <label>Especialidade
+        <input name="specialization" placeholder="Ex.: Reabilitação" />
+      </label>
+      <label>Data de nascimento
+        <input type="date" name="birthdate" />
+      </label>
+      <label>Contacto
+        <input name="contact" />
+      </label>
+      <button type="submit">Guardar profissional</button>
+    </form>
+    {% if physios %}
+      <table aria-label="Lista de profissionais de saúde">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Especialidade</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for physio in physios %}
+            <tr>
+              <td>{{ physio.id }}</td>
+              <td>{{ physio.name }}</td>
+              <td>{{ physio.specialization or '-' }}</td>
+              <td>{{ physio.birthdate or '-' }}</td>
+              <td>{{ physio.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem profissionais registados.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="formacao">
+  <h2>Academia e Formação</h2>
+  <div class="layout">
+    <form method="post" action="{{ url_for('add_youth_team') }}">
+      <h3>Criar Equipa Jovem</h3>
+      <label>Nome da equipa
+        <input name="name" placeholder="Ex.: Sub-15" required />
+      </label>
+      <label>Escalão
+        <input name="age_group" placeholder="Ex.: Sub-15" required />
+      </label>
+      <label>ID do treinador responsável
+        <input name="coach_id" type="number" min="1" />
+      </label>
+      <button type="submit">Guardar equipa</button>
+    </form>
+    {% if youth_teams %}
+      <table aria-label="Equipas de formação">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Equipa</th>
+            <th>Escalão</th>
+            <th>Treinador</th>
+            <th>Jogadores inscritos</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in youth_teams %}
+            <tr>
+              <td>{{ team.id }}</td>
+              <td>{{ team.name }}</td>
+              <td>{{ team.age_group }}</td>
+              <td>{{ team.coach_id or '-' }}</td>
+              <td>{{ team.player_ids | length }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem equipas de formação.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="socios">
+  <h2>Sócios do Clube</h2>
+  <div class="layout">
+    <form method="post" action="{{ url_for('add_member') }}">
+      <h3>Registar Sócio</h3>
+      <label>Nome
+        <input name="name" required />
+      </label>
+      <label>Tipo de quota
+        <input name="membership_type" placeholder="Ex.: Anual" required />
+      </label>
+      <label>Contacto
+        <input name="contact" />
+      </label>
+      <label>Data de nascimento
+        <input type="date" name="birthdate" />
+      </label>
+      <label>
+        <input type="checkbox" name="dues_paid" /> Quotas regularizadas
+      </label>
+      <button type="submit">Guardar sócio</button>
+    </form>
+    {% if members %}
+      <table aria-label="Lista de sócios">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Tipo</th>
+            <th>Quotas</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr>
+              <td>{{ member.id }}</td>
+              <td>{{ member.name }}</td>
+              <td>{{ member.membership_type }}</td>
+              <td>{{ "Regularizadas" if member.dues_paid else "Em atraso" }}</td>
+              <td>{{ member.birthdate or '-' }}</td>
+              <td>{{ member.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem sócios registados.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="financas">
+  <h2>Finanças</h2>
+  <div class="layout reversed">
+    {% if revenues or expenses %}
+      <div>
+        <h3>Fluxos registados</h3>
+        <table aria-label="Registos financeiros">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Descrição</th>
+              <th>Data</th>
+              <th>Categoria</th>
+              <th>Tipo</th>
+              <th>Montante</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in revenues %}
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.record_date }}</td>
+                <td>{{ item.category }}</td>
+                <td>Receita</td>
+                <td>{{ item.amount | format_currency }}</td>
+              </tr>
+            {% endfor %}
+            {% for item in expenses %}
+              <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.description }}</td>
+                <td>{{ item.record_date }}</td>
+                <td>{{ item.category }}</td>
+                <td>Despesa</td>
+                <td>{{ (-item.amount) | format_currency }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem movimentos financeiros registados.</p>
+    {% endif %}
+    <div class="card-grid">
+      <form method="post" action="{{ url_for('add_revenue') }}">
+        <h3>Registar Receita</h3>
+        <label>Descrição
+          <input name="description" required />
+        </label>
+        <label>Montante (€)
+          <input type="number" step="0.01" min="0" name="amount" required />
+        </label>
+        <label>Categoria
+          <input name="category" placeholder="Ex.: Bilheteira" required />
+        </label>
+        <label>Data
+          <input type="date" name="record_date" required />
+        </label>
+        <label>Origem
+          <input name="source" placeholder="Ex.: Jogo vs. FC Porto" />
+        </label>
+        <button type="submit">Guardar receita</button>
+      </form>
+      <form method="post" action="{{ url_for('add_expense') }}">
+        <h3>Registar Despesa</h3>
+        <label>Descrição
+          <input name="description" required />
+        </label>
+        <label>Montante (€)
+          <input type="number" step="0.01" min="0" name="amount" required />
+        </label>
+        <label>Categoria
+          <input name="category" placeholder="Ex.: Deslocações" required />
+        </label>
+        <label>Data
+          <input type="date" name="record_date" required />
+        </label>
+        <label>Fornecedor
+          <input name="vendor" placeholder="Ex.: Transportadora" />
+        </label>
+        <button type="submit">Guardar despesa</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

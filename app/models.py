@@ -14,6 +14,7 @@ class Person:
     name: str
     birthdate: Optional[date] = None
     contact: Optional[str] = None
+    photo_url: Optional[str] = None
 
     def to_dict(self) -> Dict:
         data = asdict(self)

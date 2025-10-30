@@ -537,6 +537,30 @@
         background: transparent;
       }
 
+      .avatar-thumb {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--primary);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
+        background: rgba(0, 0, 0, 0.2);
+      }
+
+      .avatar-placeholder {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(245, 196, 0, 0.25);
+        color: #181818;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        border: 2px dashed rgba(245, 196, 0, 0.4);
+      }
+
       table thead {
         background: linear-gradient(120deg, #0d0d0d, #2d2d2d);
         color: #f5c400;
@@ -570,6 +594,12 @@
 
         tbody tr:nth-child(even) {
           background: rgba(245, 196, 0, 0.18);
+        }
+
+        .avatar-placeholder {
+          background: rgba(245, 196, 0, 0.35);
+          color: #050505;
+          border-color: rgba(245, 196, 0, 0.6);
         }
       }
 
@@ -696,7 +726,6 @@
               <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>
               <a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a>
               <a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a>
-              <a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a>
             </div>
           </div>
           <div class="submenu" data-menu="financas">
@@ -705,6 +734,7 @@
               <a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a>
               <a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a>
               <a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a>
+              <a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a>
             </div>
           </div>
         </div>

@@ -156,7 +156,7 @@ def create_app() -> Flask:
         return render_template(
             "members.html",
             title="Sócios",
-            active_group="plantel",
+            active_group="financas",
             active_page="members",
             members=members,
             membership_types=membership_types,
@@ -262,6 +262,7 @@ def create_app() -> Flask:
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
         contact = request.form.get("contact", "").strip() or None
+        photo_url = request.form.get("photo_url", "").strip()
         shirt_number_raw = request.form.get("shirt_number", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
@@ -286,6 +287,7 @@ def create_app() -> Flask:
                 birthdate=birthdate,
                 contact=contact,
                 shirt_number=shirt_number,
+                photo_url=photo_url or None,
             )
             flash("Jogador gravado com sucesso!", "success")
         else:
@@ -298,6 +300,7 @@ def create_app() -> Flask:
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
+                    photo_url=photo_url,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -327,6 +330,7 @@ def create_app() -> Flask:
         role = request.form.get("role", "").strip()
         license_level = request.form.get("license_level", "").strip() or None
         contact = request.form.get("contact", "").strip() or None
+        photo_url = request.form.get("photo_url", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o treinador.")
@@ -342,6 +346,7 @@ def create_app() -> Flask:
                 license_level=license_level,
                 birthdate=birthdate,
                 contact=contact,
+                photo_url=photo_url or None,
             )
             flash("Treinador gravado com sucesso!", "success")
         else:
@@ -353,6 +358,7 @@ def create_app() -> Flask:
                     license_level=license_level,
                     birthdate=birthdate,
                     contact=contact,
+                    photo_url=photo_url,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -381,6 +387,7 @@ def create_app() -> Flask:
         name = request.form.get("name", "").strip()
         specialization = request.form.get("specialization", "").strip() or None
         contact = request.form.get("contact", "").strip() or None
+        photo_url = request.form.get("photo_url", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o profissional.")
@@ -395,6 +402,7 @@ def create_app() -> Flask:
                 specialization=specialization,
                 birthdate=birthdate,
                 contact=contact,
+                photo_url=photo_url or None,
             )
             flash("Profissional gravado com sucesso!", "success")
         else:
@@ -405,6 +413,7 @@ def create_app() -> Flask:
                     specialization=specialization,
                     birthdate=birthdate,
                     contact=contact,
+                    photo_url=photo_url,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -488,6 +497,7 @@ def create_app() -> Flask:
             _flash_invalid("Tipo de sócio selecionado é inválido.")
             return redirect(url_for("members_page"))
         contact = request.form.get("contact", "").strip() or None
+        photo_url = request.form.get("photo_url", "").strip()
         dues_paid_until = request.form.get("dues_paid_until", "").strip() or None
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
@@ -520,6 +530,7 @@ def create_app() -> Flask:
                     membership_type_id=membership_type_id,
                     dues_paid_until=dues_paid_until,
                     member_number=member_number,
+                    photo_url=photo_url or None,
                 )
                 flash("Sócio gravado com sucesso!", "success")
             else:
@@ -530,6 +541,7 @@ def create_app() -> Flask:
                     contact=contact,
                     birthdate=birthdate,
                     member_number=member_number,
+                    photo_url=photo_url,
                 )
                 if membership_type_id is not None:
                     type_info = service.get_membership_type(membership_type_id)

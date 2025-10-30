@@ -8,6 +8,9 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 from . import models, storage
 
 
+UNSET = object()
+
+
 class ClubService:
     """Facade that exposes CRUD helpers for the different entities."""
 
@@ -35,7 +38,7 @@ class ClubService:
     def _update_entity(self, key: str, entity_id: int, updates: Dict) -> Dict:
         for item in self._data[key]:
             if int(item.get("id")) == entity_id:
-                item.update({k: v for k, v in updates.items() if v is not None})
+                item.update(updates)
                 self._persist()
                 return item
         raise ValueError(f"{key[:-1].capitalize()} with id {entity_id} not found")
@@ -61,6 +64,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
+        photo_url: Optional[str] = None,
     ) -> models.Player:
         payload = storage.serialize_entity(
             models.Player(
@@ -71,6 +75,7 @@ class ClubService:
                 birthdate=birthdate,
                 contact=contact,
                 shirt_number=shirt_number,
+                photo_url=photo_url or None,
             )
         )
         stored = self._create_entity("players", payload)
@@ -89,6 +94,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
+        photo_url: object | str | None = UNSET,
     ) -> models.Player:
         updates: Dict[str, Any] = {}
         if name is not None:
@@ -103,6 +109,8 @@ class ClubService:
             updates["contact"] = contact
         if shirt_number is not None:
             updates["shirt_number"] = shirt_number
+        if photo_url is not UNSET:
+            updates["photo_url"] = photo_url or None
         record = self._update_entity("players", player_id, updates)
         return storage.instantiate(models.Player, record)
 
@@ -117,6 +125,7 @@ class ClubService:
         license_level: Optional[str] = None,
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
+        photo_url: Optional[str] = None,
     ) -> models.Coach:
         payload = storage.serialize_entity(
             models.Coach(
@@ -126,6 +135,7 @@ class ClubService:
                 license_level=license_level,
                 birthdate=birthdate,
                 contact=contact,
+                photo_url=photo_url or None,
             )
         )
         stored = self._create_entity("coaches", payload)
@@ -143,6 +153,7 @@ class ClubService:
         license_level: Optional[str] = None,
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
+        photo_url: object | str | None = UNSET,
     ) -> models.Coach:
         updates: Dict[str, Any] = {}
         if name is not None:
@@ -155,6 +166,8 @@ class ClubService:
             updates["birthdate"] = birthdate.isoformat()
         if contact is not None:
             updates["contact"] = contact
+        if photo_url is not UNSET:
+            updates["photo_url"] = photo_url or None
         record = self._update_entity("coaches", coach_id, updates)
         return storage.instantiate(models.Coach, record)
 
@@ -168,6 +181,7 @@ class ClubService:
         specialization: Optional[str] = None,
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
+        photo_url: Optional[str] = None,
     ) -> models.Physiotherapist:
         payload = storage.serialize_entity(
             models.Physiotherapist(
@@ -176,6 +190,7 @@ class ClubService:
                 specialization=specialization,
                 birthdate=birthdate,
                 contact=contact,
+                photo_url=photo_url or None,
             )
         )
         stored = self._create_entity("physiotherapists", payload)
@@ -195,6 +210,7 @@ class ClubService:
         specialization: Optional[str] = None,
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
+        photo_url: object | str | None = UNSET,
     ) -> models.Physiotherapist:
         updates: Dict[str, Any] = {}
         if name is not None:
@@ -205,6 +221,8 @@ class ClubService:
             updates["birthdate"] = birthdate.isoformat()
         if contact is not None:
             updates["contact"] = contact
+        if photo_url is not UNSET:
+            updates["photo_url"] = photo_url or None
         record = self._update_entity("physiotherapists", physio_id, updates)
         return storage.instantiate(models.Physiotherapist, record)
 
@@ -340,6 +358,7 @@ class ClubService:
         membership_type_id: Optional[int] = None,
         dues_paid_until: Optional[str] = None,
         member_number: Optional[int] = None,
+        photo_url: Optional[str] = None,
     ) -> models.Member:
         resolved_type = membership_type
         if membership_type_id is not None:
@@ -359,6 +378,7 @@ class ClubService:
                 dues_paid_until=dues_paid_until,
                 contact=contact,
                 birthdate=birthdate,
+                photo_url=photo_url or None,
             )
         )
         stored = self._create_entity("members", payload)
@@ -379,6 +399,7 @@ class ClubService:
         contact: Optional[str] = None,
         birthdate: Optional[date] = None,
         member_number: Optional[int] = None,
+        photo_url: object | str | None = UNSET,
     ) -> models.Member:
         updates: Dict[str, Any] = {}
         if name is not None:
@@ -397,6 +418,8 @@ class ClubService:
             updates["birthdate"] = birthdate.isoformat()
         if member_number is not None:
             updates["member_number"] = member_number
+        if photo_url is not UNSET:
+            updates["photo_url"] = photo_url or None
         record = self._update_entity("members", member_id, updates)
         return storage.instantiate(models.Member, record)
 

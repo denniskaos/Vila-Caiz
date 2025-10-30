@@ -36,6 +36,9 @@
       <label for="member-contact">Contacto</label>
       <input id="member-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_member.contact if editing_member else '' }}" />
 
+      <label for="member-photo">Fotografia (URL)</label>
+      <input id="member-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_member.photo_url if editing_member and editing_member.photo_url else '' }}" />
+
       <label for="member-dues-until">Quotas válidas até</label>
       <input id="member-dues-until" name="dues_paid_until" type="text" placeholder="Ex.: Dez 2024" value="{{ editing_member.dues_paid_until if editing_member else '' }}" />
 
@@ -59,6 +62,7 @@
         <table aria-label="Lista de sócios">
           <thead>
             <tr>
+              <th>Foto</th>
               <th>Nº Sócio</th>
               <th>Nome</th>
               <th>Tipo</th>
@@ -73,6 +77,13 @@
             {% for member in members %}
               {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
               <tr>
+                <td>
+                  {% if member.photo_url %}
+                    <img src="{{ member.photo_url }}" alt="Fotografia de {{ member.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ member.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
                 <td>{{ member.member_number or member.id }}</td>
                 <td>{{ member.name }}</td>
                 <td>

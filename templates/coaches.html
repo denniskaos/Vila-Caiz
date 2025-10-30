@@ -26,6 +26,9 @@
       <label for="coach-contact">Contacto</label>
       <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_coach.contact if editing_coach else '' }}" />
 
+      <label for="coach-photo">Fotografia (URL)</label>
+      <input id="coach-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_coach.photo_url if editing_coach and editing_coach.photo_url else '' }}" />
+
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_coach else 'Gravar' }}</button>
         {% if editing_coach %}
@@ -42,6 +45,7 @@
         <table aria-label="Lista de treinadores">
           <thead>
             <tr>
+              <th>Foto</th>
               <th>Nome</th>
               <th>Função</th>
               <th>Licença</th>
@@ -53,6 +57,13 @@
           <tbody>
             {% for coach in coaches %}
               <tr>
+                <td>
+                  {% if coach.photo_url %}
+                    <img src="{{ coach.photo_url }}" alt="Fotografia de {{ coach.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ coach.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
                 <td>{{ coach.name }}</td>
                 <td>{{ coach.role }}</td>
                 <td>{{ coach.license_level or '-' }}</td>

@@ -23,6 +23,9 @@
       <label for="physio-contact">Contacto</label>
       <input id="physio-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_physio.contact if editing_physio else '' }}" />
 
+      <label for="physio-photo">Fotografia (URL)</label>
+      <input id="physio-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_physio.photo_url if editing_physio and editing_physio.photo_url else '' }}" />
+
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_physio else 'Gravar' }}</button>
         {% if editing_physio %}
@@ -39,6 +42,7 @@
         <table aria-label="Lista de fisioterapeutas">
           <thead>
             <tr>
+              <th>Foto</th>
               <th>Nome</th>
               <th>Especialidade</th>
               <th>Nascimento</th>
@@ -49,6 +53,13 @@
           <tbody>
             {% for physio in physios %}
               <tr>
+                <td>
+                  {% if physio.photo_url %}
+                    <img src="{{ physio.photo_url }}" alt="Fotografia de {{ physio.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ physio.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
                 <td>{{ physio.name }}</td>
                 <td>{{ physio.specialization or '-' }}</td>
                 <td>{{ physio.birthdate or '-' }}</td>

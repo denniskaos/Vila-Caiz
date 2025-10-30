@@ -36,6 +36,9 @@
       <label for="player-contact">Contacto</label>
       <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_player.contact if editing_player else '' }}" />
 
+      <label for="player-photo">Fotografia (URL)</label>
+      <input id="player-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_player.photo_url if editing_player and editing_player.photo_url else '' }}" />
+
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_player else 'Gravar' }}</button>
         {% if editing_player %}
@@ -52,6 +55,7 @@
         <table aria-label="Lista de jogadores">
           <thead>
             <tr>
+              <th>Foto</th>
               <th>#</th>
               <th>Nome</th>
               <th>Posição</th>
@@ -64,6 +68,13 @@
           <tbody>
             {% for player in players %}
               <tr>
+                <td>
+                  {% if player.photo_url %}
+                    <img src="{{ player.photo_url }}" alt="Fotografia de {{ player.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ player.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
                 <td>{{ player.shirt_number or '-' }}</td>
                 <td>{{ player.name }}</td>
                 <td>{{ player.position }}</td>

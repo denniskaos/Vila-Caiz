@@ -507,13 +507,27 @@
         }
       }
 
-      table {
+      .table-wrapper {
         width: 100%;
-        border-collapse: collapse;
-        background: var(--surface);
+        overflow-x: auto;
         border-radius: 18px;
         overflow: hidden;
+        background: var(--surface);
         box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .table-wrapper {
+          background: var(--surface-dark);
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+
+      .table-wrapper table {
+        width: 100%;
+        min-width: 640px;
+        border-collapse: collapse;
+        background: transparent;
       }
 
       table thead {
@@ -528,6 +542,9 @@
         padding: 0.85rem 1rem;
         text-align: left;
         border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        white-space: normal;
+        word-break: break-word;
       }
 
       tbody tr:last-child td {
@@ -536,6 +553,17 @@
 
       tbody tr:nth-child(even) {
         background: rgba(245, 196, 0, 0.08);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        th,
+        td {
+          border-bottom-color: var(--border-dark);
+        }
+
+        tbody tr:nth-child(even) {
+          background: rgba(245, 196, 0, 0.18);
+        }
       }
 
       .tag {
@@ -697,10 +725,7 @@
       const submenus = Array.from(document.querySelectorAll('.submenu'));
       const openMenus = new Set();
 
-      if (activePage === 'dashboard') {
-        openMenus.add('plantel');
-        openMenus.add('financas');
-      } else if (activeGroup) {
+      if (activeGroup) {
         openMenus.add(activeGroup);
       }
 
@@ -719,9 +744,7 @@
       toggles.forEach((toggle) => {
         toggle.addEventListener('click', () => {
           const target = toggle.dataset.menu;
-          if (activePage === 'dashboard') {
-            openMenus.add(target);
-          } else if (openMenus.has(target)) {
+          if (openMenus.has(target)) {
             openMenus.delete(target);
           } else {
             openMenus.add(target);

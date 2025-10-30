@@ -38,35 +38,37 @@
   <article class="card">
     <h3>Equipas em Atividade</h3>
     {% if youth_teams %}
-      <table aria-label="Lista de equipas de formação">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Escalão</th>
-            <th>Treinador</th>
-            <th>Atletas</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for team in youth_teams %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de equipas de formação">
+          <thead>
             <tr>
-              <td>{{ team.name }}</td>
-              <td>{{ team.age_group }}</td>
-              <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
-              <td>{{ team.player_ids | length }}</td>
-              <td>
-                <div class="actions">
-                  <a href="{{ url_for('youth_page', edit=team.id) }}" class="button secondary">Editar</a>
-                  <form method="post" action="{{ url_for('delete_youth_team', team_id=team.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta equipa?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Nome</th>
+              <th>Escalão</th>
+              <th>Treinador</th>
+              <th>Atletas</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for team in youth_teams %}
+              <tr>
+                <td>{{ team.name }}</td>
+                <td>{{ team.age_group }}</td>
+                <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
+                <td>{{ team.player_ids | length }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('youth_page', edit=team.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_youth_team', team_id=team.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta equipa?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Sem equipas de formação registadas.</p>
     {% endif %}

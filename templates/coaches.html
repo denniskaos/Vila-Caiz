@@ -38,37 +38,39 @@
   <article class="card">
     <h3>Staff Técnico</h3>
     {% if coaches %}
-      <table aria-label="Lista de treinadores">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Função</th>
-            <th>Licença</th>
-            <th>Nascimento</th>
-            <th>Contacto</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for coach in coaches %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de treinadores">
+          <thead>
             <tr>
-              <td>{{ coach.name }}</td>
-              <td>{{ coach.role }}</td>
-              <td>{{ coach.license_level or '-' }}</td>
-              <td>{{ coach.birthdate or '-' }}</td>
-              <td>{{ coach.contact or '-' }}</td>
-              <td>
-                <div class="actions">
-                  <a href="{{ url_for('coaches_page', edit=coach.id) }}" class="button secondary">Editar</a>
-                  <form method="post" action="{{ url_for('delete_coach', coach_id=coach.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste treinador?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Nome</th>
+              <th>Função</th>
+              <th>Licença</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for coach in coaches %}
+              <tr>
+                <td>{{ coach.name }}</td>
+                <td>{{ coach.role }}</td>
+                <td>{{ coach.license_level or '-' }}</td>
+                <td>{{ coach.birthdate or '-' }}</td>
+                <td>{{ coach.contact or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('coaches_page', edit=coach.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_coach', coach_id=coach.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste treinador?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Ainda não existem elementos técnicos registados.</p>
     {% endif %}

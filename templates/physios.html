@@ -35,35 +35,37 @@
   <article class="card">
     <h3>Equipa Clínica</h3>
     {% if physios %}
-      <table aria-label="Lista de fisioterapeutas">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Especialidade</th>
-            <th>Nascimento</th>
-            <th>Contacto</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for physio in physios %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de fisioterapeutas">
+          <thead>
             <tr>
-              <td>{{ physio.name }}</td>
-              <td>{{ physio.specialization or '-' }}</td>
-              <td>{{ physio.birthdate or '-' }}</td>
-              <td>{{ physio.contact or '-' }}</td>
-              <td>
-                <div class="actions">
-                  <a href="{{ url_for('physios_page', edit=physio.id) }}" class="button secondary">Editar</a>
-                  <form method="post" action="{{ url_for('delete_physio', physio_id=physio.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste profissional?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Nome</th>
+              <th>Especialidade</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for physio in physios %}
+              <tr>
+                <td>{{ physio.name }}</td>
+                <td>{{ physio.specialization or '-' }}</td>
+                <td>{{ physio.birthdate or '-' }}</td>
+                <td>{{ physio.contact or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('physios_page', edit=physio.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_physio', physio_id=physio.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste profissional?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Ainda não existem profissionais registados.</p>
     {% endif %}

@@ -170,8 +170,8 @@ def create_app() -> Flask:
         )
 
     def _render_finances(
+        template: str,
         active_page: str,
-        focus_section: str | None = None,
         *,
         edit_revenue_id: Optional[int] = None,
         edit_expense_id: Optional[int] = None,
@@ -187,11 +187,10 @@ def create_app() -> Flask:
         if edit_expense_id is not None:
             editing_expense = next((record for record in expenses if record.id == edit_expense_id), None)
         return render_template(
-            "finances.html",
+            template,
             title="Finanças",
             active_group="financas",
             active_page=active_page,
-            focus_section=focus_section,
             revenues=revenues,
             expenses=expenses,
             summary=summary,
@@ -205,14 +204,19 @@ def create_app() -> Flask:
     def finances_page():
         revenue_id = _parse_optional_int(request.args.get("edit_revenue"))
         expense_id = _parse_optional_int(request.args.get("edit_expense"))
-        return _render_finances("finances-overview", edit_revenue_id=revenue_id, edit_expense_id=expense_id)
+        return _render_finances(
+            "finances_overview.html",
+            "finances-overview",
+            edit_revenue_id=revenue_id,
+            edit_expense_id=expense_id,
+        )
 
     @app.get("/financas/receitas")
     def finances_revenue_page():
         revenue_id = _parse_optional_int(request.args.get("edit"))
         return _render_finances(
+            "finances_revenue.html",
             "finances-revenue",
-            "receitas",
             edit_revenue_id=revenue_id,
         )
 
@@ -220,8 +224,8 @@ def create_app() -> Flask:
     def finances_expense_page():
         expense_id = _parse_optional_int(request.args.get("edit"))
         return _render_finances(
+            "finances_expense.html",
             "finances-expense",
-            "despesas",
             edit_expense_id=expense_id,
         )
 

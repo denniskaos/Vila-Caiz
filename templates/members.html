@@ -55,47 +55,49 @@
   <article class="card">
     <h3>Comunidade Vila-Caiz</h3>
     {% if members %}
-      <table aria-label="Lista de sócios">
-        <thead>
-          <tr>
-            <th>Nº Sócio</th>
-            <th>Nome</th>
-            <th>Tipo</th>
-            <th>Estado</th>
-            <th>Validade</th>
-            <th>Nascimento</th>
-            <th>Contacto</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for member in members %}
-            {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de sócios">
+          <thead>
             <tr>
-              <td>{{ member.member_number or member.id }}</td>
-              <td>{{ member.name }}</td>
-              <td>
-                {{ member.membership_type or '—' }}
-                {% if type_info %}
-                  <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
-                {% endif %}
-              </td>
-              <td>{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
-              <td>{{ member.dues_paid_until or '-' }}</td>
-              <td>{{ member.birthdate or '-' }}</td>
-              <td>{{ member.contact or '-' }}</td>
-              <td>
-                <div class="actions">
-                  <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
-                  <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Nº Sócio</th>
+              <th>Nome</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+              <th>Validade</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for member in members %}
+              {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
+              <tr>
+                <td>{{ member.member_number or member.id }}</td>
+                <td>{{ member.name }}</td>
+                <td>
+                  {{ member.membership_type or '—' }}
+                  {% if type_info %}
+                    <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
+                <td>{{ member.dues_paid_until or '-' }}</td>
+                <td>{{ member.birthdate or '-' }}</td>
+                <td>{{ member.contact or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Sem sócios registados neste momento.</p>
     {% endif %}
@@ -133,35 +135,37 @@
   <article class="card">
     <h3>Catálogo de Tipos</h3>
     {% if membership_types %}
-      <table aria-label="Tipos de sócio">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Valor</th>
-            <th>Periodicidade</th>
-            <th>Notas</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for membership_type in membership_types %}
+      <div class="table-wrapper">
+        <table aria-label="Tipos de sócio">
+          <thead>
             <tr>
-              <td>{{ membership_type.name }}</td>
-              <td>{{ membership_type.amount|format_currency }}</td>
-              <td>{{ membership_type.frequency }}</td>
-              <td>{{ membership_type.description or '-' }}</td>
-              <td>
-                <div class="actions">
-                  <a href="{{ url_for('members_page', edit_type=membership_type.id) }}" class="button secondary">Editar</a>
-                  <form method="post" action="{{ url_for('delete_membership_type', type_id=membership_type.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste tipo de sócio?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Nome</th>
+              <th>Valor</th>
+              <th>Periodicidade</th>
+              <th>Notas</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for membership_type in membership_types %}
+              <tr>
+                <td>{{ membership_type.name }}</td>
+                <td>{{ membership_type.amount|format_currency }}</td>
+                <td>{{ membership_type.frequency }}</td>
+                <td>{{ membership_type.description or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('members_page', edit_type=membership_type.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_membership_type', type_id=membership_type.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste tipo de sócio?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Configure os primeiros tipos para associar quotas automaticamente.</p>
     {% endif %}
@@ -218,46 +222,48 @@
           {% endif %}
         {% endfor %}
       </ul>
-      <table aria-label="Pagamentos de quotas">
-        <thead>
-          <tr>
-            <th>Data</th>
-            <th>Sócio</th>
-            <th>Tipo</th>
-            <th>Período</th>
-            <th>Valor</th>
-            <th>Notas</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for payment in payments|sort(attribute='paid_on', reverse=True) %}
-            {% set member = member_lookup.get(payment.member_id) %}
-            {% set type_info = type_lookup.get(payment.membership_type_id) if payment.membership_type_id is not none else None %}
+      <div class="table-wrapper">
+        <table aria-label="Pagamentos de quotas">
+          <thead>
             <tr>
-              <td>{{ payment.paid_on }}</td>
-              <td>
-                {% if member %}
-                  [{{ member.member_number or member.id }}] {{ member.name }}
-                {% else %}
-                  Sócio #{{ payment.member_id }}
-                {% endif %}
-              </td>
-              <td>{{ type_info.name if type_info else member.membership_type if member else '-' }}</td>
-              <td>{{ payment.period }}</td>
-              <td>{{ payment.amount|format_currency }}</td>
-              <td>{{ payment.notes or '-' }}</td>
-              <td>
-                <div class="actions">
-                  <form method="post" action="{{ url_for('delete_membership_payment', payment_id=payment.id) }}" class="inline-form">
-                    <button type="submit" class="button danger" onclick="return confirm('Remover este registo de pagamento?');">Eliminar</button>
-                  </form>
-                </div>
-              </td>
+              <th>Data</th>
+              <th>Sócio</th>
+              <th>Tipo</th>
+              <th>Período</th>
+              <th>Valor</th>
+              <th>Notas</th>
+              <th>Ações</th>
             </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {% for payment in payments|sort(attribute='paid_on', reverse=True) %}
+              {% set member = member_lookup.get(payment.member_id) %}
+              {% set type_info = type_lookup.get(payment.membership_type_id) if payment.membership_type_id is not none else None %}
+              <tr>
+                <td>{{ payment.paid_on }}</td>
+                <td>
+                  {% if member %}
+                    [{{ member.member_number or member.id }}] {{ member.name }}
+                  {% else %}
+                    Sócio #{{ payment.member_id }}
+                  {% endif %}
+                </td>
+                <td>{{ type_info.name if type_info else member.membership_type if member else '-' }}</td>
+                <td>{{ payment.period }}</td>
+                <td>{{ payment.amount|format_currency }}</td>
+                <td>{{ payment.notes or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <form method="post" action="{{ url_for('delete_membership_payment', payment_id=payment.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Remover este registo de pagamento?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
     {% else %}
       <p class="empty-state">Ainda não existem pagamentos registados. Quando adicionar um, fica registado aqui de imediato.</p>
     {% endif %}

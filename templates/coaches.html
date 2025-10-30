@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Equipa Técnica</h2>
+  <p>Organize o staff responsável pela estratégia e treino.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-coaches">
+    <h3 id="form-coaches">Adicionar Treinador</h3>
+    <form method="post" action="{{ url_for('add_coach') }}">
+      <label for="coach-name">Nome</label>
+      <input id="coach-name" name="name" type="text" required />
+
+      <label for="coach-birthdate">Data de Nascimento</label>
+      <input id="coach-birthdate" name="birthdate" type="date" required />
+
+      <label for="coach-role">Função</label>
+      <input id="coach-role" name="role" type="text" placeholder="Ex.: Treinador Principal" required />
+
+      <label for="coach-license">Licença</label>
+      <input id="coach-license" name="license_level" type="text" placeholder="UEFA B" />
+
+      <label for="coach-contact">Contacto</label>
+      <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" />
+
+      <button type="submit">Registar Treinador</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Staff Técnico</h3>
+    {% if coaches %}
+      <table aria-label="Lista de treinadores">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Função</th>
+            <th>Licença</th>
+            <th>Nascimento</th>
+            <th>Contacto</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for coach in coaches %}
+            <tr>
+              <td>{{ coach.name }}</td>
+              <td>{{ coach.role }}</td>
+              <td>{{ coach.license_level or '-' }}</td>
+              <td>{{ coach.birthdate or '-' }}</td>
+              <td>{{ coach.contact or '-' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Ainda não existem elementos técnicos registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

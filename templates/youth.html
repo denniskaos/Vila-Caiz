@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Camadas Jovens</h2>
+  <p>Acompanhe a formação e a ligação às equipas técnicas.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-youth">
+    <h3 id="form-youth">Criar Equipa</h3>
+    <form method="post" action="{{ url_for('add_youth_team') }}">
+      <label for="youth-name">Nome da Equipa</label>
+      <input id="youth-name" name="name" type="text" required />
+
+      <label for="youth-age">Escalão</label>
+      <input id="youth-age" name="age_group" type="text" placeholder="Ex.: Sub-17" required />
+
+      <label for="youth-coach">Treinador Responsável</label>
+      <select id="youth-coach" name="coach_id">
+        <option value="">Selecionar</option>
+        {% for coach in coaches %}
+          <option value="{{ coach.id }}">{{ coach.name }}</option>
+        {% endfor %}
+      </select>
+
+      <button type="submit">Criar Equipa</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Equipas em Atividade</h3>
+    {% if youth_teams %}
+      <table aria-label="Lista de equipas de formação">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Escalão</th>
+            <th>Treinador</th>
+            <th>Atletas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for team in youth_teams %}
+            <tr>
+              <td>{{ team.name }}</td>
+              <td>{{ team.age_group }}</td>
+              <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
+              <td>{{ team.player_ids | length }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="empty-state">Sem equipas de formação registadas.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

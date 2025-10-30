@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title or "Vila-Caiz" }}</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        --primary: #f5c400;
+        --primary-dark: #181818;
+        --surface: rgba(255, 249, 223, 0.9);
+        --surface-dark: rgba(30, 30, 30, 0.9);
+        --border: rgba(24, 24, 24, 0.15);
+        --border-dark: rgba(245, 196, 0, 0.35);
+        --success: #0b7d2a;
+        --error: #c62828;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        background: radial-gradient(circle at top left, rgba(245, 196, 0, 0.16), transparent 55%),
+          radial-gradient(circle at bottom right, rgba(24, 24, 24, 0.85), #050505);
+        color: #0d0d0d;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: linear-gradient(170deg, #050505 0%, #171717 40%, #f5c400 140%);
+          color: #f9f6ea;
+        }
+      }
+
+      header {
+        background: var(--primary-dark);
+        color: #f5c400;
+        padding: 1.2rem 0;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+        border-bottom: 4px solid var(--primary);
+      }
+
+      header .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+      }
+
+      header .identity {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      header .identity img {
+        width: 64px;
+        height: auto;
+        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.45));
+      }
+
+      header .identity h1 {
+        margin: 0;
+        font-size: clamp(1.35rem, 2.4vw, 1.8rem);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .container {
+        width: min(1100px, 92vw);
+        margin: 0 auto;
+      }
+
+      .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+      }
+
+      .primary-nav {
+        display: flex;
+        gap: 1.2rem;
+        align-items: center;
+      }
+
+      .primary-nav a,
+      .primary-nav button {
+        background: none;
+        border: none;
+        color: #f5c400;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        cursor: pointer;
+        padding: 0.35rem 0.6rem;
+        position: relative;
+        transition: color 0.2s ease;
+      }
+
+      .primary-nav a::after,
+      .primary-nav button::after {
+        content: "";
+        position: absolute;
+        inset-inline: 0;
+        bottom: 0;
+        height: 2px;
+        background: var(--primary);
+        transform: scaleX(0);
+        transform-origin: center;
+        transition: transform 0.2s ease;
+      }
+
+      .primary-nav a:hover::after,
+      .primary-nav a:focus-visible::after,
+      .primary-nav button:hover::after,
+      .primary-nav button:focus-visible::after {
+        transform: scaleX(1);
+      }
+
+      .primary-nav a.active,
+      .primary-nav button.is-active {
+        color: var(--primary);
+      }
+
+      .primary-nav a.active::after,
+      .primary-nav button.is-active::after {
+        transform: scaleX(1);
+      }
+
+      .primary-nav button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .primary-nav button::before {
+        content: "▾";
+        font-size: 0.75em;
+        transform: translateY(-5%);
+        transition: transform 0.2s ease;
+      }
+
+      .primary-nav button.is-active::before {
+        transform: rotate(180deg) translateY(5%);
+      }
+
+      .submenu-bar {
+        background: linear-gradient(135deg, rgba(5, 5, 5, 0.98), rgba(18, 18, 18, 0.98));
+        border-top: 1px solid rgba(245, 196, 0, 0.45);
+        border-bottom: 1px solid rgba(245, 196, 0, 0.28);
+        backdrop-filter: blur(8px);
+      }
+
+      .submenu-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: 0.85rem 0 1rem;
+      }
+
+      .submenu {
+        display: none;
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 0.85rem 1.1rem;
+        border-radius: 16px;
+        background: rgba(0, 0, 0, 0.88);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .submenu.is-visible {
+        display: flex;
+      }
+
+      .submenu-title {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 196, 0, 0.75);
+      }
+
+      .submenu-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+      }
+
+      .submenu a {
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        padding: 0.35rem 0.9rem;
+        border-radius: 999px;
+        background: rgba(245, 196, 0, 0.18);
+        color: #fff6c9;
+        transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: inset 0 0 0 1px rgba(245, 196, 0, 0.25);
+      }
+
+      .submenu a:hover,
+      .submenu a:focus-visible {
+        background: rgba(245, 196, 0, 0.32);
+        box-shadow: inset 0 0 0 1px rgba(245, 196, 0, 0.4);
+      }
+
+      .submenu a.active {
+        background: var(--primary);
+        color: #181818;
+      }
+
+      main {
+        padding: 2.5rem 0 4rem;
+      }
+
+      h1,
+      h2,
+      h3,
+      h4 {
+        font-weight: 700;
+        margin-top: 0;
+      }
+
+      .page-header {
+        margin-bottom: 2.5rem;
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .page-header p {
+        margin: 0;
+        color: rgba(24, 24, 24, 0.74);
+        max-width: 60ch;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .page-header p {
+          color: rgba(254, 245, 199, 0.75);
+        }
+      }
+
+      section {
+        margin-bottom: 3.5rem;
+      }
+
+      section h2 {
+        margin-bottom: 1.2rem;
+        color: var(--primary-dark);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        section h2 {
+          color: var(--primary);
+        }
+      }
+
+      .card-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1.1rem;
+      }
+
+      .card {
+        background: var(--surface);
+        border-radius: 18px;
+        padding: 1.4rem 1.2rem;
+        border: 1px solid var(--border);
+        box-shadow: 0 18px 35px rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card {
+          background: var(--surface-dark);
+          border-color: var(--border-dark);
+        }
+      }
+
+      .section-grid {
+        display: grid;
+        gap: 1.6rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        align-items: start;
+      }
+
+      .form-card {
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      form {
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        label {
+          color: var(--primary);
+        }
+      }
+
+      .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .checkbox-label {
+          color: var(--primary);
+        }
+      }
+
+      .checkbox-label input {
+        width: auto;
+        margin: 0;
+      }
+
+      input,
+      select,
+      textarea {
+        padding: 0.65rem 0.75rem;
+        border-radius: 10px;
+        border: 1px solid rgba(24, 24, 24, 0.25);
+        font: inherit;
+        background: rgba(255, 255, 255, 0.88);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        input,
+        select,
+        textarea {
+          background: rgba(12, 12, 12, 0.75);
+          border-color: rgba(245, 196, 0, 0.45);
+          color: #f7f2d4;
+        }
+      }
+
+      .form-hint {
+        margin: -0.2rem 0 0.6rem;
+        font-size: 0.8rem;
+        color: rgba(24, 24, 24, 0.6);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .form-hint {
+          color: rgba(254, 245, 199, 0.6);
+        }
+      }
+
+      button {
+        justify-self: start;
+        background: linear-gradient(120deg, var(--primary), #f7d54d);
+        color: #181818;
+        border: none;
+        border-radius: 999px;
+        padding: 0.65rem 1.6rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        box-shadow: 0 12px 28px rgba(245, 196, 0, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      button:hover,
+      button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 32px rgba(245, 196, 0, 0.45);
+      }
+
+      button:focus-visible {
+        outline: 2px solid #fef5c7;
+        outline-offset: 3px;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background: linear-gradient(120deg, var(--primary), #f7d54d);
+        color: #181818;
+        border: none;
+        border-radius: 999px;
+        padding: 0.45rem 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 10px 22px rgba(245, 196, 0, 0.32);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 28px rgba(245, 196, 0, 0.42);
+        outline: 2px solid #fef5c7;
+        outline-offset: 3px;
+      }
+
+      .button.secondary {
+        background: rgba(245, 196, 0, 0.18);
+        color: var(--primary);
+        box-shadow: inset 0 0 0 1px rgba(245, 196, 0, 0.45);
+      }
+
+      .button.secondary:hover,
+      .button.secondary:focus-visible {
+        background: rgba(245, 196, 0, 0.32);
+      }
+
+      .button.danger {
+        background: linear-gradient(120deg, #c62828, #e45151);
+        color: #fff5f5;
+        box-shadow: 0 10px 22px rgba(198, 40, 40, 0.35);
+      }
+
+      .button.danger:hover,
+      .button.danger:focus-visible {
+        box-shadow: 0 16px 28px rgba(198, 40, 40, 0.45);
+      }
+
+      .inline-form {
+        display: inline;
+        margin: 0;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .actions .button {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.9rem;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        margin-top: 0.8rem;
+      }
+
+      .card h3 {
+        font-size: 0.95rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--primary-dark);
+        margin-bottom: 0.5rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card h3 {
+          color: var(--primary);
+        }
+      }
+
+      .card strong {
+        font-size: 1.8rem;
+        color: var(--primary-dark);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card strong {
+          color: #fef5c7;
+        }
+      }
+
+      .card ul {
+        list-style: none;
+        padding: 0;
+        margin: 0.6rem 0 0;
+      }
+
+      .card ul li {
+        padding: 0.45rem 0;
+        border-bottom: 1px solid rgba(24, 24, 24, 0.12);
+      }
+
+      .card ul li:last-child {
+        border-bottom: none;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .card ul li {
+          border-bottom-color: rgba(245, 196, 0, 0.3);
+        }
+      }
+
+      .table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        border-radius: 18px;
+        overflow: hidden;
+        background: var(--surface);
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .table-wrapper {
+          background: var(--surface-dark);
+          box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        }
+      }
+
+      .table-wrapper table {
+        width: 100%;
+        min-width: 640px;
+        border-collapse: collapse;
+        background: transparent;
+      }
+
+      table thead {
+        background: linear-gradient(120deg, #0d0d0d, #2d2d2d);
+        color: #f5c400;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+
+      th,
+      td {
+        padding: 0.85rem 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border);
+        vertical-align: top;
+        white-space: normal;
+        word-break: break-word;
+      }
+
+      tbody tr:last-child td {
+        border-bottom: none;
+      }
+
+      tbody tr:nth-child(even) {
+        background: rgba(245, 196, 0, 0.08);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        th,
+        td {
+          border-bottom-color: var(--border-dark);
+        }
+
+        tbody tr:nth-child(even) {
+          background: rgba(245, 196, 0, 0.18);
+        }
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(245, 196, 0, 0.16);
+        color: var(--primary-dark);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-inline-start: 0.35rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .tag {
+          background: rgba(245, 196, 0, 0.24);
+          color: #181818;
+        }
+      }
+
+      .totals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0;
+        margin: 0 0 1rem;
+        list-style: none;
+      }
+
+      .totals li {
+        background: rgba(5, 5, 5, 0.08);
+        border-radius: 999px;
+        padding: 0.45rem 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .totals li {
+          background: rgba(245, 196, 0, 0.18);
+          color: #181818;
+        }
+      }
+
+      .flash-messages {
+        margin: 1.5rem 0;
+        display: grid;
+        gap: 0.6rem;
+      }
+
+      .flash {
+        padding: 0.8rem 1rem;
+        border-radius: 12px;
+        font-weight: 600;
+      }
+
+      .flash.success {
+        background: rgba(11, 125, 42, 0.2);
+        color: #0b7d2a;
+      }
+
+      .flash.error {
+        background: rgba(198, 40, 40, 0.2);
+        color: #8b1010;
+      }
+
+      .empty-state {
+        padding: 1rem;
+        text-align: center;
+        font-style: italic;
+        color: rgba(13, 13, 13, 0.66);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .empty-state {
+          color: rgba(254, 245, 199, 0.7);
+        }
+      }
+
+      @media (max-width: 720px) {
+        header {
+          padding: 1rem 0;
+        }
+
+        .header-main {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        .primary-nav {
+          flex-wrap: wrap;
+          justify-content: center;
+        }
+
+        .submenu-wrapper {
+          justify-content: center;
+        }
+      }
+    </style>
+  </head>
+  <body data-active-group="{{ active_group or '' }}" data-active-page="{{ active_page or '' }}">
+    <header>
+      <div class="container header-main">
+        <div class="identity">
+          <img src="{{ url_for('static', filename='crest.svg') }}" alt="Emblema do G.C.D. Vila Caiz" />
+          <h1>G.C.D. Vila Caiz</h1>
+        </div>
+        <nav class="primary-nav" aria-label="Secções principais">
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
+          <button type="button" class="menu-toggle" data-menu="plantel" aria-expanded="false">Plantel &amp; Staff</button>
+          <button type="button" class="menu-toggle" data-menu="financas" aria-expanded="false">Finanças</button>
+        </nav>
+      </div>
+      <div class="submenu-bar">
+        <div class="container submenu-wrapper">
+          <div class="submenu" data-menu="plantel">
+            <span class="submenu-title">Plantel &amp; Staff</span>
+            <div class="submenu-links">
+              <a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
+              <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>
+              <a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a>
+              <a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a>
+              <a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a>
+            </div>
+          </div>
+          <div class="submenu" data-menu="financas">
+            <span class="submenu-title">Finanças</span>
+            <div class="submenu-links">
+              <a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a>
+              <a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a>
+              <a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="container">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+          {% if messages %}
+            <div class="flash-messages" role="status">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+    <script>
+      const body = document.body;
+      const activePage = body.dataset.activePage;
+      const activeGroup = body.dataset.activeGroup;
+      const toggles = Array.from(document.querySelectorAll('.menu-toggle'));
+      const submenus = Array.from(document.querySelectorAll('.submenu'));
+      const openMenus = new Set();
+
+      if (activeGroup) {
+        openMenus.add(activeGroup);
+      }
+
+      const syncMenus = () => {
+        submenus.forEach((submenu) => {
+          const isVisible = openMenus.has(submenu.dataset.menu);
+          submenu.classList.toggle('is-visible', isVisible);
+        });
+        toggles.forEach((toggle) => {
+          const isActive = openMenus.has(toggle.dataset.menu);
+          toggle.classList.toggle('is-active', isActive);
+          toggle.setAttribute('aria-expanded', String(isActive));
+        });
+      };
+
+      toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+          const target = toggle.dataset.menu;
+          if (openMenus.has(target)) {
+            openMenus.delete(target);
+          } else {
+            openMenus.add(target);
+          }
+          syncMenus();
+        });
+      });
+
+      syncMenus();
+    </script>
+  </body>
+</html>

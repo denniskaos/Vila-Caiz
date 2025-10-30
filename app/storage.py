@@ -5,7 +5,7 @@ import json
 from dataclasses import asdict
 from datetime import date
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, get_args, get_origin, get_type_hints
 
 from . import models
 
@@ -70,10 +70,33 @@ def serialize_entity(entity: Any) -> Dict[str, Any]:
     return result
 
 
+def _is_date_annotation(annotation: Any) -> bool:
+    """Return True if the annotation represents a date field."""
+
+    if annotation is None:
+        return False
+    if annotation is date:
+        return True
+    origin = get_origin(annotation)
+    if origin is None:
+        return False
+    return any(arg is date for arg in get_args(annotation))
+
+
 def instantiate(model_cls: Type[T], payload: Dict[str, Any]) -> T:
     """Create a dataclass instance from the stored payload."""
+
     kwargs = dict(payload)
+    type_hints = get_type_hints(model_cls)
     for field in model_cls.__dataclass_fields__.values():  # type: ignore[attr-defined]
-        if field.type is date and isinstance(kwargs.get(field.name), str):
-            kwargs[field.name] = date.fromisoformat(kwargs[field.name])
+        value = kwargs.get(field.name)
+        if not isinstance(value, str):
+            continue
+        annotation = type_hints.get(field.name)
+        if not _is_date_annotation(annotation):
+            continue
+        if value:
+            kwargs[field.name] = date.fromisoformat(value)
+        else:
+            kwargs[field.name] = None
     return model_cls(**kwargs)  # type: ignore[arg-type]

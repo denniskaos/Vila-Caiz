@@ -80,11 +80,9 @@
         list-style: none;
         padding: 0;
         margin: 0;
-        align-items: center;
       }
 
-      nav a,
-      nav summary {
+      nav a {
         color: #f5c400;
         text-decoration: none;
         font-weight: 600;
@@ -92,11 +90,9 @@
         letter-spacing: 0.04em;
         position: relative;
         padding-bottom: 0.2rem;
-        cursor: pointer;
       }
 
-      nav a::after,
-      nav summary::after {
+      nav a::after {
         content: "";
         position: absolute;
         inset-inline: 0;
@@ -109,54 +105,8 @@
       }
 
       nav a:hover::after,
-      nav a:focus-visible::after,
-      nav summary:hover::after,
-      nav summary:focus-visible::after {
+      nav a:focus-visible::after {
         transform: scaleX(1);
-      }
-
-      nav details {
-        position: relative;
-      }
-
-      nav details summary {
-        list-style: none;
-      }
-
-      nav summary::-webkit-details-marker {
-        display: none;
-      }
-
-      nav details[open] > summary::after {
-        transform: scaleX(1);
-      }
-
-      nav details ul {
-        position: absolute;
-        inset-inline-start: 0;
-        margin-top: 0.75rem;
-        padding: 0.75rem 1rem;
-        list-style: none;
-        background: rgba(5, 5, 5, 0.94);
-        border: 1px solid rgba(245, 196, 0, 0.4);
-        border-radius: 12px;
-        display: grid;
-        gap: 0.6rem;
-        min-width: 220px;
-        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.55);
-        z-index: 200;
-      }
-
-      nav details ul li {
-        margin: 0;
-      }
-
-      nav details a {
-        display: block;
-        padding: 0;
-        font-weight: 500;
-        letter-spacing: 0.02em;
-        text-transform: none;
       }
 
       main {
@@ -208,105 +158,6 @@
           background: var(--surface-dark);
           border-color: var(--border-dark);
         }
-      }
-
-      .section-grid {
-        display: grid;
-        gap: 1.6rem;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        align-items: start;
-      }
-
-      .form-card {
-        display: grid;
-        gap: 0.85rem;
-      }
-
-      form {
-        display: grid;
-        gap: 0.6rem;
-      }
-
-      label {
-        font-size: 0.85rem;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        color: var(--primary-dark);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        label {
-          color: var(--primary);
-        }
-      }
-
-      .checkbox-label {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-size: 0.9rem;
-        font-weight: 600;
-        text-transform: none;
-        letter-spacing: 0;
-        color: var(--primary-dark);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        .checkbox-label {
-          color: var(--primary);
-        }
-      }
-
-      .checkbox-label input {
-        width: auto;
-        margin: 0;
-      }
-
-      input,
-      select,
-      textarea {
-        padding: 0.65rem 0.75rem;
-        border-radius: 10px;
-        border: 1px solid rgba(24, 24, 24, 0.25);
-        font: inherit;
-        background: rgba(255, 255, 255, 0.88);
-      }
-
-      @media (prefers-color-scheme: dark) {
-        input,
-        select,
-        textarea {
-          background: rgba(12, 12, 12, 0.75);
-          border-color: rgba(245, 196, 0, 0.45);
-          color: #f7f2d4;
-        }
-      }
-
-      button {
-        justify-self: start;
-        background: linear-gradient(120deg, var(--primary), #f7d54d);
-        color: #181818;
-        border: none;
-        border-radius: 999px;
-        padding: 0.65rem 1.6rem;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        cursor: pointer;
-        box-shadow: 0 12px 28px rgba(245, 196, 0, 0.35);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-      }
-
-      button:hover,
-      button:focus-visible {
-        transform: translateY(-1px);
-        box-shadow: 0 16px 32px rgba(245, 196, 0, 0.45);
-      }
-
-      button:focus-visible {
-        outline: 2px solid #fef5c7;
-        outline-offset: 3px;
       }
 
       .card h3 {
@@ -434,12 +285,6 @@
         nav ul {
           justify-content: center;
         }
-
-        nav details ul {
-          position: static;
-          margin-top: 0.5rem;
-          width: 100%;
-        }
       }
     </style>
   </head>
@@ -453,28 +298,7 @@
         <nav aria-label="Secções principais">
           <ul>
             <li><a href="#resumo">Resumo Geral</a></li>
-            <li>
-              <details class="menu-group">
-                <summary>Plantel &amp; Staff</summary>
-                <ul>
-                  <li><a href="#jogadores">Jogadores</a></li>
-                  <li><a href="#equipa-tecnica">Equipa Técnica</a></li>
-                  <li><a href="#fisioterapia">Departamento Médico</a></li>
-                  <li><a href="#formacao">Camadas Jovens</a></li>
-                  <li><a href="#socios">Sócios</a></li>
-                </ul>
-              </details>
-            </li>
-            <li>
-              <details class="menu-group">
-                <summary>Finanças</summary>
-                <ul>
-                  <li><a href="#financas">Visão Geral</a></li>
-                  <li><a href="#receitas">Receitas</a></li>
-                  <li><a href="#despesas">Despesas</a></li>
-                </ul>
-              </details>
-            </li>
+            <li><a href="#financas">Detalhe Financeiro</a></li>
           </ul>
         </nav>
       </div>

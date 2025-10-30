@@ -38,6 +38,7 @@ def create_app() -> Flask:
         members = service.list_members()
         revenues, expenses = service.list_financial_records()
         summary = service.financial_summary()
+        coach_lookup = {coach.id: coach.name for coach in coaches}
         revenue_categories: Dict[str, float] = {}
         expense_categories: Dict[str, float] = {}
         for key, value in summary.items():
@@ -56,6 +57,7 @@ def create_app() -> Flask:
             revenues=revenues,
             expenses=expenses,
             summary=summary,
+            coach_lookup=coach_lookup,
             revenue_categories=revenue_categories,
             expense_categories=expense_categories,
         )
@@ -222,14 +224,14 @@ def create_app() -> Flask:
         amount = _parse_amount("amount")
         if amount is None or amount <= 0:
             _flash_invalid("Montante da receita inválido.")
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#receitas")
         try:
             record_date = _handle_financial_date()
         except ValueError:
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#receitas")
         if not description or not category:
             _flash_invalid("Descrição e categoria são obrigatórias.")
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#receitas")
         service = get_service()
         service.add_revenue(
             description=description,
@@ -239,7 +241,7 @@ def create_app() -> Flask:
             source=source,
         )
         flash("Receita registada com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#financas")
+        return redirect(url_for("dashboard") + "#receitas")
 
     @app.post("/finance/expense")
     def add_expense():
@@ -249,14 +251,14 @@ def create_app() -> Flask:
         amount = _parse_amount("amount")
         if amount is None or amount <= 0:
             _flash_invalid("Montante da despesa inválido.")
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#despesas")
         try:
             record_date = _handle_financial_date()
         except ValueError:
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#despesas")
         if not description or not category:
             _flash_invalid("Descrição e categoria são obrigatórias.")
-            return redirect(url_for("dashboard") + "#financas")
+            return redirect(url_for("dashboard") + "#despesas")
         service = get_service()
         service.add_expense(
             description=description,
@@ -266,9 +268,12 @@ def create_app() -> Flask:
             vendor=vendor,
         )
         flash("Despesa registada com sucesso!", "success")
-        return redirect(url_for("dashboard") + "#financas")
+        return redirect(url_for("dashboard") + "#despesas")
 
     return app
+
+
+app = create_app()
 
 
 def main() -> None:
@@ -277,7 +282,6 @@ def main() -> None:
     parser.add_argument("--port", type=int, default=5000, help="Porta do servidor")
     parser.add_argument("--debug", action="store_true", help="Ativar modo debug")
     args = parser.parse_args()
-    app = create_app()
     app.run(host=args.host, port=args.port, debug=args.debug)
 
 

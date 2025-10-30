@@ -45,6 +45,16 @@ ou `http://localhost:5000`, consoante a porta escolhida, para utilizar o painel
 visual com formulários para todas as secções do clube (plantel, equipa técnica,
 saúde, formação, sócios e finanças).
 
+Para deploys em produção (por exemplo no Render ou em qualquer plataforma que
+espere um servidor WSGI) utilize o Gunicorn apontando para a aplicação Flask
+exposta em `app.web`:
+
+```bash
+gunicorn "app.web:app" --bind 0.0.0.0:8000
+```
+
+Substitua `8000` pela porta que o ambiente disponibilizar.
+
 ### Exemplo de fluxo
 
 ```bash

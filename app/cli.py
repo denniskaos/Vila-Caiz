@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import shlex
+import sys
 from datetime import date
 from typing import Callable, Dict, Optional
 
@@ -290,11 +292,7 @@ def build_parser(service: services.ClubService) -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Optional[list[str]] = None) -> None:
-    storage.ensure_storage()
-    service = services.ClubService()
-    parser = build_parser(service)
-    args = parser.parse_args(argv)
+def dispatch_command(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if getattr(args, "command", None) is None:
         parser.print_help()
         return
@@ -303,6 +301,54 @@ def main(argv: Optional[list[str]] = None) -> None:
         parser.print_help()
         return
     handler(args)
+
+
+def run_interactive_shell(parser: argparse.ArgumentParser) -> None:
+    print("Modo interativo do Vila-Caiz CLI.")
+    print("Escreva comandos como faria na linha de comandos (ex.: 'players list').")
+    print("Use 'help' para ver a ajuda geral e 'exit' ou 'quit' para terminar.\n")
+    while True:
+        try:
+            raw = input("vila-caiz> ").strip()
+        except EOFError:
+            print()
+            break
+        except KeyboardInterrupt:
+            print("\nInterrupção recebida. A sair do modo interativo.")
+            break
+        if not raw:
+            continue
+        lowered = raw.lower()
+        if lowered in {"exit", "quit"}:
+            print("Até breve!")
+            break
+        if lowered in {"help", "?"}:
+            parser.print_help()
+            continue
+        try:
+            args = parser.parse_args(shlex.split(raw))
+        except SystemExit:
+            # argparse already imprimiu a mensagem de erro/ajuda
+            continue
+        dispatch_command(parser, args)
+
+
+def main(argv: Optional[list[str]] = None) -> None:
+    storage.ensure_storage()
+    service = services.ClubService()
+    parser = build_parser(service)
+
+    if argv is None:
+        actual_args = sys.argv[1:]
+    else:
+        actual_args = argv
+
+    if not actual_args:
+        run_interactive_shell(parser)
+        return
+
+    args = parser.parse_args(actual_args)
+    dispatch_command(parser, args)
 
 
 if __name__ == "__main__":

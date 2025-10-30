@@ -23,6 +23,16 @@ Execute os comandos a partir da raiz do projeto:
 python -m app --help
 ```
 
+Também é possível iniciar um modo interativo simples com:
+
+```bash
+python app.py
+```
+
+No modo interativo escreva os mesmos comandos que usaria na linha de comandos
+(`players list`, `finance summary`, etc.). Utilize `help` para ver a ajuda e
+`exit`/`quit` para terminar.
+
 ### Exemplo de fluxo
 
 ```bash

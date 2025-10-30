@@ -159,6 +159,10 @@
         color: var(--primary);
       }
 
+      nav details[data-pinned="true"] > summary {
+        color: var(--primary);
+      }
+
       nav details ul {
         position: absolute;
         inset-inline-start: 0;
@@ -329,6 +333,18 @@
         }
       }
 
+      .form-hint {
+        margin: -0.2rem 0 0.6rem;
+        font-size: 0.8rem;
+        color: rgba(24, 24, 24, 0.6);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .form-hint {
+          color: rgba(254, 245, 199, 0.6);
+        }
+      }
+
       button {
         justify-self: start;
         background: linear-gradient(120deg, var(--primary), #f7d54d);
@@ -432,6 +448,51 @@
         background: rgba(245, 196, 0, 0.08);
       }
 
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(245, 196, 0, 0.16);
+        color: var(--primary-dark);
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        margin-inline-start: 0.35rem;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .tag {
+          background: rgba(245, 196, 0, 0.24);
+          color: #181818;
+        }
+      }
+
+      .totals {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0;
+        margin: 0 0 1rem;
+        list-style: none;
+      }
+
+      .totals li {
+        background: rgba(5, 5, 5, 0.08);
+        border-radius: 999px;
+        padding: 0.45rem 0.85rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .totals li {
+          background: rgba(245, 196, 0, 0.18);
+          color: #181818;
+        }
+      }
+
       .flash-messages {
         margin: 1.5rem 0;
         display: grid;
@@ -489,7 +550,7 @@
       }
     </style>
   </head>
-  <body data-active-group="{{ active_group or '' }}">
+  <body data-active-group="{{ active_group or '' }}" data-active-page="{{ active_page or '' }}">
     <header>
       <div class="container">
         <div class="identity">
@@ -542,50 +603,102 @@
       </div>
     </main>
     <script>
-      document.querySelectorAll('details.menu-group').forEach((menu) => {
+      const menus = Array.from(document.querySelectorAll('details.menu-group'));
+      const body = document.body;
+      const activePage = body.dataset.activePage;
+
+      const setExpanded = (menu) => {
         const summary = menu.querySelector('summary');
         if (!summary) return;
-        const setExpanded = () => {
-          summary.setAttribute('aria-expanded', menu.hasAttribute('open') ? 'true' : 'false');
-        };
-        if (menu.classList.contains('is-active')) {
-          menu.setAttribute('open', '');
-          setExpanded();
+        summary.setAttribute('aria-expanded', menu.hasAttribute('open') ? 'true' : 'false');
+      };
+
+      const openMenu = (menu, { pin = false } = {}) => {
+        if (pin) {
+          menu.dataset.pinned = 'true';
         }
-        summary.addEventListener('click', () => {
-          requestAnimationFrame(setExpanded);
-        });
-        menu.addEventListener('mouseenter', () => {
-          menu.setAttribute('open', '');
-          setExpanded();
-        });
-        menu.addEventListener('mouseleave', () => {
+        menu.setAttribute('open', '');
+        setExpanded(menu);
+      };
+
+      const closeMenu = (menu, { force = false } = {}) => {
+        if (!force) {
+          if (menu.dataset.pinned === 'true') return;
           if (menu.classList.contains('is-active')) return;
-          menu.removeAttribute('open');
-          setExpanded();
+        }
+        menu.removeAttribute('open');
+        delete menu.dataset.pinned;
+        setExpanded(menu);
+      };
+
+      menus.forEach((menu) => {
+        const summary = menu.querySelector('summary');
+        if (!summary) return;
+
+        if (menu.classList.contains('is-active')) {
+          openMenu(menu);
+        }
+
+        summary.addEventListener('click', (event) => {
+          event.preventDefault();
+          if (menu.dataset.pinned === 'true') {
+            closeMenu(menu, { force: !menu.classList.contains('is-active') });
+          } else {
+            openMenu(menu, { pin: true });
+          }
         });
+
+        menu.addEventListener('mouseenter', () => {
+          if (menu.dataset.pinned === 'true') return;
+          openMenu(menu);
+        });
+
+        menu.addEventListener('mouseleave', () => {
+          if (menu.dataset.pinned === 'true') return;
+          closeMenu(menu);
+        });
+
         summary.addEventListener('focus', () => {
-          menu.setAttribute('open', '');
-          setExpanded();
+          openMenu(menu);
         });
+
         summary.addEventListener('blur', () => {
           window.setTimeout(() => {
-            if (menu.classList.contains('is-active')) return;
+            if (menu.dataset.pinned === 'true') return;
             if (!menu.matches(':hover') && !menu.contains(document.activeElement)) {
-              menu.removeAttribute('open');
-              setExpanded();
+              closeMenu(menu);
             }
           }, 120);
         });
+
         menu.addEventListener('keydown', (event) => {
           if (event.key === 'Escape') {
-            menu.removeAttribute('open');
-            setExpanded();
+            closeMenu(menu, { force: true });
             summary.focus();
           }
         });
-        setExpanded();
+
+        setExpanded(menu);
       });
+
+      document.addEventListener('click', (event) => {
+        menus.forEach((menu) => {
+          if (menu.dataset.pinned === 'true' && !menu.contains(event.target)) {
+            if (!menu.classList.contains('is-active')) {
+              closeMenu(menu, { force: true });
+            }
+          }
+        });
+      });
+
+      if (activePage === 'dashboard') {
+        menus.forEach((menu) => {
+          const identifier = menu.dataset.menu;
+          if (identifier === 'plantel' || identifier === 'financas') {
+            openMenu(menu, { pin: true });
+          }
+        });
+      }
     </script>
   </body>
 </html>

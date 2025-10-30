@@ -26,6 +26,12 @@ class ClubService:
     def _list_entities(self, key: str) -> List[Dict]:
         return list(self._data[key])
 
+    def _find_entity(self, key: str, entity_id: int) -> Dict | None:
+        for item in self._data[key]:
+            if int(item.get("id")) == entity_id:
+                return item
+        return None
+
     def _update_entity(self, key: str, entity_id: int, updates: Dict) -> Dict:
         for item in self._data[key]:
             if int(item.get("id")) == entity_id:
@@ -154,6 +160,37 @@ class ClubService:
         return [storage.instantiate(models.YouthTeam, item) for item in self._list_entities("youth_teams")]
 
     # Members ---------------------------------------------------------
+    def add_membership_type(
+        self,
+        name: str,
+        amount: float,
+        frequency: str = "Mensal",
+        description: Optional[str] = None,
+    ) -> models.MembershipType:
+        payload = storage.serialize_entity(
+            models.MembershipType(
+                id=0,
+                name=name,
+                amount=amount,
+                frequency=frequency,
+                description=description,
+            )
+        )
+        stored = self._create_entity("membership_types", payload)
+        return storage.instantiate(models.MembershipType, stored)
+
+    def list_membership_types(self) -> List[models.MembershipType]:
+        return [
+            storage.instantiate(models.MembershipType, item)
+            for item in self._list_entities("membership_types")
+        ]
+
+    def get_membership_type(self, membership_type_id: int) -> Optional[models.MembershipType]:
+        record = self._find_entity("membership_types", membership_type_id)
+        if record is None:
+            return None
+        return storage.instantiate(models.MembershipType, record)
+
     def add_member(
         self,
         name: str,
@@ -161,13 +198,23 @@ class ClubService:
         dues_paid: bool = False,
         contact: Optional[str] = None,
         birthdate: Optional[date] = None,
+        membership_type_id: Optional[int] = None,
+        dues_paid_until: Optional[str] = None,
     ) -> models.Member:
+        resolved_type = membership_type
+        if membership_type_id is not None:
+            type_info = self.get_membership_type(membership_type_id)
+            if type_info is None:
+                raise ValueError(f"Membership type with id {membership_type_id} not found")
+            resolved_type = type_info.name
         payload = storage.serialize_entity(
             models.Member(
                 id=0,
                 name=name,
-                membership_type=membership_type,
+                membership_type=resolved_type,
+                membership_type_id=membership_type_id,
                 dues_paid=dues_paid,
+                dues_paid_until=dues_paid_until,
                 contact=contact,
                 birthdate=birthdate,
             )
@@ -177,6 +224,56 @@ class ClubService:
 
     def list_members(self) -> List[models.Member]:
         return [storage.instantiate(models.Member, item) for item in self._list_entities("members")]
+
+    def register_membership_payment(
+        self,
+        member_id: int,
+        amount: float,
+        period: str,
+        paid_on: date,
+        membership_type_id: Optional[int] = None,
+        notes: Optional[str] = None,
+    ) -> models.MembershipPayment:
+        member_record = self._find_entity("members", member_id)
+        if member_record is None:
+            raise ValueError(f"Member with id {member_id} not found")
+        membership_type_name = member_record.get("membership_type")
+        if membership_type_id is not None:
+            type_record = self._find_entity("membership_types", membership_type_id)
+            if type_record is None:
+                raise ValueError(f"Membership type with id {membership_type_id} not found")
+            membership_type_name = type_record.get("name", membership_type_name)
+        payload = storage.serialize_entity(
+            models.MembershipPayment(
+                id=0,
+                member_id=member_id,
+                membership_type_id=membership_type_id,
+                amount=amount,
+                period=period,
+                paid_on=paid_on,
+                notes=notes,
+            )
+        )
+        stored = self._create_entity("membership_payments", payload)
+        updates = {
+            "dues_paid": True,
+            "dues_paid_until": period,
+        }
+        if membership_type_id is not None and membership_type_name:
+            updates["membership_type_id"] = membership_type_id
+            updates["membership_type"] = membership_type_name
+        self._update_entity("members", member_id, updates)
+        return storage.instantiate(models.MembershipPayment, stored)
+
+    def list_membership_payments(self) -> List[models.MembershipPayment]:
+        return [
+            storage.instantiate(models.MembershipPayment, item)
+            for item in self._list_entities("membership_payments")
+        ]
+
+    def list_member_payments(self, member_id: int) -> List[models.MembershipPayment]:
+        payments = self.list_membership_payments()
+        return [payment for payment in payments if payment.member_id == member_id]
 
     # Finance ---------------------------------------------------------
     def add_revenue(

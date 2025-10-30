@@ -53,9 +53,39 @@ class YouthTeam:
 
 
 @dataclass
+class MembershipType:
+    id: int
+    name: str
+    amount: float
+    frequency: str = "Mensal"
+    description: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
+
+@dataclass
 class Member(Person):
     membership_type: str = "standard"
+    membership_type_id: Optional[int] = None
     dues_paid: bool = False
+    dues_paid_until: Optional[str] = None
+
+
+@dataclass
+class MembershipPayment:
+    id: int
+    member_id: int
+    membership_type_id: Optional[int]
+    amount: float
+    period: str
+    paid_on: date
+    notes: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        data = asdict(self)
+        data["paid_on"] = self.paid_on.isoformat()
+        return data
 
 
 @dataclass

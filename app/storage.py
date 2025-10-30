@@ -16,6 +16,8 @@ DEFAULT_STRUCTURE = {
     "physiotherapists": [],
     "youth_teams": [],
     "members": [],
+    "membership_types": [],
+    "membership_payments": [],
     "revenues": [],
     "expenses": [],
 }

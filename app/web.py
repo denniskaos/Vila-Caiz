@@ -115,12 +115,28 @@ def create_app() -> Flask:
     def members_page():
         service = get_service()
         members = service.list_members()
+        membership_types = service.list_membership_types()
+        payments = service.list_membership_payments()
+        member_lookup = {member.id: member for member in members}
+        type_lookup = {membership_type.id: membership_type for membership_type in membership_types}
+        payment_totals: Dict[int | str, float] = {}
+        total_payments = 0.0
+        for payment in payments:
+            key = payment.membership_type_id if payment.membership_type_id is not None else "outros"
+            payment_totals[key] = payment_totals.get(key, 0.0) + payment.amount
+            total_payments += payment.amount
         return render_template(
             "members.html",
             title="Sócios",
             active_group="plantel",
             active_page="members",
             members=members,
+            membership_types=membership_types,
+            payments=payments,
+            member_lookup=member_lookup,
+            type_lookup=type_lookup,
+            payment_totals=payment_totals,
+            total_payments=total_payments,
         )
 
     def _render_finances(active_page: str, focus_section: str | None = None):
@@ -271,24 +287,104 @@ def create_app() -> Flask:
     def add_member():
         name = request.form.get("name", "").strip()
         membership_type = request.form.get("membership_type", "").strip()
+        membership_type_id_raw = request.form.get("membership_type_id", "").strip()
+        membership_type_id = None
+        if membership_type_id_raw:
+            try:
+                membership_type_id = int(membership_type_id_raw)
+            except ValueError:
+                _flash_invalid("Tipo de sócio selecionado é inválido.")
+                return redirect(url_for("members_page"))
         contact = request.form.get("contact", "").strip() or None
+        dues_paid_until = request.form.get("dues_paid_until", "").strip() or None
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o sócio.")
             return redirect(url_for("members_page"))
         dues_paid = request.form.get("dues_paid") == "on"
-        if not name or not membership_type:
-            _flash_invalid("Nome e tipo de quota são obrigatórios.")
+        if not name:
+            _flash_invalid("O nome do sócio é obrigatório.")
+            return redirect(url_for("members_page"))
+        if not membership_type_id and not membership_type:
+            _flash_invalid("Escolha um tipo de sócio ou indique um novo tipo de quota.")
             return redirect(url_for("members_page"))
         service = get_service()
-        service.add_member(
-            name=name,
-            membership_type=membership_type,
-            dues_paid=dues_paid,
-            contact=contact,
-            birthdate=birthdate,
-        )
+        try:
+            service.add_member(
+                name=name,
+                membership_type=membership_type,
+                dues_paid=dues_paid,
+                contact=contact,
+                birthdate=birthdate,
+                membership_type_id=membership_type_id,
+                dues_paid_until=dues_paid_until,
+            )
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            return redirect(url_for("members_page"))
         flash("Sócio registado com sucesso!", "success")
+        return redirect(url_for("members_page"))
+
+    @app.post("/membership-types")
+    def create_membership_type():
+        name = request.form.get("name", "").strip()
+        frequency = request.form.get("frequency", "").strip() or "Mensal"
+        description = request.form.get("description", "").strip() or None
+        amount = _parse_amount("amount")
+        if not name or amount is None or amount <= 0:
+            _flash_invalid("Indique o nome e o valor da quota para o tipo de sócio.")
+            return redirect(url_for("members_page"))
+        service = get_service()
+        service.add_membership_type(name=name, amount=amount, frequency=frequency, description=description)
+        flash("Tipo de sócio criado!", "success")
+        return redirect(url_for("members_page"))
+
+    @app.post("/membership-payments")
+    def record_membership_payment():
+        member_id_raw = request.form.get("member_id", "").strip()
+        membership_type_id_raw = request.form.get("membership_type_id", "").strip()
+        period = request.form.get("period", "").strip()
+        notes = request.form.get("notes", "").strip() or None
+        if not member_id_raw:
+            _flash_invalid("Selecione o sócio a quem se aplica o pagamento.")
+            return redirect(url_for("members_page"))
+        try:
+            member_id = int(member_id_raw)
+        except ValueError:
+            _flash_invalid("Sócio inválido para registo de pagamento.")
+            return redirect(url_for("members_page"))
+        membership_type_id = None
+        if membership_type_id_raw:
+            try:
+                membership_type_id = int(membership_type_id_raw)
+            except ValueError:
+                _flash_invalid("Tipo de sócio inválido para o pagamento.")
+                return redirect(url_for("members_page"))
+        amount = _parse_amount("amount")
+        if amount is None or amount <= 0:
+            _flash_invalid("Indique o valor pago na quota.")
+            return redirect(url_for("members_page"))
+        if not period:
+            _flash_invalid("Indique o período a que se refere o pagamento.")
+            return redirect(url_for("members_page"))
+        try:
+            paid_on = _handle_financial_date()
+        except ValueError:
+            return redirect(url_for("members_page"))
+        service = get_service()
+        try:
+            service.register_membership_payment(
+                member_id=member_id,
+                amount=amount,
+                period=period,
+                paid_on=paid_on,
+                membership_type_id=membership_type_id,
+                notes=notes,
+            )
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            return redirect(url_for("members_page"))
+        flash("Pagamento de quotas registado!", "success")
         return redirect(url_for("members_page"))
 
     def _parse_amount(field: str) -> float | None:

@@ -66,6 +66,7 @@ class MembershipType:
 
 @dataclass
 class Member(Person):
+    member_number: Optional[int] = None
     membership_type: str = "standard"
     membership_type_id: Optional[int] = None
     dues_paid: bool = False

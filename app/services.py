@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import date
-from typing import Dict, Iterable, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from . import models, storage
 
@@ -79,6 +79,36 @@ class ClubService:
     def list_players(self) -> List[models.Player]:
         return [storage.instantiate(models.Player, item) for item in self._list_entities("players")]
 
+    def update_player(
+        self,
+        player_id: int,
+        *,
+        name: Optional[str] = None,
+        position: Optional[str] = None,
+        squad: Optional[str] = None,
+        birthdate: Optional[date] = None,
+        contact: Optional[str] = None,
+        shirt_number: Optional[int] = None,
+    ) -> models.Player:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if position is not None:
+            updates["position"] = position
+        if squad is not None:
+            updates["squad"] = squad
+        if birthdate is not None:
+            updates["birthdate"] = birthdate.isoformat()
+        if contact is not None:
+            updates["contact"] = contact
+        if shirt_number is not None:
+            updates["shirt_number"] = shirt_number
+        record = self._update_entity("players", player_id, updates)
+        return storage.instantiate(models.Player, record)
+
+    def remove_player(self, player_id: int) -> None:
+        self._remove_entity("players", player_id)
+
     # Coaches ---------------------------------------------------------
     def add_coach(
         self,
@@ -103,6 +133,33 @@ class ClubService:
 
     def list_coaches(self) -> List[models.Coach]:
         return [storage.instantiate(models.Coach, item) for item in self._list_entities("coaches")]
+
+    def update_coach(
+        self,
+        coach_id: int,
+        *,
+        name: Optional[str] = None,
+        role: Optional[str] = None,
+        license_level: Optional[str] = None,
+        birthdate: Optional[date] = None,
+        contact: Optional[str] = None,
+    ) -> models.Coach:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if role is not None:
+            updates["role"] = role
+        if license_level is not None:
+            updates["license_level"] = license_level
+        if birthdate is not None:
+            updates["birthdate"] = birthdate.isoformat()
+        if contact is not None:
+            updates["contact"] = contact
+        record = self._update_entity("coaches", coach_id, updates)
+        return storage.instantiate(models.Coach, record)
+
+    def remove_coach(self, coach_id: int) -> None:
+        self._remove_entity("coaches", coach_id)
 
     # Physiotherapists ------------------------------------------------
     def add_physiotherapist(
@@ -129,6 +186,30 @@ class ClubService:
             storage.instantiate(models.Physiotherapist, item)
             for item in self._list_entities("physiotherapists")
         ]
+
+    def update_physiotherapist(
+        self,
+        physio_id: int,
+        *,
+        name: Optional[str] = None,
+        specialization: Optional[str] = None,
+        birthdate: Optional[date] = None,
+        contact: Optional[str] = None,
+    ) -> models.Physiotherapist:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if specialization is not None:
+            updates["specialization"] = specialization
+        if birthdate is not None:
+            updates["birthdate"] = birthdate.isoformat()
+        if contact is not None:
+            updates["contact"] = contact
+        record = self._update_entity("physiotherapists", physio_id, updates)
+        return storage.instantiate(models.Physiotherapist, record)
+
+    def remove_physiotherapist(self, physio_id: int) -> None:
+        self._remove_entity("physiotherapists", physio_id)
 
     # Youth teams -----------------------------------------------------
     def add_youth_team(
@@ -158,6 +239,27 @@ class ClubService:
 
     def list_youth_teams(self) -> List[models.YouthTeam]:
         return [storage.instantiate(models.YouthTeam, item) for item in self._list_entities("youth_teams")]
+
+    def update_youth_team(
+        self,
+        team_id: int,
+        *,
+        name: Optional[str] = None,
+        age_group: Optional[str] = None,
+        coach_id: Optional[int] = None,
+    ) -> models.YouthTeam:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if age_group is not None:
+            updates["age_group"] = age_group
+        if coach_id is not None:
+            updates["coach_id"] = coach_id
+        record = self._update_entity("youth_teams", team_id, updates)
+        return storage.instantiate(models.YouthTeam, record)
+
+    def remove_youth_team(self, team_id: int) -> None:
+        self._remove_entity("youth_teams", team_id)
 
     # Members ---------------------------------------------------------
     def add_membership_type(
@@ -191,6 +293,43 @@ class ClubService:
             return None
         return storage.instantiate(models.MembershipType, record)
 
+    def update_membership_type(
+        self,
+        membership_type_id: int,
+        *,
+        name: Optional[str] = None,
+        amount: Optional[float] = None,
+        frequency: Optional[str] = None,
+        description: Optional[str] = None,
+    ) -> models.MembershipType:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if amount is not None:
+            updates["amount"] = amount
+        if frequency is not None:
+            updates["frequency"] = frequency
+        if description is not None:
+            updates["description"] = description
+        record = self._update_entity("membership_types", membership_type_id, updates)
+        return storage.instantiate(models.MembershipType, record)
+
+    def remove_membership_type(self, membership_type_id: int) -> None:
+        self._remove_entity("membership_types", membership_type_id)
+
+    def _next_member_number(self) -> int:
+        highest = 0
+        for record in self._data["members"]:
+            raw = record.get("member_number") or record.get("id")
+            if raw is None:
+                continue
+            try:
+                number = int(raw)
+            except (TypeError, ValueError):
+                continue
+            highest = max(highest, number)
+        return highest + 1
+
     def add_member(
         self,
         name: str,
@@ -200,6 +339,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         membership_type_id: Optional[int] = None,
         dues_paid_until: Optional[str] = None,
+        member_number: Optional[int] = None,
     ) -> models.Member:
         resolved_type = membership_type
         if membership_type_id is not None:
@@ -207,10 +347,12 @@ class ClubService:
             if type_info is None:
                 raise ValueError(f"Membership type with id {membership_type_id} not found")
             resolved_type = type_info.name
+        number = member_number if member_number is not None else self._next_member_number()
         payload = storage.serialize_entity(
             models.Member(
                 id=0,
                 name=name,
+                member_number=number,
                 membership_type=resolved_type,
                 membership_type_id=membership_type_id,
                 dues_paid=dues_paid,
@@ -224,6 +366,47 @@ class ClubService:
 
     def list_members(self) -> List[models.Member]:
         return [storage.instantiate(models.Member, item) for item in self._list_entities("members")]
+
+    def update_member(
+        self,
+        member_id: int,
+        *,
+        name: Optional[str] = None,
+        membership_type: Optional[str] = None,
+        membership_type_id: Optional[int] = None,
+        dues_paid: Optional[bool] = None,
+        dues_paid_until: Optional[str] = None,
+        contact: Optional[str] = None,
+        birthdate: Optional[date] = None,
+        member_number: Optional[int] = None,
+    ) -> models.Member:
+        updates: Dict[str, Any] = {}
+        if name is not None:
+            updates["name"] = name
+        if membership_type is not None:
+            updates["membership_type"] = membership_type
+        if membership_type_id is not None:
+            updates["membership_type_id"] = membership_type_id
+        if dues_paid is not None:
+            updates["dues_paid"] = dues_paid
+        if dues_paid_until is not None:
+            updates["dues_paid_until"] = dues_paid_until
+        if contact is not None:
+            updates["contact"] = contact
+        if birthdate is not None:
+            updates["birthdate"] = birthdate.isoformat()
+        if member_number is not None:
+            updates["member_number"] = member_number
+        record = self._update_entity("members", member_id, updates)
+        return storage.instantiate(models.Member, record)
+
+    def remove_member(self, member_id: int) -> None:
+        payments = self._data["membership_payments"]
+        self._data["membership_payments"] = [
+            payment for payment in payments if int(payment.get("member_id", 0)) != member_id
+        ]
+        self._persist()
+        self._remove_entity("members", member_id)
 
     def register_membership_payment(
         self,
@@ -263,6 +446,22 @@ class ClubService:
             updates["membership_type_id"] = membership_type_id
             updates["membership_type"] = membership_type_name
         self._update_entity("members", member_id, updates)
+        member_name = member_record.get("name", f"Sócio #{member_id}")
+        member_number = member_record.get("member_number") or member_record.get("id")
+        description_parts = ["Quota"]
+        if membership_type_name:
+            description_parts.append(membership_type_name)
+        description = " ".join(description_parts)
+        descriptor = f"{description} - {member_name}"
+        if member_number is not None:
+            descriptor = f"{descriptor} (#{member_number})"
+        self.add_revenue(
+            description=descriptor,
+            amount=amount,
+            category="Quotas de Sócios",
+            record_date=paid_on,
+            source="Sócios",
+        )
         return storage.instantiate(models.MembershipPayment, stored)
 
     def list_membership_payments(self) -> List[models.MembershipPayment]:
@@ -274,6 +473,9 @@ class ClubService:
     def list_member_payments(self, member_id: int) -> List[models.MembershipPayment]:
         payments = self.list_membership_payments()
         return [payment for payment in payments if payment.member_id == member_id]
+
+    def remove_membership_payment(self, payment_id: int) -> None:
+        self._remove_entity("membership_payments", payment_id)
 
     # Finance ---------------------------------------------------------
     def add_revenue(
@@ -297,6 +499,33 @@ class ClubService:
         stored = self._create_entity("revenues", payload)
         return storage.instantiate(models.Revenue, stored)
 
+    def update_revenue(
+        self,
+        revenue_id: int,
+        *,
+        description: Optional[str] = None,
+        amount: Optional[float] = None,
+        category: Optional[str] = None,
+        record_date: Optional[date] = None,
+        source: Optional[str] = None,
+    ) -> models.Revenue:
+        updates: Dict[str, Any] = {}
+        if description is not None:
+            updates["description"] = description
+        if amount is not None:
+            updates["amount"] = amount
+        if category is not None:
+            updates["category"] = category
+        if record_date is not None:
+            updates["record_date"] = record_date.isoformat()
+        if source is not None:
+            updates["source"] = source
+        record = self._update_entity("revenues", revenue_id, updates)
+        return storage.instantiate(models.Revenue, record)
+
+    def remove_revenue(self, revenue_id: int) -> None:
+        self._remove_entity("revenues", revenue_id)
+
     def add_expense(
         self,
         description: str,
@@ -317,6 +546,33 @@ class ClubService:
         )
         stored = self._create_entity("expenses", payload)
         return storage.instantiate(models.Expense, stored)
+
+    def update_expense(
+        self,
+        expense_id: int,
+        *,
+        description: Optional[str] = None,
+        amount: Optional[float] = None,
+        category: Optional[str] = None,
+        record_date: Optional[date] = None,
+        vendor: Optional[str] = None,
+    ) -> models.Expense:
+        updates: Dict[str, Any] = {}
+        if description is not None:
+            updates["description"] = description
+        if amount is not None:
+            updates["amount"] = amount
+        if category is not None:
+            updates["category"] = category
+        if record_date is not None:
+            updates["record_date"] = record_date.isoformat()
+        if vendor is not None:
+            updates["vendor"] = vendor
+        record = self._update_entity("expenses", expense_id, updates)
+        return storage.instantiate(models.Expense, record)
+
+    def remove_expense(self, expense_id: int) -> None:
+        self._remove_entity("expenses", expense_id)
 
     def list_financial_records(self) -> Tuple[List[models.Revenue], List[models.Expense]]:
         revenues = [storage.instantiate(models.Revenue, item) for item in self._list_entities("revenues")]

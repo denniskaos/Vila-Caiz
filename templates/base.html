@@ -74,44 +74,36 @@
         margin: 0 auto;
       }
 
-      nav ul {
+      .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 2rem;
+      }
+
+      .primary-nav {
         display: flex;
         gap: 1.2rem;
-        list-style: none;
-        padding: 0;
-        margin: 0;
         align-items: center;
       }
 
-      nav a,
-      nav summary {
+      .primary-nav a,
+      .primary-nav button {
+        background: none;
+        border: none;
         color: #f5c400;
-        text-decoration: none;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        letter-spacing: 0.04em;
-        position: relative;
-        padding-bottom: 0.2rem;
+        font-size: 0.85rem;
         cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
+        padding: 0.35rem 0.6rem;
+        position: relative;
+        transition: color 0.2s ease;
       }
 
-      nav summary::before {
-        content: "▾";
-        font-size: 0.85em;
-        transition: transform 0.2s ease;
-        display: inline-block;
-        transform: translateY(-5%);
-      }
-
-      nav details[open] summary::before {
-        transform: rotate(180deg) translateY(5%);
-      }
-
-      nav a::after,
-      nav summary::after {
+      .primary-nav a::after,
+      .primary-nav button::after {
         content: "";
         position: absolute;
         inset-inline: 0;
@@ -123,72 +115,96 @@
         transition: transform 0.2s ease;
       }
 
-      nav a:hover::after,
-      nav a:focus-visible::after,
-      nav summary:hover::after,
-      nav summary:focus-visible::after {
+      .primary-nav a:hover::after,
+      .primary-nav a:focus-visible::after,
+      .primary-nav button:hover::after,
+      .primary-nav button:focus-visible::after {
         transform: scaleX(1);
       }
 
-      nav details {
-        position: relative;
+      .primary-nav a.active,
+      .primary-nav button.is-active {
+        color: var(--primary);
       }
 
-      nav details summary {
-        list-style: none;
+      .primary-nav a.active::after,
+      .primary-nav button.is-active::after {
+        transform: scaleX(1);
       }
 
-      nav summary::-webkit-details-marker {
+      .primary-nav button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .primary-nav button::before {
+        content: "▾";
+        font-size: 0.75em;
+        transform: translateY(-5%);
+        transition: transform 0.2s ease;
+      }
+
+      .primary-nav button.is-active::before {
+        transform: rotate(180deg) translateY(5%);
+      }
+
+      .submenu-bar {
+        background: rgba(5, 5, 5, 0.92);
+        border-top: 1px solid rgba(245, 196, 0, 0.35);
+        border-bottom: 1px solid rgba(245, 196, 0, 0.2);
+      }
+
+      .submenu-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+        padding: 0.75rem 0 0.9rem;
+      }
+
+      .submenu {
         display: none;
+        flex-direction: column;
+        gap: 0.4rem;
       }
 
-      nav details[open] > summary::after {
-        transform: scaleX(1);
+      .submenu.is-visible {
+        display: flex;
       }
 
-      nav a.active,
-      nav summary.active {
-        color: var(--primary);
+      .submenu-title {
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 196, 0, 0.75);
       }
 
-      nav a.active::after {
-        transform: scaleX(1);
-      }
-
-      nav details.is-active > summary {
-        color: var(--primary);
-      }
-
-      nav details[data-pinned="true"] > summary {
-        color: var(--primary);
-      }
-
-      nav details ul {
-        position: absolute;
-        inset-inline-start: 0;
-        margin-top: 0.75rem;
-        padding: 0.75rem 1rem;
-        list-style: none;
-        background: rgba(5, 5, 5, 0.94);
-        border: 1px solid rgba(245, 196, 0, 0.4);
-        border-radius: 12px;
-        display: grid;
+      .submenu-links {
+        display: flex;
+        flex-wrap: wrap;
         gap: 0.6rem;
-        min-width: 220px;
-        box-shadow: 0 18px 32px rgba(0, 0, 0, 0.55);
-        z-index: 200;
       }
 
-      nav details ul li {
-        margin: 0;
+      .submenu a {
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.8rem;
+        letter-spacing: 0.03em;
+        padding: 0.3rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(245, 196, 0, 0.12);
+        color: #fdf5c4;
+        transition: background 0.2s ease, color 0.2s ease;
       }
 
-      nav details a {
-        display: block;
-        padding: 0;
-        font-weight: 500;
-        letter-spacing: 0.02em;
-        text-transform: none;
+      .submenu a:hover,
+      .submenu a:focus-visible {
+        background: rgba(245, 196, 0, 0.24);
+      }
+
+      .submenu a.active {
+        background: var(--primary);
+        color: #181818;
       }
 
       main {
@@ -371,6 +387,80 @@
         outline-offset: 3px;
       }
 
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        background: linear-gradient(120deg, var(--primary), #f7d54d);
+        color: #181818;
+        border: none;
+        border-radius: 999px;
+        padding: 0.45rem 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 10px 22px rgba(245, 196, 0, 0.32);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      }
+
+      .button:hover,
+      .button:focus-visible {
+        transform: translateY(-1px);
+        box-shadow: 0 16px 28px rgba(245, 196, 0, 0.42);
+        outline: 2px solid #fef5c7;
+        outline-offset: 3px;
+      }
+
+      .button.secondary {
+        background: rgba(245, 196, 0, 0.18);
+        color: var(--primary);
+        box-shadow: inset 0 0 0 1px rgba(245, 196, 0, 0.45);
+      }
+
+      .button.secondary:hover,
+      .button.secondary:focus-visible {
+        background: rgba(245, 196, 0, 0.32);
+      }
+
+      .button.danger {
+        background: linear-gradient(120deg, #c62828, #e45151);
+        color: #fff5f5;
+        box-shadow: 0 10px 22px rgba(198, 40, 40, 0.35);
+      }
+
+      .button.danger:hover,
+      .button.danger:focus-visible {
+        box-shadow: 0 16px 28px rgba(198, 40, 40, 0.45);
+      }
+
+      .inline-form {
+        display: inline;
+        margin: 0;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .actions .button {
+        font-size: 0.7rem;
+        padding: 0.4rem 0.9rem;
+      }
+
+      .form-actions {
+        display: flex;
+        gap: 0.6rem;
+        align-items: center;
+        margin-top: 0.8rem;
+      }
+
       .card h3 {
         font-size: 0.95rem;
         text-transform: uppercase;
@@ -533,59 +623,56 @@
           padding: 1rem 0;
         }
 
-        header .container {
+        .header-main {
           flex-direction: column;
           text-align: center;
         }
 
-        nav ul {
+        .primary-nav {
+          flex-wrap: wrap;
           justify-content: center;
         }
 
-        nav details ul {
-          position: static;
-          margin-top: 0.5rem;
-          width: 100%;
+        .submenu-wrapper {
+          justify-content: center;
         }
       }
     </style>
   </head>
   <body data-active-group="{{ active_group or '' }}" data-active-page="{{ active_page or '' }}">
     <header>
-      <div class="container">
+      <div class="container header-main">
         <div class="identity">
           <img src="{{ url_for('static', filename='crest.svg') }}" alt="Emblema do G.C.D. Vila Caiz" />
           <h1>G.C.D. Vila Caiz</h1>
         </div>
-        <nav aria-label="Secções principais">
-          <ul>
-            <li>
-              <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
-            </li>
-            <li>
-              <details class="menu-group{% if active_group == 'plantel' %} is-active{% endif %}" data-menu="plantel" {% if active_group == 'plantel' %}open{% endif %}>
-                <summary aria-haspopup="true" aria-expanded="false">Plantel &amp; Staff</summary>
-                <ul>
-                  <li><a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a></li>
-                  <li><a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a></li>
-                  <li><a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a></li>
-                  <li><a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a></li>
-                  <li><a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a></li>
-                </ul>
-              </details>
-            </li>
-            <li>
-              <details class="menu-group{% if active_group == 'financas' %} is-active{% endif %}" data-menu="financas" {% if active_group == 'financas' %}open{% endif %}>
-                <summary aria-haspopup="true" aria-expanded="false">Finanças</summary>
-                <ul>
-                  <li><a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a></li>
-                  <li><a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a></li>
-                  <li><a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a></li>
-                </ul>
-              </details>
-            </li>
-          </ul>
+        <nav class="primary-nav" aria-label="Secções principais">
+          <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
+          <button type="button" class="menu-toggle" data-menu="plantel" aria-expanded="false">Plantel &amp; Staff</button>
+          <button type="button" class="menu-toggle" data-menu="financas" aria-expanded="false">Finanças</button>
         </nav>
+      </div>
+      <div class="submenu-bar">
+        <div class="container submenu-wrapper">
+          <div class="submenu" data-menu="plantel">
+            <span class="submenu-title">Plantel &amp; Staff</span>
+            <div class="submenu-links">
+              <a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
+              <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>
+              <a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a>
+              <a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a>
+              <a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a>
+            </div>
+          </div>
+          <div class="submenu" data-menu="financas">
+            <span class="submenu-title">Finanças</span>
+            <div class="submenu-links">
+              <a href="{{ url_for('finances_page') }}" class="{{ 'active' if active_page == 'finances-overview' else '' }}"{% if active_page == 'finances-overview' %} aria-current="page"{% endif %}>Resumo</a>
+              <a href="{{ url_for('finances_revenue_page') }}" class="{{ 'active' if active_page == 'finances-revenue' else '' }}"{% if active_page == 'finances-revenue' %} aria-current="page"{% endif %}>Receitas</a>
+              <a href="{{ url_for('finances_expense_page') }}" class="{{ 'active' if active_page == 'finances-expense' else '' }}"{% if active_page == 'finances-expense' %} aria-current="page"{% endif %}>Despesas</a>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
     <main>
@@ -603,102 +690,47 @@
       </div>
     </main>
     <script>
-      const menus = Array.from(document.querySelectorAll('details.menu-group'));
       const body = document.body;
       const activePage = body.dataset.activePage;
-
-      const setExpanded = (menu) => {
-        const summary = menu.querySelector('summary');
-        if (!summary) return;
-        summary.setAttribute('aria-expanded', menu.hasAttribute('open') ? 'true' : 'false');
-      };
-
-      const openMenu = (menu, { pin = false } = {}) => {
-        if (pin) {
-          menu.dataset.pinned = 'true';
-        }
-        menu.setAttribute('open', '');
-        setExpanded(menu);
-      };
-
-      const closeMenu = (menu, { force = false } = {}) => {
-        if (!force) {
-          if (menu.dataset.pinned === 'true') return;
-          if (menu.classList.contains('is-active')) return;
-        }
-        menu.removeAttribute('open');
-        delete menu.dataset.pinned;
-        setExpanded(menu);
-      };
-
-      menus.forEach((menu) => {
-        const summary = menu.querySelector('summary');
-        if (!summary) return;
-
-        if (menu.classList.contains('is-active')) {
-          openMenu(menu);
-        }
-
-        summary.addEventListener('click', (event) => {
-          event.preventDefault();
-          if (menu.dataset.pinned === 'true') {
-            closeMenu(menu, { force: !menu.classList.contains('is-active') });
-          } else {
-            openMenu(menu, { pin: true });
-          }
-        });
-
-        menu.addEventListener('mouseenter', () => {
-          if (menu.dataset.pinned === 'true') return;
-          openMenu(menu);
-        });
-
-        menu.addEventListener('mouseleave', () => {
-          if (menu.dataset.pinned === 'true') return;
-          closeMenu(menu);
-        });
-
-        summary.addEventListener('focus', () => {
-          openMenu(menu);
-        });
-
-        summary.addEventListener('blur', () => {
-          window.setTimeout(() => {
-            if (menu.dataset.pinned === 'true') return;
-            if (!menu.matches(':hover') && !menu.contains(document.activeElement)) {
-              closeMenu(menu);
-            }
-          }, 120);
-        });
-
-        menu.addEventListener('keydown', (event) => {
-          if (event.key === 'Escape') {
-            closeMenu(menu, { force: true });
-            summary.focus();
-          }
-        });
-
-        setExpanded(menu);
-      });
-
-      document.addEventListener('click', (event) => {
-        menus.forEach((menu) => {
-          if (menu.dataset.pinned === 'true' && !menu.contains(event.target)) {
-            if (!menu.classList.contains('is-active')) {
-              closeMenu(menu, { force: true });
-            }
-          }
-        });
-      });
+      const activeGroup = body.dataset.activeGroup;
+      const toggles = Array.from(document.querySelectorAll('.menu-toggle'));
+      const submenus = Array.from(document.querySelectorAll('.submenu'));
+      const openMenus = new Set();
 
       if (activePage === 'dashboard') {
-        menus.forEach((menu) => {
-          const identifier = menu.dataset.menu;
-          if (identifier === 'plantel' || identifier === 'financas') {
-            openMenu(menu, { pin: true });
-          }
-        });
+        openMenus.add('plantel');
+        openMenus.add('financas');
+      } else if (activeGroup) {
+        openMenus.add(activeGroup);
       }
+
+      const syncMenus = () => {
+        submenus.forEach((submenu) => {
+          const isVisible = openMenus.has(submenu.dataset.menu);
+          submenu.classList.toggle('is-visible', isVisible);
+        });
+        toggles.forEach((toggle) => {
+          const isActive = openMenus.has(toggle.dataset.menu);
+          toggle.classList.toggle('is-active', isActive);
+          toggle.setAttribute('aria-expanded', String(isActive));
+        });
+      };
+
+      toggles.forEach((toggle) => {
+        toggle.addEventListener('click', () => {
+          const target = toggle.dataset.menu;
+          if (activePage === 'dashboard') {
+            openMenus.add(target);
+          } else if (openMenus.has(target)) {
+            openMenus.delete(target);
+          } else {
+            openMenus.add(target);
+          }
+          syncMenus();
+        });
+      });
+
+      syncMenus();
     </script>
   </body>
 </html>

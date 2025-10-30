@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import date
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from flask import Flask, flash, redirect, render_template, request, url_for
 
@@ -63,36 +63,51 @@ def create_app() -> Flask:
     def players_page():
         service = get_service()
         players = service.list_players()
+        editing_player = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_player = next((player for player in players if player.id == edit_id), None)
         return render_template(
             "players.html",
             title="Jogadores",
             active_group="plantel",
             active_page="players",
             players=players,
+            editing_player=editing_player,
         )
 
     @app.get("/equipa-tecnica")
     def coaches_page():
         service = get_service()
         coaches = service.list_coaches()
+        editing_coach = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_coach = next((coach for coach in coaches if coach.id == edit_id), None)
         return render_template(
             "coaches.html",
             title="Equipa Técnica",
             active_group="plantel",
             active_page="coaches",
             coaches=coaches,
+            editing_coach=editing_coach,
         )
 
     @app.get("/departamento-medico")
     def physios_page():
         service = get_service()
         physios = service.list_physiotherapists()
+        editing_physio = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_physio = next((physio for physio in physios if physio.id == edit_id), None)
         return render_template(
             "physios.html",
             title="Departamento Médico",
             active_group="plantel",
             active_page="physios",
             physios=physios,
+            editing_physio=editing_physio,
         )
 
     @app.get("/camadas-jovens")
@@ -101,6 +116,10 @@ def create_app() -> Flask:
         youth_teams = service.list_youth_teams()
         coaches = service.list_coaches()
         coach_lookup = {coach.id: coach.name for coach in coaches}
+        editing_team = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_team = next((team for team in youth_teams if team.id == edit_id), None)
         return render_template(
             "youth.html",
             title="Camadas Jovens",
@@ -109,6 +128,7 @@ def create_app() -> Flask:
             youth_teams=youth_teams,
             coaches=coaches,
             coach_lookup=coach_lookup,
+            editing_team=editing_team,
         )
 
     @app.get("/socios")
@@ -125,6 +145,14 @@ def create_app() -> Flask:
             key = payment.membership_type_id if payment.membership_type_id is not None else "outros"
             payment_totals[key] = payment_totals.get(key, 0.0) + payment.amount
             total_payments += payment.amount
+        editing_member = None
+        edit_member = _parse_optional_int(request.args.get("edit_member"))
+        if edit_member is not None:
+            editing_member = next((member for member in members if member.id == edit_member), None)
+        editing_type = None
+        edit_type = _parse_optional_int(request.args.get("edit_type"))
+        if edit_type is not None:
+            editing_type = next((item for item in membership_types if item.id == edit_type), None)
         return render_template(
             "members.html",
             title="Sócios",
@@ -137,13 +165,27 @@ def create_app() -> Flask:
             type_lookup=type_lookup,
             payment_totals=payment_totals,
             total_payments=total_payments,
+            editing_member=editing_member,
+            editing_type=editing_type,
         )
 
-    def _render_finances(active_page: str, focus_section: str | None = None):
+    def _render_finances(
+        active_page: str,
+        focus_section: str | None = None,
+        *,
+        edit_revenue_id: Optional[int] = None,
+        edit_expense_id: Optional[int] = None,
+    ):
         service = get_service()
         revenues, expenses = service.list_financial_records()
         summary = service.financial_summary()
         revenue_categories, expense_categories = _split_categories(summary)
+        editing_revenue = None
+        if edit_revenue_id is not None:
+            editing_revenue = next((record for record in revenues if record.id == edit_revenue_id), None)
+        editing_expense = None
+        if edit_expense_id is not None:
+            editing_expense = next((record for record in expenses if record.id == edit_expense_id), None)
         return render_template(
             "finances.html",
             title="Finanças",
@@ -155,19 +197,33 @@ def create_app() -> Flask:
             summary=summary,
             revenue_categories=revenue_categories,
             expense_categories=expense_categories,
+            editing_revenue=editing_revenue,
+            editing_expense=editing_expense,
         )
 
     @app.get("/financas")
     def finances_page():
-        return _render_finances("finances-overview")
+        revenue_id = _parse_optional_int(request.args.get("edit_revenue"))
+        expense_id = _parse_optional_int(request.args.get("edit_expense"))
+        return _render_finances("finances-overview", edit_revenue_id=revenue_id, edit_expense_id=expense_id)
 
     @app.get("/financas/receitas")
     def finances_revenue_page():
-        return _render_finances("finances-revenue", "receitas")
+        revenue_id = _parse_optional_int(request.args.get("edit"))
+        return _render_finances(
+            "finances-revenue",
+            "receitas",
+            edit_revenue_id=revenue_id,
+        )
 
     @app.get("/financas/despesas")
     def finances_expense_page():
-        return _render_finances("finances-expense", "despesas")
+        expense_id = _parse_optional_int(request.args.get("edit"))
+        return _render_finances(
+            "finances-expense",
+            "despesas",
+            edit_expense_id=expense_id,
+        )
 
     def _handle_date(field: str) -> Tuple[bool, date | None]:
         value = request.form.get(field)
@@ -180,8 +236,24 @@ def create_app() -> Flask:
     def _flash_invalid(message: str) -> None:
         flash(message, "error")
 
+    def _parse_optional_int(value: Optional[str]) -> Optional[int]:
+        if value is None:
+            return None
+        value = value.strip()
+        if not value:
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            return None
+
     @app.post("/players")
     def add_player():
+        player_id_raw = request.form.get("player_id")
+        player_id = _parse_optional_int(player_id_raw)
+        if player_id_raw and player_id is None:
+            _flash_invalid("Jogador selecionado é inválido para edição.")
+            return redirect(url_for("players_page"))
         name = request.form.get("name", "").strip()
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
@@ -202,19 +274,51 @@ def create_app() -> Flask:
             _flash_invalid("Nome e posição são obrigatórios.")
             return redirect(url_for("players_page"))
         service = get_service()
-        service.add_player(
-            name=name,
-            position=position,
-            squad=squad or "senior",
-            birthdate=birthdate,
-            contact=contact,
-            shirt_number=shirt_number,
-        )
-        flash("Jogador registado com sucesso!", "success")
+        if player_id is None:
+            service.add_player(
+                name=name,
+                position=position,
+                squad=squad or "senior",
+                birthdate=birthdate,
+                contact=contact,
+                shirt_number=shirt_number,
+            )
+            flash("Jogador gravado com sucesso!", "success")
+        else:
+            try:
+                service.update_player(
+                    player_id,
+                    name=name,
+                    position=position,
+                    squad=squad or "senior",
+                    birthdate=birthdate,
+                    contact=contact,
+                    shirt_number=shirt_number,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("players_page", edit=player_id))
+            flash("Jogador atualizado com sucesso!", "success")
+        return redirect(url_for("players_page"))
+
+    @app.post("/players/<int:player_id>/delete")
+    def delete_player(player_id: int):
+        service = get_service()
+        try:
+            service.remove_player(player_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Jogador eliminado.", "success")
         return redirect(url_for("players_page"))
 
     @app.post("/coaches")
     def add_coach():
+        coach_id_raw = request.form.get("coach_id")
+        coach_id = _parse_optional_int(coach_id_raw)
+        if coach_id_raw and coach_id is None:
+            _flash_invalid("Treinador selecionado é inválido para edição.")
+            return redirect(url_for("coaches_page"))
         name = request.form.get("name", "").strip()
         role = request.form.get("role", "").strip()
         license_level = request.form.get("license_level", "").strip() or None
@@ -227,18 +331,49 @@ def create_app() -> Flask:
             _flash_invalid("Nome e função são obrigatórios.")
             return redirect(url_for("coaches_page"))
         service = get_service()
-        service.add_coach(
-            name=name,
-            role=role,
-            license_level=license_level,
-            birthdate=birthdate,
-            contact=contact,
-        )
-        flash("Treinador registado com sucesso!", "success")
+        if coach_id is None:
+            service.add_coach(
+                name=name,
+                role=role,
+                license_level=license_level,
+                birthdate=birthdate,
+                contact=contact,
+            )
+            flash("Treinador gravado com sucesso!", "success")
+        else:
+            try:
+                service.update_coach(
+                    coach_id,
+                    name=name,
+                    role=role,
+                    license_level=license_level,
+                    birthdate=birthdate,
+                    contact=contact,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("coaches_page", edit=coach_id))
+            flash("Treinador atualizado com sucesso!", "success")
+        return redirect(url_for("coaches_page"))
+
+    @app.post("/coaches/<int:coach_id>/delete")
+    def delete_coach(coach_id: int):
+        service = get_service()
+        try:
+            service.remove_coach(coach_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Treinador eliminado.", "success")
         return redirect(url_for("coaches_page"))
 
     @app.post("/physios")
     def add_physio():
+        physio_id_raw = request.form.get("physio_id")
+        physio_id = _parse_optional_int(physio_id_raw)
+        if physio_id_raw and physio_id is None:
+            _flash_invalid("Profissional selecionado é inválido para edição.")
+            return redirect(url_for("physios_page"))
         name = request.form.get("name", "").strip()
         specialization = request.form.get("specialization", "").strip() or None
         contact = request.form.get("contact", "").strip() or None
@@ -250,51 +385,104 @@ def create_app() -> Flask:
             _flash_invalid("O nome do profissional é obrigatório.")
             return redirect(url_for("physios_page"))
         service = get_service()
-        service.add_physiotherapist(
-            name=name,
-            specialization=specialization,
-            birthdate=birthdate,
-            contact=contact,
-        )
-        flash("Profissional registado com sucesso!", "success")
+        if physio_id is None:
+            service.add_physiotherapist(
+                name=name,
+                specialization=specialization,
+                birthdate=birthdate,
+                contact=contact,
+            )
+            flash("Profissional gravado com sucesso!", "success")
+        else:
+            try:
+                service.update_physiotherapist(
+                    physio_id,
+                    name=name,
+                    specialization=specialization,
+                    birthdate=birthdate,
+                    contact=contact,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("physios_page", edit=physio_id))
+            flash("Profissional atualizado com sucesso!", "success")
+        return redirect(url_for("physios_page"))
+
+    @app.post("/physios/<int:physio_id>/delete")
+    def delete_physio(physio_id: int):
+        service = get_service()
+        try:
+            service.remove_physiotherapist(physio_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Profissional eliminado.", "success")
         return redirect(url_for("physios_page"))
 
     @app.post("/youth-teams")
     def add_youth_team():
+        team_id_raw = request.form.get("team_id")
+        team_id = _parse_optional_int(team_id_raw)
+        if team_id_raw and team_id is None:
+            _flash_invalid("Equipa selecionada é inválida para edição.")
+            return redirect(url_for("youth_page"))
         name = request.form.get("name", "").strip()
         age_group = request.form.get("age_group", "").strip()
-        coach_id_raw = request.form.get("coach_id", "").strip()
-        coach_id = None
-        if coach_id_raw:
-            try:
-                coach_id = int(coach_id_raw)
-            except ValueError:
-                _flash_invalid("ID do treinador inválido.")
-                return redirect(url_for("youth_page"))
+        coach_id_raw = request.form.get("coach_id", "")
+        coach_id = _parse_optional_int(coach_id_raw)
+        if coach_id_raw and coach_id is None:
+            _flash_invalid("ID do treinador inválido.")
+            return redirect(url_for("youth_page"))
         if not name or not age_group:
             _flash_invalid("Nome e escalão da equipa são obrigatórios.")
             return redirect(url_for("youth_page"))
         service = get_service()
-        service.add_youth_team(
-            name=name,
-            age_group=age_group,
-            coach_id=coach_id,
-        )
-        flash("Equipa de formação criada!", "success")
+        if team_id is None:
+            service.add_youth_team(
+                name=name,
+                age_group=age_group,
+                coach_id=coach_id,
+            )
+            flash("Equipa de formação gravada!", "success")
+        else:
+            try:
+                service.update_youth_team(
+                    team_id,
+                    name=name,
+                    age_group=age_group,
+                    coach_id=coach_id,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("youth_page", edit=team_id))
+            flash("Equipa de formação atualizada!", "success")
+        return redirect(url_for("youth_page"))
+
+    @app.post("/youth-teams/<int:team_id>/delete")
+    def delete_youth_team(team_id: int):
+        service = get_service()
+        try:
+            service.remove_youth_team(team_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Equipa removida.", "success")
         return redirect(url_for("youth_page"))
 
     @app.post("/members")
     def add_member():
+        member_id_raw = request.form.get("member_id")
+        member_id = _parse_optional_int(member_id_raw)
+        if member_id_raw and member_id is None:
+            _flash_invalid("Sócio selecionado é inválido para edição.")
+            return redirect(url_for("members_page"))
         name = request.form.get("name", "").strip()
         membership_type = request.form.get("membership_type", "").strip()
         membership_type_id_raw = request.form.get("membership_type_id", "").strip()
-        membership_type_id = None
-        if membership_type_id_raw:
-            try:
-                membership_type_id = int(membership_type_id_raw)
-            except ValueError:
-                _flash_invalid("Tipo de sócio selecionado é inválido.")
-                return redirect(url_for("members_page"))
+        membership_type_id = _parse_optional_int(membership_type_id_raw)
+        if membership_type_id_raw and membership_type_id is None:
+            _flash_invalid("Tipo de sócio selecionado é inválido.")
+            return redirect(url_for("members_page"))
         contact = request.form.get("contact", "").strip() or None
         dues_paid_until = request.form.get("dues_paid_until", "").strip() or None
         ok_birthdate, birthdate = _handle_date("birthdate")
@@ -302,41 +490,116 @@ def create_app() -> Flask:
             _flash_invalid("Data de nascimento inválida para o sócio.")
             return redirect(url_for("members_page"))
         dues_paid = request.form.get("dues_paid") == "on"
+        member_number_raw = request.form.get("member_number", "").strip()
+        member_number = None
+        if member_number_raw:
+            try:
+                member_number = int(member_number_raw)
+            except ValueError:
+                _flash_invalid("Número de sócio inválido.")
+                return redirect(url_for("members_page"))
         if not name:
             _flash_invalid("O nome do sócio é obrigatório.")
             return redirect(url_for("members_page"))
-        if not membership_type_id and not membership_type:
+        if member_id is None and not membership_type_id and not membership_type:
             _flash_invalid("Escolha um tipo de sócio ou indique um novo tipo de quota.")
             return redirect(url_for("members_page"))
         service = get_service()
         try:
-            service.add_member(
-                name=name,
-                membership_type=membership_type,
-                dues_paid=dues_paid,
-                contact=contact,
-                birthdate=birthdate,
-                membership_type_id=membership_type_id,
-                dues_paid_until=dues_paid_until,
-            )
+            if member_id is None:
+                service.add_member(
+                    name=name,
+                    membership_type=membership_type,
+                    dues_paid=dues_paid,
+                    contact=contact,
+                    birthdate=birthdate,
+                    membership_type_id=membership_type_id,
+                    dues_paid_until=dues_paid_until,
+                    member_number=member_number,
+                )
+                flash("Sócio gravado com sucesso!", "success")
+            else:
+                update_kwargs = dict(
+                    name=name,
+                    dues_paid=dues_paid,
+                    dues_paid_until=dues_paid_until,
+                    contact=contact,
+                    birthdate=birthdate,
+                    member_number=member_number,
+                )
+                if membership_type_id is not None:
+                    type_info = service.get_membership_type(membership_type_id)
+                    if type_info is None:
+                        raise ValueError("Tipo de sócio não existe.")
+                    update_kwargs["membership_type_id"] = membership_type_id
+                    update_kwargs["membership_type"] = type_info.name
+                elif membership_type:
+                    update_kwargs["membership_type"] = membership_type
+                service.update_member(
+                    member_id,
+                    **update_kwargs,
+                )
+                flash("Sócio atualizado com sucesso!", "success")
         except ValueError as exc:
             _flash_invalid(str(exc))
-            return redirect(url_for("members_page"))
-        flash("Sócio registado com sucesso!", "success")
+            target = url_for("members_page")
+            if member_id is not None:
+                target = url_for("members_page", edit_member=member_id)
+            return redirect(target)
+        return redirect(url_for("members_page"))
+
+    @app.post("/members/<int:member_id>/delete")
+    def delete_member(member_id: int):
+        service = get_service()
+        try:
+            service.remove_member(member_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Sócio eliminado.", "success")
         return redirect(url_for("members_page"))
 
     @app.post("/membership-types")
     def create_membership_type():
+        type_id_raw = request.form.get("type_id")
+        type_id = _parse_optional_int(type_id_raw)
+        if type_id_raw and type_id is None:
+            _flash_invalid("Tipo de sócio selecionado é inválido para edição.")
+            return redirect(url_for("members_page"))
         name = request.form.get("name", "").strip()
         frequency = request.form.get("frequency", "").strip() or "Mensal"
         description = request.form.get("description", "").strip() or None
         amount = _parse_amount("amount")
         if not name or amount is None or amount <= 0:
             _flash_invalid("Indique o nome e o valor da quota para o tipo de sócio.")
-            return redirect(url_for("members_page"))
+            target = url_for("members_page")
+            if type_id is not None:
+                target = url_for("members_page", edit_type=type_id)
+            return redirect(target)
         service = get_service()
-        service.add_membership_type(name=name, amount=amount, frequency=frequency, description=description)
-        flash("Tipo de sócio criado!", "success")
+        if type_id is None:
+            service.add_membership_type(name=name, amount=amount, frequency=frequency, description=description)
+            flash("Tipo de sócio gravado!", "success")
+        else:
+            service.update_membership_type(
+                type_id,
+                name=name,
+                amount=amount,
+                frequency=frequency,
+                description=description,
+            )
+            flash("Tipo de sócio atualizado!", "success")
+        return redirect(url_for("members_page"))
+
+    @app.post("/membership-types/<int:type_id>/delete")
+    def delete_membership_type(type_id: int):
+        service = get_service()
+        try:
+            service.remove_membership_type(type_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Tipo de sócio eliminado.", "success")
         return redirect(url_for("members_page"))
 
     @app.post("/membership-payments")
@@ -387,6 +650,17 @@ def create_app() -> Flask:
         flash("Pagamento de quotas registado!", "success")
         return redirect(url_for("members_page"))
 
+    @app.post("/membership-payments/<int:payment_id>/delete")
+    def delete_membership_payment(payment_id: int):
+        service = get_service()
+        try:
+            service.remove_membership_payment(payment_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Pagamento removido.", "success")
+        return redirect(url_for("members_page"))
+
     def _parse_amount(field: str) -> float | None:
         raw = request.form.get(field, "").strip()
         if not raw:
@@ -405,6 +679,11 @@ def create_app() -> Flask:
 
     @app.post("/finance/revenue")
     def add_revenue():
+        revenue_id_raw = request.form.get("revenue_id")
+        revenue_id = _parse_optional_int(revenue_id_raw)
+        if revenue_id_raw and revenue_id is None:
+            _flash_invalid("Registo de receita inválido para edição.")
+            return redirect(url_for("finances_revenue_page"))
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "").strip()
         source = request.form.get("source", "").strip() or None
@@ -420,18 +699,49 @@ def create_app() -> Flask:
             _flash_invalid("Descrição e categoria são obrigatórias.")
             return redirect(url_for("finances_revenue_page"))
         service = get_service()
-        service.add_revenue(
-            description=description,
-            amount=amount,
-            category=category,
-            record_date=record_date,
-            source=source,
-        )
-        flash("Receita registada com sucesso!", "success")
+        if revenue_id is None:
+            service.add_revenue(
+                description=description,
+                amount=amount,
+                category=category,
+                record_date=record_date,
+                source=source,
+            )
+            flash("Receita gravada com sucesso!", "success")
+        else:
+            try:
+                service.update_revenue(
+                    revenue_id,
+                    description=description,
+                    amount=amount,
+                    category=category,
+                    record_date=record_date,
+                    source=source,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("finances_revenue_page", edit=revenue_id))
+            flash("Receita atualizada com sucesso!", "success")
+        return redirect(url_for("finances_revenue_page"))
+
+    @app.post("/finance/revenue/<int:revenue_id>/delete")
+    def delete_revenue(revenue_id: int):
+        service = get_service()
+        try:
+            service.remove_revenue(revenue_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Receita eliminada.", "success")
         return redirect(url_for("finances_revenue_page"))
 
     @app.post("/finance/expense")
     def add_expense():
+        expense_id_raw = request.form.get("expense_id")
+        expense_id = _parse_optional_int(expense_id_raw)
+        if expense_id_raw and expense_id is None:
+            _flash_invalid("Registo de despesa inválido para edição.")
+            return redirect(url_for("finances_expense_page"))
         description = request.form.get("description", "").strip()
         category = request.form.get("category", "").strip()
         vendor = request.form.get("vendor", "").strip() or None
@@ -447,14 +757,40 @@ def create_app() -> Flask:
             _flash_invalid("Descrição e categoria são obrigatórias.")
             return redirect(url_for("finances_expense_page"))
         service = get_service()
-        service.add_expense(
-            description=description,
-            amount=amount,
-            category=category,
-            record_date=record_date,
-            vendor=vendor,
-        )
-        flash("Despesa registada com sucesso!", "success")
+        if expense_id is None:
+            service.add_expense(
+                description=description,
+                amount=amount,
+                category=category,
+                record_date=record_date,
+                vendor=vendor,
+            )
+            flash("Despesa gravada com sucesso!", "success")
+        else:
+            try:
+                service.update_expense(
+                    expense_id,
+                    description=description,
+                    amount=amount,
+                    category=category,
+                    record_date=record_date,
+                    vendor=vendor,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(url_for("finances_expense_page", edit=expense_id))
+            flash("Despesa atualizada com sucesso!", "success")
+        return redirect(url_for("finances_expense_page"))
+
+    @app.post("/finance/expense/<int:expense_id>/delete")
+    def delete_expense(expense_id: int):
+        service = get_service()
+        try:
+            service.remove_expense(expense_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Despesa eliminada.", "success")
         return redirect(url_for("finances_expense_page"))
 
     return app

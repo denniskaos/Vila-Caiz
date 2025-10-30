@@ -6,24 +6,32 @@
 </section>
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-coaches">
-    <h3 id="form-coaches">Adicionar Treinador</h3>
+    <h3 id="form-coaches">{{ 'Editar Treinador' if editing_coach else 'Adicionar Treinador' }}</h3>
     <form method="post" action="{{ url_for('add_coach') }}">
+      {% if editing_coach %}
+        <input type="hidden" name="coach_id" value="{{ editing_coach.id }}" />
+      {% endif %}
       <label for="coach-name">Nome</label>
-      <input id="coach-name" name="name" type="text" required />
+      <input id="coach-name" name="name" type="text" value="{{ editing_coach.name if editing_coach else '' }}" required />
 
       <label for="coach-birthdate">Data de Nascimento</label>
-      <input id="coach-birthdate" name="birthdate" type="date" required />
+      <input id="coach-birthdate" name="birthdate" type="date" value="{{ editing_coach.birthdate.isoformat() if editing_coach and editing_coach.birthdate else '' }}" required />
 
       <label for="coach-role">Função</label>
-      <input id="coach-role" name="role" type="text" placeholder="Ex.: Treinador Principal" required />
+      <input id="coach-role" name="role" type="text" placeholder="Ex.: Treinador Principal" value="{{ editing_coach.role if editing_coach else '' }}" required />
 
       <label for="coach-license">Licença</label>
-      <input id="coach-license" name="license_level" type="text" placeholder="UEFA B" />
+      <input id="coach-license" name="license_level" type="text" placeholder="UEFA B" value="{{ editing_coach.license_level if editing_coach else '' }}" />
 
       <label for="coach-contact">Contacto</label>
-      <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" />
+      <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_coach.contact if editing_coach else '' }}" />
 
-      <button type="submit">Registar Treinador</button>
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_coach else 'Gravar' }}</button>
+        {% if editing_coach %}
+          <a href="{{ url_for('coaches_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
     </form>
   </article>
 
@@ -38,6 +46,7 @@
             <th>Licença</th>
             <th>Nascimento</th>
             <th>Contacto</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -48,6 +57,14 @@
               <td>{{ coach.license_level or '-' }}</td>
               <td>{{ coach.birthdate or '-' }}</td>
               <td>{{ coach.contact or '-' }}</td>
+              <td>
+                <div class="actions">
+                  <a href="{{ url_for('coaches_page', edit=coach.id) }}" class="button secondary">Editar</a>
+                  <form method="post" action="{{ url_for('delete_coach', coach_id=coach.id) }}" class="inline-form">
+                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste treinador?');">Eliminar</button>
+                  </form>
+                </div>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

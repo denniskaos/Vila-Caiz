@@ -6,23 +6,32 @@
 </section>
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-youth">
-    <h3 id="form-youth">Criar Equipa</h3>
+    <h3 id="form-youth">{{ 'Editar Equipa' if editing_team else 'Criar Equipa' }}</h3>
     <form method="post" action="{{ url_for('add_youth_team') }}">
+      {% if editing_team %}
+        <input type="hidden" name="team_id" value="{{ editing_team.id }}" />
+      {% endif %}
       <label for="youth-name">Nome da Equipa</label>
-      <input id="youth-name" name="name" type="text" required />
+      <input id="youth-name" name="name" type="text" value="{{ editing_team.name if editing_team else '' }}" required />
 
       <label for="youth-age">Escalão</label>
-      <input id="youth-age" name="age_group" type="text" placeholder="Ex.: Sub-17" required />
+      <input id="youth-age" name="age_group" type="text" placeholder="Ex.: Sub-17" value="{{ editing_team.age_group if editing_team else '' }}" required />
 
       <label for="youth-coach">Treinador Responsável</label>
       <select id="youth-coach" name="coach_id">
         <option value="">Selecionar</option>
+        {% set selected_coach = editing_team.coach_id if editing_team else '' %}
         {% for coach in coaches %}
-          <option value="{{ coach.id }}">{{ coach.name }}</option>
+          <option value="{{ coach.id }}"{% if coach.id == selected_coach %} selected{% endif %}>{{ coach.name }}</option>
         {% endfor %}
       </select>
 
-      <button type="submit">Criar Equipa</button>
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_team else 'Gravar' }}</button>
+        {% if editing_team %}
+          <a href="{{ url_for('youth_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
     </form>
   </article>
 
@@ -36,6 +45,7 @@
             <th>Escalão</th>
             <th>Treinador</th>
             <th>Atletas</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -45,6 +55,14 @@
               <td>{{ team.age_group }}</td>
               <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
               <td>{{ team.player_ids | length }}</td>
+              <td>
+                <div class="actions">
+                  <a href="{{ url_for('youth_page', edit=team.id) }}" class="button secondary">Editar</a>
+                  <form method="post" action="{{ url_for('delete_youth_team', team_id=team.id) }}" class="inline-form">
+                    <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta equipa?');">Eliminar</button>
+                  </form>
+                </div>
+              </td>
             </tr>
           {% endfor %}
         </tbody>

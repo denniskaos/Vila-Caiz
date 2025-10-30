@@ -25,15 +25,10 @@ Execute os comandos a partir da raiz do projeto:
 python -m app --help
 ```
 
-Também é possível iniciar um modo interativo simples com:
-
-```bash
-python app.py
-```
-
-No modo interativo escreva os mesmos comandos que usaria na linha de comandos
-(`players list`, `finance summary`, etc.). Utilize `help` para ver a ajuda e
-`exit`/`quit` para terminar.
+Se não indicar subcomandos (`python -m app`) será aberto um modo interativo
+para a consola, no qual pode escrever diretamente os comandos (`players list`,
+`finance summary`, etc.). Utilize `help` para ver a ajuda e `exit`/`quit` para
+terminar.
 
 ### Interface web
 
@@ -41,12 +36,14 @@ Instale as dependências e arranque o servidor Flask com:
 
 ```bash
 pip install -r requirements.txt
-python -m app.web --port 8000
+python app.py --port 8000
 ```
 
-Depois aceda a `http://localhost:8000` para utilizar o painel visual com
-formulários para todas as secções do clube (plantel, equipa técnica, saúde,
-formação, sócios e finanças).
+Também pode usar diretamente `python app.py` (sem argumentos) para arrancar o
+painel na porta predefinida (`5000`). Depois aceda a `http://localhost:8000`
+ou `http://localhost:5000`, consoante a porta escolhida, para utilizar o painel
+visual com formulários para todas as secções do clube (plantel, equipa técnica,
+saúde, formação, sócios e finanças).
 
 ### Exemplo de fluxo
 

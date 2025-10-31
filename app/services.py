@@ -14,6 +14,7 @@ SEASONAL_COLLECTIONS = {
     "players",
     "coaches",
     "physiotherapists",
+    "match_plans",
     "youth_teams",
     "members",
     "membership_types",
@@ -277,6 +278,25 @@ class ClubService:
         except (TypeError, ValueError):
             return None
 
+    def _normalize_player_selection(
+        self, player_ids: Iterable[Any], *, exclude: Iterable[int] | None = None
+    ) -> List[int]:
+        valid_players = {player.id for player in self.list_players()}
+        exclude_set = set(exclude or [])
+        normalized: List[int] = []
+        seen: set[int] = set()
+        for raw in player_ids:
+            player_id = self._coerce_int(raw)
+            if player_id is None:
+                continue
+            if player_id in exclude_set or player_id in seen:
+                continue
+            if player_id not in valid_players:
+                continue
+            normalized.append(player_id)
+            seen.add(player_id)
+        return normalized
+
     def _sync_youth_revenue(
         self,
         *,
@@ -521,6 +541,20 @@ class ClubService:
                 self.remove_revenue(revenue_id)
             except ValueError:
                 pass
+        plans = self._data.setdefault("match_plans", [])
+        for plan in plans:
+            starters = [
+                pid
+                for pid in plan.get("starters", [])
+                if self._coerce_int(pid) != player_id
+            ]
+            substitutes = [
+                pid
+                for pid in plan.get("substitutes", [])
+                if self._coerce_int(pid) != player_id
+            ]
+            plan["starters"] = starters
+            plan["substitutes"] = substitutes
         self._remove_entity("players", player_id)
 
     # Coaches ---------------------------------------------------------
@@ -580,6 +614,136 @@ class ClubService:
 
     def remove_coach(self, coach_id: int) -> None:
         self._remove_entity("coaches", coach_id)
+
+    # Match planning --------------------------------------------------
+    def list_match_plans(self) -> List[models.MatchPlan]:
+        plans = [
+            storage.instantiate(models.MatchPlan, item)
+            for item in self._list_entities("match_plans")
+        ]
+        return sorted(
+            plans,
+            key=lambda plan: (plan.match_date, plan.kickoff_time or "", plan.id),
+        )
+
+    def get_match_plan(self, plan_id: int) -> models.MatchPlan:
+        record = self._find_entity("match_plans", plan_id)
+        if record is None:
+            raise ValueError(f"Plano de jogo com id {plan_id} não encontrado")
+        return storage.instantiate(models.MatchPlan, record)
+
+    def create_match_plan(
+        self,
+        *,
+        squad: str,
+        match_date: date,
+        kickoff_time: Optional[str],
+        venue: Optional[str],
+        opponent: str,
+        competition: Optional[str],
+        notes: Optional[str],
+        starters: Iterable[Any],
+        substitutes: Iterable[Any],
+    ) -> models.MatchPlan:
+        clean_squad = squad.strip() if isinstance(squad, str) else str(squad)
+        if not clean_squad:
+            clean_squad = "senior"
+        starter_ids = self._normalize_player_selection(starters)
+        substitute_ids = self._normalize_player_selection(substitutes, exclude=starter_ids)
+        kickoff_clean = kickoff_time.strip() if isinstance(kickoff_time, str) and kickoff_time.strip() else None
+        venue_clean = venue.strip() if isinstance(venue, str) and venue.strip() else None
+        opponent_clean = opponent.strip() if isinstance(opponent, str) else str(opponent)
+        competition_clean = (
+            competition.strip() if isinstance(competition, str) and competition.strip() else None
+        )
+        notes_clean = notes.strip() if isinstance(notes, str) and notes.strip() else None
+        if kickoff_clean is None:
+            raise ValueError("Indique uma hora válida para o jogo.")
+        if venue_clean is None:
+            raise ValueError("Indique um local válido para o jogo.")
+        if not opponent_clean:
+            raise ValueError("Indique um adversário válido para o plano de jogo.")
+
+        payload = storage.serialize_entity(
+            models.MatchPlan(
+                id=0,
+                squad=clean_squad,
+                match_date=match_date,
+                kickoff_time=kickoff_clean,
+                venue=venue_clean,
+                opponent=opponent_clean,
+                competition=competition_clean,
+                notes=notes_clean,
+                starters=starter_ids,
+                substitutes=substitute_ids,
+                season_id=self.active_season_id,
+            )
+        )
+        stored = self._create_entity("match_plans", payload)
+        return storage.instantiate(models.MatchPlan, stored)
+
+    def update_match_plan(
+        self,
+        plan_id: int,
+        *,
+        squad: Optional[str] = None,
+        match_date: Optional[date] = None,
+        kickoff_time: object = UNSET,
+        venue: object = UNSET,
+        opponent: Optional[str] = None,
+        competition: object = UNSET,
+        notes: object = UNSET,
+        starters: Optional[Iterable[Any]] = None,
+        substitutes: Optional[Iterable[Any]] = None,
+    ) -> models.MatchPlan:
+        record = self._find_entity("match_plans", plan_id)
+        if record is None:
+            raise ValueError(f"Plano de jogo com id {plan_id} não encontrado")
+
+        updates: Dict[str, Any] = {}
+        if squad is not None:
+            clean_squad = squad.strip() if isinstance(squad, str) else str(squad)
+            updates["squad"] = clean_squad or "senior"
+        if match_date is not None:
+            updates["match_date"] = match_date.isoformat()
+        if kickoff_time is not UNSET:
+            kickoff_clean = kickoff_time.strip() if isinstance(kickoff_time, str) and kickoff_time.strip() else None
+            if kickoff_clean is None:
+                raise ValueError("Indique uma hora válida para o jogo.")
+            updates["kickoff_time"] = kickoff_clean
+        if venue is not UNSET:
+            venue_clean = venue.strip() if isinstance(venue, str) and venue.strip() else None
+            if venue_clean is None:
+                raise ValueError("Indique um local válido para o jogo.")
+            updates["venue"] = venue_clean
+        if opponent is not None:
+            opponent_clean = opponent.strip() if isinstance(opponent, str) else str(opponent)
+            if not opponent_clean:
+                raise ValueError("Indique um adversário válido para o plano de jogo.")
+            updates["opponent"] = opponent_clean
+        if competition is not UNSET:
+            updates["competition"] = competition.strip() if competition else None
+        if notes is not UNSET:
+            updates["notes"] = notes.strip() if notes else None
+        if starters is not None:
+            starter_ids = self._normalize_player_selection(starters)
+            updates["starters"] = starter_ids
+            if substitutes is None:
+                current_substitutes = record.get("substitutes", [])
+                substitutes = current_substitutes
+        if substitutes is not None:
+            exclude = updates.get("starters")
+            if exclude is None:
+                exclude = [self._coerce_int(pid) for pid in record.get("starters", [])]
+            exclude_ids = [pid for pid in exclude if pid is not None]
+            substitute_ids = self._normalize_player_selection(substitutes, exclude=exclude_ids)
+            updates["substitutes"] = substitute_ids
+
+        updated = self._update_entity("match_plans", plan_id, updates)
+        return storage.instantiate(models.MatchPlan, updated)
+
+    def remove_match_plan(self, plan_id: int) -> None:
+        self._remove_entity("match_plans", plan_id)
 
     # Physiotherapists ------------------------------------------------
     def add_physiotherapist(

@@ -621,6 +621,56 @@
         margin-top: 0.8rem;
       }
 
+      .dual-selects {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        align-items: start;
+      }
+
+      .dual-selects select {
+        min-height: 220px;
+      }
+
+      .dual-selects .select-note {
+        margin-top: 0.35rem;
+        font-size: 0.75rem;
+        color: rgba(24, 24, 24, 0.65);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .dual-selects .select-note {
+          color: rgba(245, 196, 0, 0.7);
+        }
+      }
+
+      .inline-filter {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+        margin-top: 0.6rem;
+      }
+
+      .inline-filter label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        color: rgba(24, 24, 24, 0.65);
+      }
+
+      .inline-filter select {
+        width: auto;
+        min-width: 180px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .inline-filter label {
+          color: rgba(245, 196, 0, 0.75);
+        }
+      }
+
       @media (max-width: 600px) {
         .form-actions {
           flex-direction: column;
@@ -676,6 +726,33 @@
       @media (prefers-color-scheme: dark) {
         .card ul li {
           border-bottom-color: rgba(245, 196, 0, 0.3);
+        }
+      }
+
+      .list-tags {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .list-tags li {
+        background: rgba(245, 196, 0, 0.18);
+        color: var(--primary-dark);
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .list-tags li {
+          background: rgba(245, 196, 0, 0.32);
+          color: #101010;
         }
       }
 
@@ -1046,6 +1123,7 @@
             <div class="submenu-links">
               <a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
               <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>
+              <a href="{{ url_for('match_plans_page') }}" class="{{ 'active' if active_page == 'match-plans' else '' }}"{% if active_page == 'match-plans' %} aria-current="page"{% endif %}>Planificação de Jogo</a>
               <a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a>
               <a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a>
             </div>

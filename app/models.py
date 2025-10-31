@@ -49,6 +49,26 @@ class Physiotherapist(Person):
 
 
 @dataclass
+class MatchPlan:
+    id: int
+    squad: str
+    match_date: date
+    kickoff_time: Optional[str] = None
+    venue: Optional[str] = None
+    opponent: str = ""
+    competition: Optional[str] = None
+    notes: Optional[str] = None
+    starters: List[int] = field(default_factory=list)
+    substitutes: List[int] = field(default_factory=list)
+    season_id: Optional[int] = None
+
+    def to_dict(self) -> Dict:
+        data = asdict(self)
+        data["match_date"] = self.match_date.isoformat()
+        return data
+
+
+@dataclass
 class YouthTeam:
     id: int
     name: str

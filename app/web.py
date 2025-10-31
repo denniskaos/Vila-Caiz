@@ -252,6 +252,175 @@ def create_app() -> Flask:
             editing_coach=editing_coach,
         )
 
+    @app.get("/planificacao-equipa")
+    def match_plans_page():
+        service = get_service()
+        players = service.list_players()
+        plans = service.list_match_plans()
+        squad_options = sorted(
+            {player.squad or "senior" for player in players}
+            | {plan.squad or "senior" for plan in plans}
+        ) or ["senior"]
+        selected_squad = request.args.get("squad", "").strip()
+        if not selected_squad:
+            selected_squad = squad_options[0]
+        elif selected_squad not in squad_options:
+            selected_squad = squad_options[0]
+        editing_plan = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            try:
+                editing_plan = service.get_match_plan(edit_id)
+                selected_squad = editing_plan.squad or selected_squad
+            except ValueError:
+                _flash_invalid("Plano de jogo selecionado não existe.")
+        player_lookup = {player.id: player for player in players}
+        available_players = [
+            player for player in players if (player.squad or "senior") == selected_squad
+        ]
+        if editing_plan is not None:
+            referenced = set(editing_plan.starters + editing_plan.substitutes)
+            for player_id in referenced:
+                player = player_lookup.get(player_id)
+                if player and player not in available_players:
+                    available_players.append(player)
+        available_players.sort(key=lambda player: (player.squad or "", player.name))
+        squad_plans = [
+            plan for plan in plans if (plan.squad or "senior") == selected_squad
+        ]
+        return render_template(
+            "match_plans.html",
+            title="Planificação de Jogo",
+            active_group="plantel",
+            active_page="match-plans",
+            squads=squad_options,
+            selected_squad=selected_squad,
+            players=available_players,
+            plans=squad_plans,
+            editing_plan=editing_plan,
+            player_lookup=player_lookup,
+        )
+
+    @app.post("/planificacao-equipa")
+    def save_match_plan():
+        plan_id = _parse_optional_int(request.form.get("plan_id"))
+        squad = request.form.get("squad", "").strip()
+        if not squad:
+            squad = "senior"
+
+        def _redirect_back(include_edit: bool = False):
+            params: Dict[str, str] = {}
+            if squad:
+                params["squad"] = squad
+            if include_edit and plan_id is not None:
+                params["edit"] = str(plan_id)
+            return redirect(url_for("match_plans_page", **params))
+
+        ok_date, match_date = _handle_date("match_date")
+        if not ok_date or match_date is None:
+            _flash_invalid("Indique uma data válida para o jogo.")
+            return _redirect_back(include_edit=True)
+        kickoff_time = request.form.get("kickoff_time", "").strip()
+        if not kickoff_time:
+            _flash_invalid("Indique a hora do jogo.")
+            return _redirect_back(include_edit=True)
+        opponent = request.form.get("opponent", "").strip()
+        if not opponent:
+            _flash_invalid("Indique o adversário do jogo.")
+            return _redirect_back(include_edit=True)
+        venue = request.form.get("venue", "").strip()
+        if not venue:
+            _flash_invalid("Indique o local do jogo.")
+            return _redirect_back(include_edit=True)
+        competition = request.form.get("competition", "").strip()
+        notes = request.form.get("notes", "").strip()
+        starters = request.form.getlist("starters")
+        substitutes = request.form.getlist("substitutes")
+
+        service = get_service()
+        try:
+            if plan_id is None:
+                plan = service.create_match_plan(
+                    squad=squad,
+                    match_date=match_date,
+                    kickoff_time=kickoff_time,
+                    venue=venue,
+                    opponent=opponent,
+                    competition=competition or None,
+                    notes=notes or None,
+                    starters=starters,
+                    substitutes=substitutes,
+                )
+                flash("Plano de jogo registado com sucesso!", "success")
+            else:
+                plan = service.update_match_plan(
+                    plan_id,
+                    squad=squad,
+                    match_date=match_date,
+                    kickoff_time=kickoff_time,
+                    venue=venue,
+                    opponent=opponent,
+                    competition=competition or None,
+                    notes=notes or None,
+                    starters=starters,
+                    substitutes=substitutes,
+                )
+                flash("Plano de jogo atualizado com sucesso!", "success")
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            return _redirect_back(include_edit=True)
+
+        redirect_params: Dict[str, str] = {}
+        target_squad = plan.squad or squad
+        if target_squad:
+            redirect_params["squad"] = target_squad
+        return redirect(url_for("match_plans_page", **redirect_params))
+
+    @app.post("/planificacao-equipa/<int:plan_id>/eliminar")
+    def delete_match_plan(plan_id: int):
+        service = get_service()
+        try:
+            plan = service.get_match_plan(plan_id)
+        except ValueError:
+            _flash_invalid("Plano de jogo não encontrado.")
+            return redirect(url_for("match_plans_page"))
+        try:
+            service.remove_match_plan(plan_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Plano de jogo eliminado.", "success")
+        redirect_params: Dict[str, str] = {}
+        if plan.squad:
+            redirect_params["squad"] = plan.squad
+        return redirect(url_for("match_plans_page", **redirect_params))
+
+    @app.get("/planificacao-equipa/<int:plan_id>/imprimir")
+    def print_match_plan(plan_id: int):
+        service = get_service()
+        try:
+            plan = service.get_match_plan(plan_id)
+        except ValueError:
+            _flash_invalid("Plano de jogo não encontrado.")
+            return redirect(url_for("match_plans_page"))
+        players = service.list_players()
+        player_lookup = {player.id: player for player in players}
+        starters = [player_lookup[pid] for pid in plan.starters if pid in player_lookup]
+        substitutes = [
+            player_lookup[pid]
+            for pid in plan.substitutes
+            if pid in player_lookup
+        ]
+        generated_at = date.today()
+        return render_template(
+            "match_plan_print.html",
+            title=f"Plano de jogo vs {plan.opponent}",
+            plan=plan,
+            starters=starters,
+            substitutes=substitutes,
+            generated_at=generated_at,
+        )
+
     @app.get("/departamento-medico")
     def physios_page():
         service = get_service()

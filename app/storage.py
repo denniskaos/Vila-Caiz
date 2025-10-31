@@ -16,6 +16,7 @@ DEFAULT_STRUCTURE: Dict[str, Any] = {
     "players": [],
     "coaches": [],
     "physiotherapists": [],
+    "match_plans": [],
     "youth_teams": [],
     "members": [],
     "membership_types": [],

@@ -4,6 +4,8 @@ Todas as alterações notáveis deste projeto serão documentadas neste ficheiro
 
 ## [Unreleased]
 ### Adicionado
+- Navegação do plantel dividida por escalão com páginas dedicadas a seniores, juniores e restantes equipas de formação.
+- Formulários com fundo escuro por omissão e novas definições para personalizar as cores dos campos e do texto inserido.
 - Campo "Sócio desde" para registar a data de adesão, visível na gestão e no cartão imprimível.
 - Sistema de autenticação com configuração inicial do administrador, criação manual de utilizadores e atribuição de cargos com salvaguarda do último administrador.
 - Definições de identidade visual para atualizar cores, logótipo e nome do clube diretamente no painel.

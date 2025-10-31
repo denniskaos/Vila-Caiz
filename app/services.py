@@ -17,6 +17,8 @@ DEFAULT_THEME = {
     "dark_color": "#181818",
     "accent_color": "#fef5c7",
     "menu_background": "#050505",
+    "input_background": "#101010",
+    "input_text_color": "#fefefe",
 }
 
 DEFAULT_BRANDING = {

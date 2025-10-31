@@ -1,19 +1,36 @@
 {% extends "base.html" %}
 {% block content %}
 <section class="page-header">
-  <h2>Jogadores</h2>
-  <p>Gestão completa do plantel amarelo e preto.</p>
+  <h2>Jogadores · {{ selected_squad_label }}</h2>
+  <p>Gestão dedicada aos {{ selected_squad_label|lower }} nesta época.</p>
   {% if active_season %}
     <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
   {% endif %}
 </section>
+
+<nav class="squad-nav" aria-label="Escalões do plantel">
+  {% for option in squad_options %}
+    <a
+      href="{{ url_for('players_page', squad_slug=option.slug) }}"
+      class="{{ 'active' if option.slug == selected_squad_slug else '' }}"
+      {% if option.slug == selected_squad_slug %}aria-current="page"{% endif %}
+    >
+      <span class="squad-name">{{ option.label }}</span>
+      <span class="squad-count">{{ option.count }} {{ 'jogador' if option.count == 1 else 'jogadores' }}</span>
+    </a>
+  {% endfor %}
+</nav>
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-jogadores">
-    <h3 id="form-jogadores">{{ 'Editar Jogador' if editing_player else 'Adicionar Jogador' }}</h3>
+    <h3 id="form-jogadores">
+      {{ 'Editar Jogador' if editing_player else 'Adicionar Jogador' }}
+      <small>· {{ selected_squad_label }}</small>
+    </h3>
     <form method="post" action="{{ url_for('add_player') }}" enctype="multipart/form-data">
       {% if editing_player %}
         <input type="hidden" name="player_id" value="{{ editing_player.id }}" />
       {% endif %}
+      <input type="hidden" name="current_slug" value="{{ selected_squad_slug }}" />
       <label for="player-name">Nome</label>
       <input id="player-name" name="name" type="text" value="{{ editing_player.name if editing_player else '' }}" required />
 
@@ -24,13 +41,11 @@
       <input id="player-position" name="position" type="text" placeholder="Ex.: Médio Centro" value="{{ editing_player.position if editing_player else '' }}" required />
 
       <label for="player-squad">Escalão</label>
+      {% set current_squad = form_squad_value %}
       <select id="player-squad" name="squad">
-        {% set current_squad = editing_player.squad if editing_player else 'senior' %}
-        <option value="senior"{% if current_squad == 'senior' %} selected{% endif %}>Seniores</option>
-        <option value="juniores"{% if current_squad == 'juniores' %} selected{% endif %}>Juniores</option>
-        <option value="juvenis"{% if current_squad == 'juvenis' %} selected{% endif %}>Juvenis</option>
-        <option value="iniciados"{% if current_squad == 'iniciados' %} selected{% endif %}>Iniciados</option>
-        <option value="infantis"{% if current_squad == 'infantis' %} selected{% endif %}>Infantis</option>
+        {% for option in squad_options %}
+          <option value="{{ option.value }}"{% if current_squad == option.value %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
       </select>
 
       <label for="player-shirt">Número da Camisola</label>
@@ -98,14 +113,14 @@
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_player else 'Gravar' }}</button>
         {% if editing_player %}
-          <a href="{{ url_for('players_page') }}" class="button secondary">Cancelar</a>
+          <a href="{{ url_for('players_page', squad_slug=selected_squad_slug) }}" class="button secondary">Cancelar</a>
         {% endif %}
       </div>
     </form>
   </article>
 
   <article class="card" aria-live="polite">
-    <h3>Plantel Atual</h3>
+    <h3>Plantel {{ selected_squad_label }}</h3>
     {% if players %}
       <div class="table-wrapper">
         <table aria-label="Lista de jogadores">
@@ -140,7 +155,10 @@
                 <td data-label="ID AF Porto">{{ player.af_porto_id or '-' }}</td>
                 <td data-label="Nome">{{ player.name }}</td>
                 <td data-label="Posição">{{ player.position }}</td>
-                <td data-label="Escalão">{{ player.squad|title }}</td>
+                {% set player_squad_value = player.squad|lower if player.squad else '' %}
+                <td data-label="Escalão">
+                  {{ selected_squad_label if player_squad_value == selected_squad_value else player.squad|title }}
+                </td>
                 {% set youth_squads = ['juniores', 'juvenis', 'iniciados', 'infantis'] %}
                 {% set is_youth = player.squad and player.squad|lower in youth_squads %}
                 <td data-label="Mensalidade">
@@ -187,7 +205,7 @@
                 </td>
                 <td data-label="Ações">
                   <div class="actions">
-                    <a href="{{ url_for('players_page', edit=player.id) }}" class="button secondary">Editar</a>
+                    <a href="{{ url_for('players_page', squad_slug=selected_squad_slug, edit=player.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_player', player_id=player.id) }}" class="inline-form">
                       <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste jogador?');">Eliminar</button>
                     </form>
@@ -199,7 +217,7 @@
         </table>
       </div>
     {% else %}
-      <p class="empty-state">Ainda não existem jogadores registados.</p>
+      <p class="empty-state">Ainda não existem jogadores registados neste escalão.</p>
     {% endif %}
   </article>
 </section>

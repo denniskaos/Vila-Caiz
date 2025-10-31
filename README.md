@@ -5,7 +5,7 @@ Vila-Caiz.
 
 ## Funcionalidades
 
-* Gestão de jogadores, treinadores e fisioterapeutas.
+* Gestão de jogadores por escalão, bem como de treinadores e fisioterapeutas.
 * Registo clínico com diagnósticos, planos de tratamento e disponibilidade dos atletas.
 * Registo de equipas das camadas jovens e associação de jogadores.
 * Gestão de sócios e do estado de quotas.
@@ -47,7 +47,9 @@ Também pode usar diretamente `python app.py` (sem argumentos) para arrancar o
 painel na porta predefinida (`5000`). Depois aceda a `http://localhost:8000`
 ou `http://localhost:5000`, consoante a porta escolhida, para utilizar o painel
 visual com formulários para todas as secções do clube (plantel, equipa técnica,
-tratamentos clínicos, formação, sócios e finanças).
+tratamentos clínicos, formação, sócios e finanças). No menu Plantel & Staff o
+plantel está dividido por páginas dedicadas a Seniores, Juniores e restantes
+escalões para facilitar a gestão.
 
 Para deploys em produção (por exemplo no Render ou em qualquer plataforma que
 espere um servidor WSGI) utilize o Gunicorn apontando para a aplicação Flask
@@ -73,8 +75,8 @@ criar logins adicionais e atribuir o cargo correto a cada pessoa:
 
 Cada perfil visualiza apenas os menus e formulários que lhe dizem respeito.
 Em **Administração → Design do Portal** pode ainda atualizar o nome exibido no
-cabeçalho, carregar um logótipo personalizado e ajustar a paleta de cores sem
-sair da aplicação.
+cabeçalho, carregar um logótipo personalizado e ajustar a paleta de cores —
+incluindo o fundo e o texto dos campos de formulário — sem sair da aplicação.
 
 ### Exemplo de fluxo
 

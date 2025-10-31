@@ -12,6 +12,8 @@
         --primary-dark: {{ theme_settings.dark_color | default('#181818') }};
         --accent: {{ theme_settings.accent_color | default('#fef5c7') }};
         --menu-bg: {{ theme_settings.menu_background | default('#050505') }};
+        --input-bg: {{ theme_settings.input_background | default('#101010') }};
+        --input-text: {{ theme_settings.input_text_color | default('#fefefe') }};
         --surface: rgba(255, 249, 223, 0.9);
         --surface-dark: rgba(30, 30, 30, 0.9);
         --border: rgba(24, 24, 24, 0.15);
@@ -368,6 +370,67 @@
         max-width: 60ch;
       }
 
+      .squad-nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0 0 2rem;
+        padding: 0;
+        list-style: none;
+      }
+
+      .squad-nav a {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+        min-width: 150px;
+        padding: 0.75rem 1rem;
+        border-radius: 14px;
+        border: 1px solid rgba(245, 196, 0, 0.35);
+        background: linear-gradient(160deg, rgba(12, 12, 12, 0.92), rgba(24, 24, 24, 0.6));
+        color: var(--primary);
+        text-decoration: none;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      }
+
+      .squad-nav a:hover,
+      .squad-nav a:focus-visible {
+        transform: translateY(-2px);
+        border-color: var(--primary);
+        box-shadow: 0 16px 32px rgba(0, 0, 0, 0.45);
+        outline: none;
+      }
+
+      .squad-nav a.active {
+        border-color: var(--primary);
+        background: linear-gradient(160deg, rgba(245, 196, 0, 0.24), rgba(12, 12, 12, 0.9));
+        color: var(--accent);
+      }
+
+      .squad-nav .squad-name {
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+      }
+
+      .squad-nav .squad-count {
+        font-size: 0.78rem;
+        color: rgba(255, 240, 185, 0.78);
+      }
+
+      @media (max-width: 720px) {
+        .squad-nav {
+          overflow-x: auto;
+          padding-bottom: 0.5rem;
+        }
+
+        .squad-nav a {
+          flex: 0 0 auto;
+        }
+      }
+
       @media (prefers-color-scheme: dark) {
         .page-header p {
           color: rgba(254, 245, 199, 0.75);
@@ -418,6 +481,21 @@
         border: 1px solid rgba(24, 24, 24, 0.16);
         box-shadow: 0 20px 38px rgba(0, 0, 0, 0.28);
         backdrop-filter: blur(8px);
+      }
+
+      h3 small {
+        font-size: 0.65em;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-left: 0.4rem;
+        color: rgba(24, 24, 24, 0.6);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        h3 small {
+          color: rgba(255, 240, 185, 0.78);
+        }
       }
 
       .auth-wrapper {
@@ -581,38 +659,37 @@
       textarea {
         padding: 0.7rem 0.85rem;
         border-radius: 12px;
-        border: 1px solid rgba(24, 24, 24, 0.22);
+        border: 1px solid rgba(245, 196, 0, 0.35);
         font: inherit;
-        background: rgba(255, 255, 255, 0.95);
-        color: #0f0f0f;
+        background: var(--input-bg);
+        color: var(--input-text);
         width: 100%;
         display: block;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
       }
 
       input:focus,
       select:focus,
       textarea:focus {
-        border-color: rgba(245, 196, 0, 0.75);
+        border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(245, 196, 0, 0.25);
         outline: none;
-        background: rgba(255, 255, 255, 0.99);
+        background: var(--input-bg);
+        color: var(--input-text);
       }
 
-      @media (prefers-color-scheme: dark) {
-        input,
-        select,
-        textarea {
-          background: rgba(12, 12, 12, 0.78);
-          border-color: rgba(245, 196, 0, 0.55);
-          color: #f7f2d4;
-        }
+      input::placeholder,
+      textarea::placeholder {
+        color: var(--input-text);
+        opacity: 0.65;
       }
 
       input[type="file"] {
         padding: 0.45rem 0.85rem;
         cursor: pointer;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--input-bg);
+        color: var(--input-text);
+        border-style: dashed;
       }
 
       input[type="file"]::file-selector-button {
@@ -1742,7 +1819,7 @@
                 <span class="submenu-title">Plantel &amp; Staff</span>
                 <div class="submenu-links">
                   {% if can_access('players') %}
-                    <a href="{{ url_for('players_page') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
+                    <a href="{{ url_for('players_page', squad_slug='seniores') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
                   {% endif %}
                   {% if can_access('coaches') %}
                     <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>

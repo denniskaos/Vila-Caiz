@@ -118,6 +118,71 @@ ENDPOINT_PERMISSIONS = {
 
 PUBLIC_ENDPOINTS = {"login_view", "login_submit", "setup_admin", "static"}
 
+PLAYER_SQUAD_OPTIONS = [
+    {"slug": "seniores", "value": "senior", "label": "Seniores"},
+    {"slug": "juniores", "value": "juniores", "label": "Juniores"},
+    {"slug": "juvenis", "value": "juvenis", "label": "Juvenis"},
+    {"slug": "iniciados", "value": "iniciados", "label": "Iniciados"},
+    {"slug": "infantis", "value": "infantis", "label": "Infantis"},
+]
+
+DEFAULT_PLAYER_SQUAD_SLUG = PLAYER_SQUAD_OPTIONS[0]["slug"]
+PLAYER_SQUAD_LOOKUP = {option["slug"]: option for option in PLAYER_SQUAD_OPTIONS}
+PLAYER_SQUAD_VALUE_TO_SLUG = {option["value"]: option["slug"] for option in PLAYER_SQUAD_OPTIONS}
+PLAYER_SQUAD_ALIAS = {
+    option["slug"]: option["slug"]
+    for option in PLAYER_SQUAD_OPTIONS
+}
+PLAYER_SQUAD_ALIAS.update(
+    {
+        option["value"]: option["slug"]
+        for option in PLAYER_SQUAD_OPTIONS
+    }
+)
+PLAYER_SQUAD_ALIAS.update(
+    {
+        "senior": "seniores",
+        "junior": "juniores",
+        "juvenil": "juvenis",
+        "iniciado": "iniciados",
+        "infantil": "infantis",
+    }
+)
+
+
+def _strip_accents(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    return "".join(char for char in normalized if not unicodedata.combining(char))
+
+
+def _normalize_player_slug(slug: Optional[str]) -> Optional[str]:
+    if slug is None:
+        return None
+    cleaned = _strip_accents(str(slug)).strip().lower()
+    return PLAYER_SQUAD_ALIAS.get(cleaned)
+
+
+def _canonical_player_squad(value: Optional[str]) -> str:
+    if value is None:
+        return PLAYER_SQUAD_OPTIONS[0]["value"]
+    cleaned = _strip_accents(str(value)).strip().lower()
+    alias = PLAYER_SQUAD_ALIAS.get(cleaned)
+    if alias:
+        return PLAYER_SQUAD_LOOKUP[alias]["value"]
+    return cleaned or PLAYER_SQUAD_OPTIONS[0]["value"]
+
+
+def _slug_for_squad(value: Optional[str]) -> str:
+    canonical = _canonical_player_squad(value)
+    return PLAYER_SQUAD_VALUE_TO_SLUG.get(canonical, DEFAULT_PLAYER_SQUAD_SLUG)
+
+
+def _resolve_form_squad_slug(value: Optional[str]) -> str:
+    normalized = _normalize_player_slug(value)
+    if normalized is None:
+        return DEFAULT_PLAYER_SQUAD_SLUG
+    return normalized
+
 
 def create_app() -> Flask:
     """Criar e configurar a aplicação Flask."""
@@ -247,6 +312,8 @@ def create_app() -> Flask:
                 "dark_color": theme.get("dark_color", "#181818"),
                 "accent_color": theme.get("accent_color", "#fef5c7"),
                 "menu_background": theme.get("menu_background", "#050505"),
+                "input_background": theme.get("input_background", "#101010"),
+                "input_text_color": theme.get("input_text_color", "#fefefe"),
             },
             "branding_settings": {
                 "club_name": branding.get("club_name", "G.C.D. Vila Caiz"),
@@ -461,6 +528,8 @@ def create_app() -> Flask:
             "dark_color": "Cor de fundo",
             "accent_color": "Cor de destaque",
             "menu_background": "Cor do menu",
+            "input_background": "Cor dos campos",
+            "input_text_color": "Texto dos campos",
         }
         for field, label in color_fields.items():
             value = request.form.get(field, "").strip()
@@ -616,23 +685,77 @@ def create_app() -> Flask:
             editing_season=editing_season,
         )
 
-    @app.get("/jogadores")
-    def players_page():
+    @app.get("/jogadores", defaults={"squad_slug": None})
+    @app.get("/jogadores/<string:squad_slug>")
+    def players_page(squad_slug: Optional[str]):
+        if squad_slug is None:
+            return redirect(url_for("players_page", squad_slug=DEFAULT_PLAYER_SQUAD_SLUG))
+        cleaned_slug = _strip_accents(str(squad_slug)).strip().lower()
+        normalized_slug = _normalize_player_slug(squad_slug)
+        if normalized_slug is None:
+            _flash_invalid("Escalão selecionado não existe.")
+            return redirect(url_for("players_page", squad_slug=DEFAULT_PLAYER_SQUAD_SLUG))
+        if normalized_slug != cleaned_slug:
+            params: Dict[str, str] = {}
+            edit_param = request.args.get("edit", "").strip()
+            if edit_param:
+                params["edit"] = edit_param
+            return redirect(url_for("players_page", squad_slug=normalized_slug, **params))
+
         service = get_service()
-        players = service.list_players()
-        player_treatments = service.treatments_by_player(active_only=True)
-        editing_player = None
+        all_players = service.list_players()
+        player_treatments_map = service.treatments_by_player(active_only=True)
+
         edit_id = _parse_optional_int(request.args.get("edit"))
+        editing_player = None
         if edit_id is not None:
-            editing_player = next((player for player in players if player.id == edit_id), None)
+            editing_player = next((player for player in all_players if player.id == edit_id), None)
+            if editing_player is None:
+                _flash_invalid("Jogador selecionado para edição não existe.")
+            else:
+                editing_slug = _slug_for_squad(editing_player.squad)
+                if editing_slug != normalized_slug:
+                    params: Dict[str, str] = {"edit": str(edit_id)}
+                    return redirect(url_for("players_page", squad_slug=editing_slug, **params))
+
+        squad_config = PLAYER_SQUAD_LOOKUP[normalized_slug]
+        canonical_value = squad_config["value"]
+        filtered_players = [
+            player
+            for player in all_players
+            if _canonical_player_squad(player.squad) == canonical_value
+        ]
+        counts: Dict[str, int] = {}
+        for player in all_players:
+            key = _canonical_player_squad(player.squad)
+            counts[key] = counts.get(key, 0) + 1
+        squad_options = []
+        for option in PLAYER_SQUAD_OPTIONS:
+            option_copy = dict(option)
+            option_copy["count"] = counts.get(option["value"], 0)
+            squad_options.append(option_copy)
+        relevant_treatments = {
+            player.id: player_treatments_map.get(player.id, [])
+            for player in filtered_players
+        }
+        form_squad_value = _canonical_player_squad(
+            editing_player.squad if editing_player is not None else canonical_value
+        )
+        page_title = f"Jogadores · {squad_config['label']}"
+
         return render_template(
             "players.html",
-            title="Jogadores",
+            title=page_title,
             active_group="plantel",
             active_page="players",
-            players=players,
+            players=filtered_players,
             editing_player=editing_player,
-            player_treatments=player_treatments,
+            player_treatments=relevant_treatments,
+            squad_options=squad_options,
+            selected_squad_slug=normalized_slug,
+            selected_squad_label=squad_config["label"],
+            selected_squad_value=canonical_value,
+            form_squad_value=form_squad_value,
         )
 
     @app.post("/epocas")
@@ -1166,15 +1289,20 @@ def create_app() -> Flask:
 
     @app.post("/players")
     def add_player():
+        current_slug = _resolve_form_squad_slug(request.form.get("current_slug"))
         player_id_raw = request.form.get("player_id")
         player_id = _parse_optional_int(player_id_raw)
         if player_id_raw and player_id is None:
             _flash_invalid("Jogador selecionado é inválido para edição.")
-            return redirect(url_for("players_page"))
-        target = url_for("players_page", edit=player_id) if player_id is not None else url_for("players_page")
+            return redirect(url_for("players_page", squad_slug=current_slug))
+        target_kwargs = {"squad_slug": current_slug}
+        if player_id is not None:
+            target_kwargs["edit"] = player_id
+        target = url_for("players_page", **target_kwargs)
         name = request.form.get("name", "").strip()
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
+        squad_value = _canonical_player_squad(squad)
         contact = request.form.get("contact", "").strip() or None
         af_porto_id = request.form.get("af_porto_id", "").strip() or None
         shirt_number_raw = request.form.get("shirt_number", "").strip()
@@ -1233,7 +1361,7 @@ def create_app() -> Flask:
                 service.add_player(
                     name=name,
                     position=position,
-                    squad=squad or "senior",
+                    squad=squad_value,
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
@@ -1253,7 +1381,7 @@ def create_app() -> Flask:
                 update_kwargs = dict(
                     name=name,
                     position=position,
-                    squad=squad or "senior",
+                    squad=squad_value,
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
@@ -1273,18 +1401,22 @@ def create_app() -> Flask:
                 _flash_invalid(str(exc))
                 return redirect(target)
             flash("Jogador atualizado com sucesso!", "success")
-        return redirect(url_for("players_page"))
+        destination_slug = _slug_for_squad(squad_value)
+        return redirect(url_for("players_page", squad_slug=destination_slug))
 
     @app.post("/players/<int:player_id>/delete")
     def delete_player(player_id: int):
         service = get_service()
+        existing_players = service.list_players()
+        player = next((item for item in existing_players if item.id == player_id), None)
+        redirect_slug = _slug_for_squad(player.squad if player else None)
         try:
             service.remove_player(player_id)
         except ValueError as exc:
             _flash_invalid(str(exc))
         else:
             flash("Jogador eliminado.", "success")
-        return redirect(url_for("players_page"))
+        return redirect(url_for("players_page", squad_slug=redirect_slug))
 
     @app.post("/coaches")
     def add_coach():

@@ -355,6 +355,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
+        federation_id: Optional[str] = None,
         photo_url: Optional[str] = None,
         youth_monthly_fee: Optional[float] = None,
         youth_monthly_paid: bool = False,
@@ -381,6 +382,7 @@ class ClubService:
                 birthdate=birthdate,
                 contact=contact,
                 shirt_number=shirt_number,
+                federation_id=federation_id,
                 photo_url=photo_url or None,
                 season_id=self.active_season_id,
                 youth_monthly_fee=monthly_fee,
@@ -433,6 +435,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
+        federation_id: object | str | None = UNSET,
         photo_url: object | str | None = UNSET,
         youth_monthly_fee: object = UNSET,
         youth_monthly_paid: object = UNSET,
@@ -492,6 +495,8 @@ class ClubService:
             updates["contact"] = contact
         if shirt_number is not None:
             updates["shirt_number"] = shirt_number
+        if federation_id is not UNSET:
+            updates["federation_id"] = federation_id or None
         if photo_url is not UNSET:
             updates["photo_url"] = photo_url or None
         updates["youth_monthly_fee"] = final_monthly_fee

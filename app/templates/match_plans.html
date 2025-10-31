@@ -63,6 +63,9 @@
                 {% else %}
                   {{ player.name }}
                 {% endif %}
+                {% if player.federation_id %}
+                  (ID: {{ player.federation_id }})
+                {% endif %}
               </option>
             {% endfor %}
           </select>
@@ -78,6 +81,9 @@
                   Nº {{ '%02d'|format(player.shirt_number) }} - {{ player.name }}
                 {% else %}
                   {{ player.name }}
+                {% endif %}
+                {% if player.federation_id %}
+                  (ID: {{ player.federation_id }})
                 {% endif %}
               </option>
             {% endfor %}
@@ -129,11 +135,14 @@
                         {% set player = player_lookup.get(player_id) %}
                         {% if player %}
                           <li>
-                            {% if player.shirt_number is not none %}
-                              Nº {{ '%02d'|format(player.shirt_number) }} -
-                            {% endif %}
-                            {{ player.name }}
-                          </li>
+                        {% if player.shirt_number is not none %}
+                          Nº {{ '%02d'|format(player.shirt_number) }} -
+                        {% endif %}
+                        {{ player.name }}
+                        {% if player.federation_id %}
+                          <span class="plan-badge">ID: {{ player.federation_id }}</span>
+                        {% endif %}
+                      </li>
                         {% endif %}
                       {% endfor %}
                     </ul>
@@ -148,11 +157,14 @@
                         {% set player = player_lookup.get(player_id) %}
                         {% if player %}
                           <li>
-                            {% if player.shirt_number is not none %}
-                              Nº {{ '%02d'|format(player.shirt_number) }} -
-                            {% endif %}
-                            {{ player.name }}
-                          </li>
+                        {% if player.shirt_number is not none %}
+                          Nº {{ '%02d'|format(player.shirt_number) }} -
+                        {% endif %}
+                        {{ player.name }}
+                        {% if player.federation_id %}
+                          <span class="plan-badge">ID: {{ player.federation_id }}</span>
+                        {% endif %}
+                      </li>
                         {% endif %}
                       {% endfor %}
                     </ul>

@@ -12,6 +12,7 @@ Vila-Caiz.
 * Registo de receitas e despesas com resumo financeiro automático.
 * Painel web com formulários e visualização dos dados do clube.
 * Organização das operações por épocas com seleção dinâmica da época ativa.
+* Autenticação com perfis configuráveis e personalização de identidade visual.
 
 Os dados são armazenados em `data/club.json` num formato legível (JSON).
 
@@ -60,19 +61,20 @@ Substitua `8000` pela porta que o ambiente disponibilizar.
 
 ### Autenticação e perfis
 
-O painel web requer autenticação. A aplicação cria automaticamente quatro
-contas para os perfis principais do clube (recomendamos alterar as palavras-passe
-assim que possível):
+O painel web requer autenticação. Na primeira execução será apresentada uma
+etapa de configuração para criar o utilizador administrador inicial. Depois de
+entrar com essa conta, utilize o menu **Administração → Utilizadores** para
+criar logins adicionais e atribuir o cargo correto a cada pessoa:
 
-| Perfil           | Utilizador        | Palavra-passe       | Permissões principais |
-| ---------------- | ----------------- | ------------------- | --------------------- |
-| Administrador    | `admin`           | `admin123`          | Acesso total a todas as secções, épocas e configurações. |
-| Treinador        | `treinador`       | `treinador123`      | Gestão do plantel, planificações de jogo, acompanhamento de tratamentos e camadas jovens. |
-| Fisioterapeuta   | `fisioterapeuta`  | `fisioterapeuta123` | Registo e atualização de tratamentos, gestão da equipa médica e consulta do plantel. |
-| Financeiro       | `financeiro`      | `financeiro123`     | Gestão de receitas, despesas, sócios e resumo financeiro. |
+* **Administrador** – acesso total ao painel, incluindo épocas, utilizadores e definições de design.
+* **Treinador** – gestão do plantel, planificações de jogo, tratamentos e camadas jovens.
+* **Fisioterapeuta** – registo e acompanhamento de tratamentos clínicos.
+* **Financeiro** – gestão de receitas, despesas, sócios e relatórios financeiros.
 
-Cada perfil visualiza apenas os menus e formulários que lhe dizem respeito. O
-administrador é o único perfil com acesso às configurações de épocas.
+Cada perfil visualiza apenas os menus e formulários que lhe dizem respeito.
+Em **Administração → Design do Portal** pode ainda atualizar o nome exibido no
+cabeçalho, carregar um logótipo personalizado e ajustar a paleta de cores sem
+sair da aplicação.
 
 ### Exemplo de fluxo
 

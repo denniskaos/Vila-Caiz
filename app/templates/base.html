@@ -3,12 +3,15 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ title or "Vila-Caiz" }}</title>
+    {% set club_name = branding_settings.club_name or 'G.C.D. Vila Caiz' %}
+    <title>{% if title %}{{ title }} · {% endif %}{{ club_name }}</title>
     <style>
       :root {
         color-scheme: light dark;
-        --primary: #f5c400;
-        --primary-dark: #181818;
+        --primary: {{ theme_settings.primary_color | default('#f5c400') }};
+        --primary-dark: {{ theme_settings.dark_color | default('#181818') }};
+        --accent: {{ theme_settings.accent_color | default('#fef5c7') }};
+        --menu-bg: {{ theme_settings.menu_background | default('#050505') }};
         --surface: rgba(255, 249, 223, 0.9);
         --surface-dark: rgba(30, 30, 30, 0.9);
         --border: rgba(24, 24, 24, 0.15);
@@ -27,20 +30,20 @@
         margin: 0;
         font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
         background: radial-gradient(circle at top left, rgba(245, 196, 0, 0.16), transparent 55%),
-          radial-gradient(circle at bottom right, rgba(24, 24, 24, 0.85), #050505);
+          radial-gradient(circle at bottom right, rgba(24, 24, 24, 0.85), var(--menu-bg));
         color: #0d0d0d;
       }
 
       @media (prefers-color-scheme: dark) {
         body {
-          background: linear-gradient(170deg, #050505 0%, #171717 40%, #f5c400 140%);
+          background: linear-gradient(170deg, var(--menu-bg) 0%, #171717 40%, var(--primary) 140%);
           color: #f9f6ea;
         }
       }
 
       header {
         background: var(--primary-dark);
-        color: #f5c400;
+        color: var(--primary);
         padding: 1.2rem 0;
         position: sticky;
         top: 0;
@@ -126,7 +129,7 @@
       .season-control select {
         background: rgba(245, 196, 0, 0.18);
         border: 1px solid rgba(245, 196, 0, 0.45);
-        color: #181818;
+        color: var(--primary-dark);
         font-weight: 600;
         border-radius: 999px;
         padding: 0.35rem 0.85rem;
@@ -152,7 +155,7 @@
 
       .user-status .role-pill {
         background: rgba(17, 17, 17, 0.85);
-        color: #f5c400;
+        color: var(--primary);
         padding: 0.2rem 0.75rem;
         border-radius: 999px;
         text-transform: uppercase;
@@ -180,7 +183,7 @@
       .user-status button:hover,
       .user-status button:focus-visible {
         background: rgba(17, 17, 17, 0.95);
-        color: #f5c400;
+        color: var(--primary);
       }
 
       .primary-nav {
@@ -193,7 +196,7 @@
       .primary-nav button {
         background: none;
         border: none;
-        color: #f5c400;
+        color: var(--primary);
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -313,7 +316,7 @@
 
       .submenu a.active {
         background: var(--primary);
-        color: #181818;
+        color: var(--primary-dark);
       }
 
       .season-control .season-manage {
@@ -332,7 +335,7 @@
       .season-control .season-manage:hover,
       .season-control .season-manage:focus-visible {
         background: var(--primary);
-        color: #181818;
+        color: var(--primary-dark);
       }
 
       .season-note {
@@ -372,7 +375,7 @@
 
         .season-control select {
           background: rgba(245, 196, 0, 0.28);
-          color: #050505;
+          color: var(--menu-bg);
           border-color: rgba(245, 196, 0, 0.55);
         }
 
@@ -517,7 +520,7 @@
         }
 
         fieldset legend {
-          color: #050505;
+          color: var(--menu-bg);
           background: rgba(245, 196, 0, 0.85);
           border-radius: 999px;
         }
@@ -591,7 +594,7 @@
       input[type="file"]::file-selector-button {
         border: none;
         background: rgba(245, 196, 0, 0.85);
-        color: #181818;
+        color: var(--primary-dark);
         padding: 0.5rem 1rem;
         margin-right: 0.75rem;
         border-radius: 999px;
@@ -620,7 +623,7 @@
       button {
         justify-self: start;
         background: linear-gradient(120deg, var(--primary), #f7d54d);
-        color: #181818;
+        color: var(--primary-dark);
         border: none;
         border-radius: 999px;
         padding: 0.65rem 1.6rem;
@@ -639,7 +642,7 @@
       }
 
       button:focus-visible {
-        outline: 2px solid #fef5c7;
+        outline: 2px solid var(--accent);
         outline-offset: 3px;
       }
 
@@ -649,7 +652,7 @@
         justify-content: center;
         gap: 0.35rem;
         background: linear-gradient(120deg, var(--primary), #f7d54d);
-        color: #181818;
+        color: var(--primary-dark);
         border: none;
         border-radius: 999px;
         padding: 0.45rem 1.2rem;
@@ -667,7 +670,7 @@
       .button:focus-visible {
         transform: translateY(-1px);
         box-shadow: 0 16px 28px rgba(245, 196, 0, 0.42);
-        outline: 2px solid #fef5c7;
+        outline: 2px solid var(--accent);
         outline-offset: 3px;
       }
 
@@ -745,6 +748,79 @@
         color: rgba(24, 24, 24, 0.65);
       }
 
+      .color-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem 1rem;
+        align-items: center;
+      }
+
+      .color-grid label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(24, 24, 24, 0.7);
+      }
+
+      .color-grid input[type="color"] {
+        width: 100%;
+        height: 42px;
+        border-radius: 12px;
+        border: 1px solid rgba(24, 24, 24, 0.15);
+        background: transparent;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .color-grid label {
+          color: rgba(245, 196, 0, 0.8);
+        }
+
+        .color-grid input[type="color"] {
+          border-color: rgba(245, 196, 0, 0.4);
+        }
+      }
+
+      .table-actions {
+        display: inline-flex;
+        gap: 0.5rem;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .design-preview .preview-banner {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 1.4rem;
+        border-radius: 18px;
+        color: var(--accent);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+      }
+
+      .design-preview img {
+        width: 76px;
+        height: auto;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 0.4rem;
+      }
+
+      .design-preview .preview-text {
+        display: grid;
+        gap: 0.2rem;
+      }
+
+      .design-preview .preview-text strong {
+        font-size: 1.1rem;
+        letter-spacing: 0.06em;
+        color: currentColor;
+      }
+
+      .design-preview .preview-text span {
+        font-size: 0.75rem;
+        opacity: 0.85;
+      }
+
       @media (prefers-color-scheme: dark) {
         .dual-selects .select-note {
           color: rgba(245, 196, 0, 0.7);
@@ -811,7 +887,7 @@
 
       @media (prefers-color-scheme: dark) {
         .card strong {
-          color: #fef5c7;
+          color: var(--accent);
         }
       }
 
@@ -1006,7 +1082,7 @@
         align-items: center;
         justify-content: center;
         background: rgba(245, 196, 0, 0.25);
-        color: #181818;
+        color: var(--primary-dark);
         font-weight: 700;
         letter-spacing: 0.02em;
         border: 2px dashed rgba(245, 196, 0, 0.4);
@@ -1014,7 +1090,7 @@
 
       table thead {
         background: linear-gradient(120deg, #0d0d0d, #2d2d2d);
-        color: #f5c400;
+        color: var(--primary);
         text-transform: uppercase;
         letter-spacing: 0.06em;
       }
@@ -1033,6 +1109,18 @@
         border-bottom: none;
       }
 
+      .table-wrapper table tr.is-active {
+        background: color-mix(in srgb, var(--primary) 18%, transparent);
+        box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 50%, var(--primary-dark) 50%);
+      }
+
+      @media (prefers-color-scheme: dark) {
+        .table-wrapper table tr.is-active {
+          background: color-mix(in srgb, var(--primary) 25%, transparent);
+          box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 65%, var(--primary-dark) 35%);
+        }
+      }
+
       tbody tr:nth-child(even) {
         background: rgba(245, 196, 0, 0.08);
       }
@@ -1049,7 +1137,7 @@
 
         .avatar-placeholder {
           background: rgba(245, 196, 0, 0.35);
-          color: #050505;
+          color: var(--menu-bg);
           border-color: rgba(245, 196, 0, 0.6);
         }
       }
@@ -1095,7 +1183,7 @@
 
       .status-chip.pending {
         background: rgba(245, 196, 0, 0.55);
-        color: #181818;
+        color: var(--primary-dark);
         border-color: rgba(24, 24, 24, 0.2);
       }
 
@@ -1117,12 +1205,12 @@
       @media (prefers-color-scheme: dark) {
         .tag {
           background: rgba(245, 196, 0, 0.24);
-          color: #181818;
+          color: var(--primary-dark);
         }
 
         .status-chip {
           background: rgba(245, 196, 0, 0.28);
-          color: #050505;
+          color: var(--menu-bg);
         }
 
         .status-chip.success {
@@ -1137,7 +1225,7 @@
 
         .status-chip.pending {
           background: rgba(245, 196, 0, 0.75);
-          color: #050505;
+          color: var(--menu-bg);
           border-color: rgba(0, 0, 0, 0.35);
         }
 
@@ -1170,7 +1258,7 @@
       @media (prefers-color-scheme: dark) {
         .totals li {
           background: rgba(245, 196, 0, 0.18);
-          color: #181818;
+          color: var(--primary-dark);
         }
       }
 
@@ -1256,7 +1344,7 @@
         display: flex;
         flex-direction: column;
         color: #0d0d0d;
-        background: linear-gradient(135deg, #f7d43b 10%, #f5c400 45%, #f0a400 110%);
+        background: linear-gradient(135deg, #f7d43b 10%, var(--primary) 45%, #f0a400 110%);
       }
 
       .membership-card::after {
@@ -1304,7 +1392,7 @@
         font-size: 4.4mm;
         letter-spacing: 0.18em;
         text-transform: uppercase;
-        color: #181818;
+        color: var(--primary-dark);
       }
 
       .membership-card.front .card-brand .card-slogan {
@@ -1323,7 +1411,7 @@
         height: 32mm;
         border-radius: 3mm;
         overflow: hidden;
-        background: linear-gradient(160deg, #f8991d, #f5c400 65%);
+        background: linear-gradient(160deg, #f8991d, var(--primary) 65%);
         box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
         z-index: 3;
         border: 1.4mm solid rgba(255, 255, 255, 0.65);
@@ -1395,7 +1483,7 @@
       }
 
       .membership-card.back {
-        background: linear-gradient(135deg, #f5c400 5%, #f7d43b 45%, #f3aa14 120%);
+        background: linear-gradient(135deg, var(--primary) 5%, #f7d43b 45%, #f3aa14 120%);
       }
 
       .membership-card.back .back-content {
@@ -1555,12 +1643,16 @@
     <header>
       <div class="container header-main">
         <div class="identity">
-          <img src="{{ url_for('static', filename='0bee0246-d183-416b-8602-1124015149f1.png') }}" alt="Emblema do G.C.D. Vila Caiz" />
-          <h1>G.C.D. Vila Caiz</h1>
+          {% set default_logo = '0bee0246-d183-416b-8602-1124015149f1.png' %}
+          {% set logo_candidate = branding_settings.logo_path or default_logo %}
+          {% set logo_url = logo_candidate | photo_path %}
+          <img src="{{ logo_url }}" alt="Emblema do {{ club_name }}" />
+          <h1>{{ club_name }}</h1>
         </div>
         {% if current_user %}
           {% set show_plantel = has_access_to_any(('players', 'coaches', 'match_plans', 'physios', 'treatments', 'youth')) %}
           {% set show_financas = has_access_to_any(('finances_overview', 'finances_revenue', 'finances_expense', 'members')) %}
+          {% set show_admin = has_access_to_any(('users', 'settings')) %}
           <div class="header-tools">
             <div class="session-bar">
               <div class="season-control">
@@ -1611,11 +1703,14 @@
               {% if show_financas %}
                 <button type="button" class="menu-toggle" data-menu="financas" aria-expanded="false">Finanças</button>
               {% endif %}
+              {% if show_admin %}
+                <button type="button" class="menu-toggle" data-menu="admin" aria-expanded="false">Administração</button>
+              {% endif %}
             </nav>
           </div>
         {% endif %}
       </div>
-      {% if current_user and (show_plantel or show_financas) %}
+      {% if current_user and (show_plantel or show_financas or show_admin) %}
         <div class="submenu-bar">
           <div class="container submenu-wrapper">
             {% if show_plantel %}
@@ -1658,6 +1753,19 @@
                   {% endif %}
                   {% if can_access('members') %}
                     <a href="{{ url_for('members_page') }}" class="{{ 'active' if active_page == 'members' else '' }}"{% if active_page == 'members' %} aria-current="page"{% endif %}>Sócios</a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+            {% if show_admin %}
+              <div class="submenu" data-menu="admin">
+                <span class="submenu-title">Administração</span>
+                <div class="submenu-links">
+                  {% if can_access('users') %}
+                    <a href="{{ url_for('users_page') }}" class="{{ 'active' if active_page == 'users' else '' }}"{% if active_page == 'users' %} aria-current="page"{% endif %}>Utilizadores</a>
+                  {% endif %}
+                  {% if can_access('settings') %}
+                    <a href="{{ url_for('settings_page') }}" class="{{ 'active' if active_page == 'settings' else '' }}"{% if active_page == 'settings' %} aria-current="page"{% endif %}>Design do Portal</a>
                   {% endif %}
                 </div>
               </div>

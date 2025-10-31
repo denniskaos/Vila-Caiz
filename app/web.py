@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 from datetime import date
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -10,7 +11,7 @@ from uuid import uuid4
 from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
-from .services import ClubService, YOUTH_SQUADS
+from .services import DEFAULT_BRANDING, ClubService, YOUTH_SQUADS
 from .storage import parse_date
 
 ROLE_LABELS = {
@@ -19,6 +20,8 @@ ROLE_LABELS = {
     "physio": "Fisioterapeuta",
     "finance": "Financeiro",
 }
+
+ROLE_ORDER = ["admin", "coach", "physio", "finance"]
 
 ROLE_PERMISSIONS = {
     "admin": {
@@ -36,6 +39,8 @@ ROLE_PERMISSIONS = {
         "finances_overview",
         "finances_revenue",
         "finances_expense",
+        "users",
+        "settings",
     },
     "coach": {
         "dashboard",
@@ -102,9 +107,15 @@ ENDPOINT_PERMISSIONS = {
     "delete_revenue": "finances_revenue",
     "add_expense": "finances_expense",
     "delete_expense": "finances_expense",
+    "users_page": "users",
+    "create_user_route": "users",
+    "update_user_route": "users",
+    "delete_user_route": "users",
+    "settings_page": "settings",
+    "update_settings_route": "settings",
 }
 
-PUBLIC_ENDPOINTS = {"login_view", "login_submit", "static"}
+PUBLIC_ENDPOINTS = {"login_view", "login_submit", "setup_admin", "static"}
 
 
 def create_app() -> Flask:
@@ -123,7 +134,14 @@ def create_app() -> Flask:
     app.config["ALLOWED_IMAGE_EXTENSIONS"] = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
     def get_service() -> ClubService:
-        return ClubService()
+        if "club_service" not in g:
+            g.club_service = ClubService()
+        return g.club_service  # type: ignore[attr-defined]
+
+    @app.teardown_appcontext
+    def cleanup_service(_: Optional[BaseException]) -> None:
+        if "club_service" in g:
+            g.pop("club_service", None)
 
     def _user_can(permission: Optional[str]) -> bool:
         user = g.get("current_user")
@@ -150,14 +168,24 @@ def create_app() -> Flask:
 
     @app.before_request
     def enforce_authentication():
+        service = get_service()
+        endpoint = request.endpoint
+
+        if not service.has_users():
+            session.pop("user_id", None)
+            g.current_user = None
+            allowed = {"setup_admin", "static"}
+            if endpoint not in allowed:
+                return redirect(url_for("setup_admin"))
+            return None
+
         user_id = session.get("user_id")
         g.current_user = None
         if user_id is not None:
             try:
-                g.current_user = get_service().get_user(int(user_id))
+                g.current_user = service.get_user(int(user_id))
             except (ValueError, TypeError):
                 session.pop("user_id", None)
-        endpoint = request.endpoint
         if not endpoint:
             return None
         if endpoint in PUBLIC_ENDPOINTS or endpoint == "static":
@@ -200,6 +228,24 @@ def create_app() -> Flask:
         }
 
     @app.context_processor
+    def inject_branding():
+        settings = get_service().get_settings()
+        theme = settings.get("theme", {})
+        branding = settings.get("branding", {})
+        return {
+            "theme_settings": {
+                "primary_color": theme.get("primary_color", "#f5c400"),
+                "dark_color": theme.get("dark_color", "#181818"),
+                "accent_color": theme.get("accent_color", "#fef5c7"),
+                "menu_background": theme.get("menu_background", "#050505"),
+            },
+            "branding_settings": {
+                "club_name": branding.get("club_name", "G.C.D. Vila Caiz"),
+                "logo_path": branding.get("logo_path", "0bee0246-d183-416b-8602-1124015149f1.png"),
+            },
+        }
+
+    @app.context_processor
     def inject_user_context():
         user = g.get("current_user")
 
@@ -218,8 +264,45 @@ def create_app() -> Flask:
             "role_labels": ROLE_LABELS,
         }
 
+    @app.route("/setup", methods=["GET", "POST"])
+    def setup_admin():
+        service = get_service()
+        if service.has_users():
+            flash("Já existe um administrador configurado. Inicie sessão.", "info")
+            return redirect(url_for("login_view"))
+
+        if request.method == "POST":
+            username = request.form.get("username", "").strip()
+            password = request.form.get("password", "")
+            confirm = request.form.get("confirm_password", "")
+            full_name = request.form.get("full_name", "").strip()
+            if not username or not password or not confirm:
+                flash("Preencha todos os campos obrigatórios.", "error")
+                return redirect(url_for("setup_admin"))
+            if password != confirm:
+                flash("As palavras-passe não coincidem.", "error")
+                return redirect(url_for("setup_admin"))
+            try:
+                user = service.create_user(username, password, role="admin", full_name=full_name)
+            except ValueError as exc:
+                flash(str(exc), "error")
+                return redirect(url_for("setup_admin"))
+            session.clear()
+            session["user_id"] = user.id
+            flash("Administrador criado com sucesso.", "success")
+            return redirect(url_for("dashboard"))
+
+        return render_template(
+            "setup.html",
+            title="Configurar Administrador",
+            body_class="auth",
+        )
+
     @app.get("/login")
     def login_view():
+        service = get_service()
+        if not service.has_users():
+            return redirect(url_for("setup_admin"))
         if g.get("current_user") is not None:
             return redirect(url_for("dashboard"))
         next_url = _sanitize_next_url(request.args.get("next"))
@@ -231,6 +314,9 @@ def create_app() -> Flask:
 
     @app.post("/login")
     def login_submit():
+        service = get_service()
+        if not service.has_users():
+            return redirect(url_for("setup_admin"))
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
         next_url = _sanitize_next_url(request.form.get("next")) or url_for("dashboard")
@@ -239,7 +325,6 @@ def create_app() -> Flask:
             if next_url and next_url != url_for("dashboard"):
                 return redirect(url_for("login_view", next=next_url))
             return redirect(url_for("login_view"))
-        service = get_service()
         user = service.authenticate_user(username, password)
         if user is None:
             flash("Credenciais inválidas.", "error")
@@ -256,6 +341,162 @@ def create_app() -> Flask:
         session.clear()
         flash("Sessão terminada com sucesso.", "success")
         return redirect(url_for("login_view"))
+
+    @app.get("/admin/utilizadores")
+    def users_page():
+        service = get_service()
+        users = sorted(service.list_users(), key=lambda user: user.username.lower())
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        editing_user = None
+        if edit_id is not None:
+            editing_user = next((user for user in users if user.id == edit_id), None)
+            if editing_user is None:
+                _flash_invalid("Utilizador selecionado para edição não foi encontrado.")
+        role_options = [(key, ROLE_LABELS.get(key, key)) for key in ROLE_ORDER if key in ROLE_PERMISSIONS]
+        return render_template(
+            "users.html",
+            title="Gestão de Utilizadores",
+            users=users,
+            role_options=role_options,
+            editing_user=editing_user,
+            active_group="admin",
+            active_page="users",
+        )
+
+    @app.post("/admin/utilizadores")
+    def create_user_route():
+        service = get_service()
+        username = request.form.get("username", "").strip()
+        full_name_raw = request.form.get("full_name", "")
+        full_name = full_name_raw.strip() if full_name_raw is not None else None
+        role = request.form.get("role", "").strip() or "coach"
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if password != confirm:
+            _flash_invalid("A confirmação da palavra-passe não coincide.")
+            return redirect(url_for("users_page"))
+        try:
+            service.create_user(username, password, role=role, full_name=full_name)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Utilizador criado com sucesso.", "success")
+        return redirect(url_for("users_page"))
+
+    @app.post("/admin/utilizadores/<int:user_id>/atualizar")
+    def update_user_route(user_id: int):
+        service = get_service()
+        target = url_for("users_page", edit=user_id)
+        username = request.form.get("username")
+        full_name = request.form.get("full_name")
+        role = request.form.get("role")
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        kwargs: Dict[str, Optional[str]] = {}
+        if username is not None:
+            kwargs["username"] = username
+        if full_name is not None:
+            kwargs["full_name"] = full_name
+        if role:
+            kwargs["role"] = role
+        if password or confirm:
+            if password != confirm:
+                _flash_invalid("A confirmação da palavra-passe não coincide.")
+                return redirect(target)
+            kwargs["password"] = password
+        try:
+            service.update_user(user_id, **kwargs)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            return redirect(target)
+        else:
+            flash("Utilizador atualizado com sucesso.", "success")
+        return redirect(url_for("users_page"))
+
+    @app.post("/admin/utilizadores/<int:user_id>/eliminar")
+    def delete_user_route(user_id: int):
+        service = get_service()
+        try:
+            service.delete_user(user_id)
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return redirect(url_for("users_page"))
+        current = g.get("current_user")
+        if current and current.id == user_id:
+            session.clear()
+            flash("O seu utilizador foi eliminado. Sessão terminada.", "info")
+            return redirect(url_for("login_view"))
+        flash("Utilizador eliminado com sucesso.", "success")
+        return redirect(url_for("users_page"))
+
+    @app.get("/admin/design")
+    def settings_page():
+        service = get_service()
+        settings = service.get_settings()
+        return render_template(
+            "settings.html",
+            title="Definições de Aparência",
+            settings=settings,
+            active_group="admin",
+            active_page="settings",
+        )
+
+    @app.post("/admin/design")
+    def update_settings_route():
+        service = get_service()
+        settings = service.get_settings()
+        theme_updates: Dict[str, str] = {}
+        branding_updates: Dict[str, Optional[str]] = {}
+        color_fields = {
+            "primary_color": "Cor principal",
+            "dark_color": "Cor de fundo",
+            "accent_color": "Cor de destaque",
+            "menu_background": "Cor do menu",
+        }
+        for field, label in color_fields.items():
+            value = request.form.get(field, "").strip()
+            if not value:
+                continue
+            normalized = _normalize_hex_color(value)
+            if not normalized:
+                flash(f"{label} inválida. Utilize um código hexadecimal.", "error")
+                return redirect(url_for("settings_page"))
+            theme_updates[field] = normalized
+
+        branding = settings.get("branding", {})
+        existing_name = branding.get("club_name") or DEFAULT_BRANDING["club_name"]
+        club_name_raw = request.form.get("club_name")
+        name_changed = False
+        if club_name_raw is not None:
+            cleaned_name = club_name_raw.strip()
+            if cleaned_name and cleaned_name != existing_name:
+                branding_updates["club_name"] = cleaned_name
+                name_changed = True
+            elif not cleaned_name and existing_name != DEFAULT_BRANDING["club_name"]:
+                branding_updates["club_name"] = DEFAULT_BRANDING["club_name"]
+                name_changed = True
+
+        existing_logo = branding.get("logo_path")
+        reset_logo = request.form.get("reset_logo") == "1"
+        logo_path, changed, error = _process_photo_upload("logo_file", existing=existing_logo)
+        if error:
+            flash(error, "error")
+            return redirect(url_for("settings_page"))
+        if reset_logo:
+            _delete_upload(existing_logo)
+            branding_updates["logo_path"] = DEFAULT_BRANDING["logo_path"]
+        elif changed and logo_path:
+            branding_updates["logo_path"] = logo_path
+
+        service.update_settings(
+            theme=theme_updates if theme_updates else None,
+            branding=branding_updates if branding_updates else None,
+        )
+        if theme_updates or name_changed or changed or reset_logo:
+            flash("Definições atualizadas com sucesso.", "success")
+        else:
+            flash("Nenhuma alteração aplicada.", "info")
+        return redirect(url_for("settings_page"))
 
     @app.template_filter("format_currency")
     def format_currency(value: float) -> str:
@@ -299,11 +540,31 @@ def create_app() -> Flask:
         new_filename = f"{uuid4().hex}{extension}"
         destination = upload_dir / new_filename
         file.save(destination)
-        if existing and not existing.startswith(("http://", "https://", "/")):
+        if existing and existing.startswith("uploads/"):
             old_path = Path(app.static_folder) / existing
             if old_path.exists():
                 old_path.unlink()
         return f"uploads/{new_filename}", True, None
+
+    def _delete_upload(relative_path: Optional[str]) -> None:
+        if not relative_path or not relative_path.startswith("uploads/"):
+            return
+        candidate = Path(app.static_folder) / relative_path
+        if candidate.exists():
+            candidate.unlink()
+
+    def _normalize_hex_color(value: str) -> Optional[str]:
+        text = value.strip()
+        if not text:
+            return None
+        if not text.startswith("#"):
+            text = f"#{text}"
+        if re.fullmatch(r"#[0-9a-fA-F]{6}", text):
+            return text.lower()
+        if re.fullmatch(r"#[0-9a-fA-F]{3}", text):
+            expanded = "#" + "".join(ch * 2 for ch in text[1:])
+            return expanded.lower()
+        return None
 
     @app.get("/")
     def dashboard():

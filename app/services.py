@@ -12,6 +12,20 @@ from . import models, storage
 
 UNSET = object()
 
+DEFAULT_THEME = {
+    "primary_color": "#f5c400",
+    "dark_color": "#181818",
+    "accent_color": "#fef5c7",
+    "menu_background": "#050505",
+}
+
+DEFAULT_BRANDING = {
+    "club_name": "G.C.D. Vila Caiz",
+    "logo_path": "0bee0246-d183-416b-8602-1124015149f1.png",
+}
+
+VALID_ROLES = {"admin", "coach", "physio", "finance"}
+
 SEASONAL_COLLECTIONS = {
     "players",
     "coaches",
@@ -40,30 +54,29 @@ class ClubService:
         self._active_season_id: Optional[int] = None
         self._ensure_season_setup()
         self._migrate_legacy_fields()
-        self._ensure_user_bootstrap()
+        self._ensure_settings_defaults()
 
-    def _ensure_user_bootstrap(self) -> None:
-        users = self._data.setdefault("users", [])
-        if users:
-            return
-        defaults = [
-            ("admin", "Administrador", "admin", "admin123"),
-            ("treinador", "Treinador", "coach", "treinador123"),
-            ("fisioterapeuta", "Fisioterapeuta", "physio", "fisioterapeuta123"),
-            ("financeiro", "Financeiro", "finance", "financeiro123"),
-        ]
-        for username, full_name, role, password in defaults:
-            payload = {
-                "id": storage.next_id(users),
-                "username": username,
-                "password_hash": generate_password_hash(password),
-                "role": role,
-                "full_name": full_name,
-            }
-            users.append(payload)
-        self._persist()
+    def _ensure_settings_defaults(self) -> None:
+        changed = False
+        settings = self._data.setdefault("settings", {})
+        theme = settings.setdefault("theme", {})
+        for key, value in DEFAULT_THEME.items():
+            if key not in theme:
+                theme[key] = value
+                changed = True
+        branding = settings.setdefault("branding", {})
+        for key, value in DEFAULT_BRANDING.items():
+            if key not in branding:
+                branding[key] = value
+                changed = True
+        if changed:
+            self._persist()
 
     # User helpers ---------------------------------------------------
+    def has_users(self) -> bool:
+        users = self._data.setdefault("users", [])
+        return len(users) > 0
+
     def list_users(self) -> List[models.User]:
         users = self._data.setdefault("users", [])
         return [storage.instantiate(models.User, item) for item in users]
@@ -74,6 +87,144 @@ class ClubService:
             if int(item.get("id", 0)) == user_id:
                 return storage.instantiate(models.User, item)
         raise ValueError(f"Utilizador com id {user_id} não encontrado")
+
+    def create_user(
+        self,
+        username: str,
+        password: str,
+        *,
+        role: str,
+        full_name: Optional[str] = None,
+    ) -> models.User:
+        username = username.strip()
+        if not username:
+            raise ValueError("O nome de utilizador é obrigatório.")
+        if role not in VALID_ROLES:
+            raise ValueError("Cargo inválido.")
+        if not password:
+            raise ValueError("A palavra-passe é obrigatória.")
+
+        users = self._data.setdefault("users", [])
+        normalized = username.lower()
+        for item in users:
+            if str(item.get("username", "")).strip().lower() == normalized:
+                raise ValueError("Já existe um utilizador com este nome.")
+
+        payload = {
+            "id": storage.next_id(users),
+            "username": username,
+            "password_hash": generate_password_hash(password),
+            "role": role,
+            "full_name": full_name.strip() if full_name and full_name.strip() else None,
+        }
+        users.append(payload)
+        self._persist()
+        return storage.instantiate(models.User, payload)
+
+    def update_user(
+        self,
+        user_id: int,
+        *,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        role: Optional[str] = None,
+        full_name: Optional[str] = None,
+    ) -> models.User:
+        users = self._data.setdefault("users", [])
+        target = None
+        for item in users:
+            if int(item.get("id", 0)) == user_id:
+                target = item
+                break
+        if target is None:
+            raise ValueError("Utilizador não encontrado.")
+
+        if username is not None:
+            cleaned = username.strip()
+            if not cleaned:
+                raise ValueError("O nome de utilizador é obrigatório.")
+            normalized = cleaned.lower()
+            for item in users:
+                if int(item.get("id", 0)) == user_id:
+                    continue
+                if str(item.get("username", "")).strip().lower() == normalized:
+                    raise ValueError("Já existe um utilizador com este nome.")
+            target["username"] = cleaned
+
+        if full_name is not None:
+            target["full_name"] = full_name.strip() if full_name and full_name.strip() else None
+
+        if role is not None:
+            if role not in VALID_ROLES:
+                raise ValueError("Cargo inválido.")
+            if target.get("role") == "admin" and role != "admin":
+                if self._admin_count(exclude_id=user_id) == 0:
+                    raise ValueError("Não é possível remover o último administrador.")
+            target["role"] = role
+
+        if password:
+            target["password_hash"] = generate_password_hash(password)
+
+        self._persist()
+        return storage.instantiate(models.User, target)
+
+    def delete_user(self, user_id: int) -> None:
+        users = self._data.setdefault("users", [])
+        for index, item in enumerate(users):
+            if int(item.get("id", 0)) == user_id:
+                if item.get("role") == "admin" and self._admin_count(exclude_id=user_id) == 0:
+                    raise ValueError("Não é possível eliminar o último administrador.")
+                del users[index]
+                self._persist()
+                return
+        raise ValueError("Utilizador não encontrado.")
+
+    def _admin_count(self, *, exclude_id: Optional[int] = None) -> int:
+        users = self._data.setdefault("users", [])
+        count = 0
+        for item in users:
+            if item.get("role") != "admin":
+                continue
+            if exclude_id is not None and int(item.get("id", 0)) == exclude_id:
+                continue
+            count += 1
+        return count
+
+    def get_settings(self) -> Dict[str, Dict[str, Any]]:
+        self._ensure_settings_defaults()
+        settings = self._data.setdefault("settings", {})
+        theme = dict(settings.get("theme", {}))
+        branding = dict(settings.get("branding", {}))
+        return {"theme": theme, "branding": branding}
+
+    def update_settings(self, *, theme: Optional[Dict[str, Any]] = None, branding: Optional[Dict[str, Any]] = None) -> Dict[str, Dict[str, Any]]:
+        settings = self._data.setdefault("settings", {})
+        updated = False
+        if theme:
+            theme_store = settings.setdefault("theme", {})
+            for key, value in theme.items():
+                if value is None:
+                    continue
+                if theme_store.get(key) != value:
+                    theme_store[key] = value
+                    updated = True
+        if branding:
+            branding_store = settings.setdefault("branding", {})
+            for key, value in branding.items():
+                if value is None:
+                    continue
+                if branding_store.get(key) != value:
+                    branding_store[key] = value
+                    updated = True
+        if updated:
+            self._persist()
+        return self.get_settings()
+
+    def reset_branding_logo(self) -> None:
+        settings = self._data.setdefault("settings", {})
+        branding = settings.setdefault("branding", {})
+        branding["logo_path"] = DEFAULT_BRANDING["logo_path"]
+        self._persist()
 
     def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
         users = self._data.setdefault("users", [])

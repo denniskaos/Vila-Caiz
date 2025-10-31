@@ -25,6 +25,7 @@ DEFAULT_STRUCTURE: Dict[str, Any] = {
     "revenues": [],
     "expenses": [],
     "users": [],
+    "settings": {},
 }
 
 T = TypeVar("T")

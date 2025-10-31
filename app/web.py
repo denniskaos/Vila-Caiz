@@ -17,7 +17,12 @@ from .storage import parse_date
 def create_app() -> Flask:
     """Criar e configurar a aplicação Flask."""
 
-    app = Flask(__name__, template_folder="../templates")
+    base_dir = Path(__file__).resolve().parent
+    app = Flask(
+        __name__,
+        template_folder=str(base_dir / "templates"),
+        static_folder=str(base_dir / "static"),
+    )
     app.config["SECRET_KEY"] = "vila-caiz-demo"
     upload_folder = Path(app.static_folder) / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)

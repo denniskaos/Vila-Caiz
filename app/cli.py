@@ -7,7 +7,7 @@ import sys
 from datetime import date
 from typing import Callable, Dict, Optional
 
-from . import services, storage
+from . import __version__, services, storage
 
 DATE_HELP = "Formato ISO (AAAA-MM-DD)."
 
@@ -328,6 +328,7 @@ def _configure_finance_commands(subparsers: argparse._SubParsersAction, service:
 
 def build_parser(service: services.ClubService) -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Gestão completa para o clube Vila-Caiz")
+    parser.add_argument("--version", action="version", version=f"Vila-Caiz {__version__}")
     subparsers = parser.add_subparsers(dest="command")
 
     _configure_player_commands(subparsers, service)

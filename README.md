@@ -24,6 +24,7 @@ Execute os comandos a partir da raiz do projeto:
 
 ```bash
 python -m app --help
+python -m app --version
 ```
 
 Se não indicar subcomandos (`python -m app`) será aberto um modo interativo
@@ -68,3 +69,26 @@ python -m app finance summary
 ```
 
 Consulte os subcomandos específicos com `python -m app <secção> --help`.
+
+## Lançamentos
+
+A primeira release oficial está identificada como **0.1.0** e encontra-se
+documentada no [CHANGELOG](CHANGELOG.md). Pode consultar a versão instalada em
+qualquer momento com:
+
+```bash
+python -m app --version
+```
+
+Para instalar o pacote diretamente (por exemplo, numa pipeline CI/CD) execute:
+
+```bash
+pip install .
+```
+
+Fornecemos também pontos de entrada após a instalação:
+
+```bash
+vila-caiz --help      # CLI
+vila-caiz-web --help  # Servidor web
+```

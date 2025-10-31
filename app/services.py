@@ -22,6 +22,11 @@ SEASONAL_COLLECTIONS = {
     "expenses",
 }
 
+YOUTH_SQUADS = {"juniores", "juvenis", "iniciados", "infantis"}
+YOUTH_REVENUE_CATEGORY = "Camadas Jovens"
+YOUTH_MONTHLY_SOURCE = "Mensalidade Formação"
+YOUTH_KIT_SOURCE = "Kit de Treino Formação"
+
 
 class ClubService:
     """Facade that exposes CRUD helpers for the different entities."""
@@ -242,6 +247,85 @@ class ClubService:
         active_id = self._data.get("active_season_id")
         self._active_season_id = int(active_id) if active_id is not None else None
 
+    def _is_youth_squad(self, squad: Optional[str]) -> bool:
+        if squad is None:
+            return False
+        return squad.lower() in YOUTH_SQUADS
+
+    def _coerce_amount(self, value: Any) -> Optional[float]:
+        if value is None:
+            return None
+        if isinstance(value, (int, float)):
+            return float(value)
+        try:
+            text = str(value).strip()
+        except Exception:  # pragma: no cover - defensive branch
+            return None
+        if not text:
+            return None
+        text = text.replace(",", ".")
+        try:
+            return float(text)
+        except ValueError:
+            return None
+
+    def _coerce_int(self, value: Any) -> Optional[int]:
+        if value in (None, ""):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _sync_youth_revenue(
+        self,
+        *,
+        player_id: int,
+        player_name: str,
+        squad: str,
+        amount: Optional[float],
+        paid: bool,
+        existing_revenue_id: Optional[int],
+        description_label: str,
+        source_label: str,
+    ) -> Optional[int]:
+        if not paid or amount is None or amount <= 0:
+            if existing_revenue_id is not None:
+                try:
+                    self.remove_revenue(existing_revenue_id)
+                except ValueError:
+                    pass
+            return None
+
+        name = player_name.strip() if isinstance(player_name, str) else str(player_name)
+        if not name:
+            name = f"Jogador #{player_id}"
+        squad_label = squad.title() if isinstance(squad, str) else str(squad)
+        description = f"{description_label} - {name} ({squad_label})"
+
+        if existing_revenue_id is not None:
+            try:
+                revenue = self.update_revenue(
+                    existing_revenue_id,
+                    description=description,
+                    amount=amount,
+                    category=YOUTH_REVENUE_CATEGORY,
+                    record_date=date.today(),
+                    source=source_label,
+                )
+                return revenue.id
+            except ValueError:
+                existing_revenue_id = None
+
+        revenue = self.add_revenue(
+            description=description,
+            amount=amount,
+            category=YOUTH_REVENUE_CATEGORY,
+            record_date=date.today(),
+            source=source_label,
+        )
+        return revenue.id
+
     # Players ---------------------------------------------------------
     def add_player(
         self,
@@ -252,7 +336,22 @@ class ClubService:
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
         photo_url: Optional[str] = None,
+        youth_monthly_fee: Optional[float] = None,
+        youth_monthly_paid: bool = False,
+        youth_kit_fee: Optional[float] = None,
+        youth_kit_paid: bool = False,
     ) -> models.Player:
+        is_youth = self._is_youth_squad(squad)
+        monthly_fee = self._coerce_amount(youth_monthly_fee) if is_youth else None
+        kit_fee = self._coerce_amount(youth_kit_fee) if is_youth else None
+        monthly_paid_flag = bool(youth_monthly_paid) if is_youth else False
+        kit_paid_flag = bool(youth_kit_paid) if is_youth else False
+
+        if is_youth and monthly_paid_flag and (monthly_fee is None or monthly_fee <= 0):
+            raise ValueError("Indique um valor para a mensalidade antes de a marcar como paga.")
+        if is_youth and kit_paid_flag and (kit_fee is None or kit_fee <= 0):
+            raise ValueError("Indique um valor para o kit de treino antes de o marcar como pago.")
+
         payload = storage.serialize_entity(
             models.Player(
                 id=0,
@@ -264,9 +363,41 @@ class ClubService:
                 shirt_number=shirt_number,
                 photo_url=photo_url or None,
                 season_id=self.active_season_id,
+                youth_monthly_fee=monthly_fee,
+                youth_monthly_paid=monthly_paid_flag,
+                youth_kit_fee=kit_fee,
+                youth_kit_paid=kit_paid_flag,
             )
         )
         stored = self._create_entity("players", payload)
+        updates: Dict[str, Any] = {}
+        if is_youth:
+            revenue_id = self._sync_youth_revenue(
+                player_id=stored["id"],
+                player_name=name,
+                squad=squad,
+                amount=monthly_fee,
+                paid=monthly_paid_flag,
+                existing_revenue_id=None,
+                description_label=YOUTH_MONTHLY_SOURCE,
+                source_label=YOUTH_MONTHLY_SOURCE,
+            )
+            if revenue_id is not None:
+                updates["youth_monthly_revenue_id"] = revenue_id
+            kit_revenue_id = self._sync_youth_revenue(
+                player_id=stored["id"],
+                player_name=name,
+                squad=squad,
+                amount=kit_fee,
+                paid=kit_paid_flag,
+                existing_revenue_id=None,
+                description_label=YOUTH_KIT_SOURCE,
+                source_label=YOUTH_KIT_SOURCE,
+            )
+            if kit_revenue_id is not None:
+                updates["youth_kit_revenue_id"] = kit_revenue_id
+        if updates:
+            stored = self._update_entity("players", stored["id"], updates)
         return storage.instantiate(models.Player, stored)
 
     def list_players(self) -> List[models.Player]:
@@ -283,7 +414,51 @@ class ClubService:
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
         photo_url: object | str | None = UNSET,
+        youth_monthly_fee: object = UNSET,
+        youth_monthly_paid: object = UNSET,
+        youth_kit_fee: object = UNSET,
+        youth_kit_paid: object = UNSET,
     ) -> models.Player:
+        record = self._find_entity("players", player_id)
+        if record is None:
+            raise ValueError(f"Jogador com id {player_id} não encontrado")
+
+        current_name = record.get("name", "")
+        current_squad = record.get("squad", "senior")
+        final_name = name if name is not None else current_name
+        final_squad = squad if squad is not None else current_squad
+        final_squad = str(final_squad or "senior")
+
+        current_monthly_fee = self._coerce_amount(record.get("youth_monthly_fee"))
+        current_kit_fee = self._coerce_amount(record.get("youth_kit_fee"))
+        final_monthly_fee = current_monthly_fee
+        final_kit_fee = current_kit_fee
+        if youth_monthly_fee is not UNSET:
+            final_monthly_fee = self._coerce_amount(youth_monthly_fee)
+        if youth_kit_fee is not UNSET:
+            final_kit_fee = self._coerce_amount(youth_kit_fee)
+
+        current_monthly_paid = bool(record.get("youth_monthly_paid", False))
+        current_kit_paid = bool(record.get("youth_kit_paid", False))
+        final_monthly_paid = current_monthly_paid
+        final_kit_paid = current_kit_paid
+        if youth_monthly_paid is not UNSET:
+            final_monthly_paid = bool(youth_monthly_paid)
+        if youth_kit_paid is not UNSET:
+            final_kit_paid = bool(youth_kit_paid)
+
+        is_youth = self._is_youth_squad(final_squad)
+        if not is_youth:
+            final_monthly_fee = None
+            final_monthly_paid = False
+            final_kit_fee = None
+            final_kit_paid = False
+
+        if is_youth and final_monthly_paid and (final_monthly_fee is None or final_monthly_fee <= 0):
+            raise ValueError("Indique um valor para a mensalidade antes de a marcar como paga.")
+        if is_youth and final_kit_paid and (final_kit_fee is None or final_kit_fee <= 0):
+            raise ValueError("Indique um valor para o kit de treino antes de o marcar como pago.")
+
         updates: Dict[str, Any] = {}
         if name is not None:
             updates["name"] = name
@@ -299,10 +474,53 @@ class ClubService:
             updates["shirt_number"] = shirt_number
         if photo_url is not UNSET:
             updates["photo_url"] = photo_url or None
+        updates["youth_monthly_fee"] = final_monthly_fee
+        updates["youth_monthly_paid"] = final_monthly_paid
+        updates["youth_kit_fee"] = final_kit_fee
+        updates["youth_kit_paid"] = final_kit_paid
+
+        current_monthly_revenue_id = self._coerce_int(record.get("youth_monthly_revenue_id"))
+        current_kit_revenue_id = self._coerce_int(record.get("youth_kit_revenue_id"))
+
+        new_monthly_revenue_id = self._sync_youth_revenue(
+            player_id=player_id,
+            player_name=final_name,
+            squad=final_squad,
+            amount=final_monthly_fee,
+            paid=final_monthly_paid,
+            existing_revenue_id=current_monthly_revenue_id,
+            description_label=YOUTH_MONTHLY_SOURCE,
+            source_label=YOUTH_MONTHLY_SOURCE,
+        )
+        updates["youth_monthly_revenue_id"] = new_monthly_revenue_id
+
+        new_kit_revenue_id = self._sync_youth_revenue(
+            player_id=player_id,
+            player_name=final_name,
+            squad=final_squad,
+            amount=final_kit_fee,
+            paid=final_kit_paid,
+            existing_revenue_id=current_kit_revenue_id,
+            description_label=YOUTH_KIT_SOURCE,
+            source_label=YOUTH_KIT_SOURCE,
+        )
+        updates["youth_kit_revenue_id"] = new_kit_revenue_id
+
         record = self._update_entity("players", player_id, updates)
         return storage.instantiate(models.Player, record)
 
     def remove_player(self, player_id: int) -> None:
+        record = self._find_entity("players", player_id)
+        if record is None:
+            raise ValueError(f"Jogador com id {player_id} não encontrado")
+        for key in ("youth_monthly_revenue_id", "youth_kit_revenue_id"):
+            revenue_id = self._coerce_int(record.get(key))
+            if revenue_id is None:
+                continue
+            try:
+                self.remove_revenue(revenue_id)
+            except ValueError:
+                pass
         self._remove_entity("players", player_id)
 
     # Coaches ---------------------------------------------------------

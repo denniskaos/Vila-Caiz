@@ -36,16 +36,48 @@ def _configure_player_commands(subparsers: argparse._SubParsersAction, service: 
     add_player.add_argument("--birthdate", help=DATE_HELP)
     add_player.add_argument("--contact", help="Contacto (email ou telefone)")
     add_player.add_argument("--shirt-number", type=int, dest="shirt_number", help="Número da camisola")
+    add_player.add_argument(
+        "--youth-monthly-fee",
+        type=float,
+        dest="youth_monthly_fee",
+        help="Valor da mensalidade (camadas jovens)",
+    )
+    add_player.add_argument(
+        "--youth-monthly-paid",
+        action="store_true",
+        dest="youth_monthly_paid",
+        help="Assinala mensalidade como paga",
+    )
+    add_player.add_argument(
+        "--youth-kit-fee",
+        type=float,
+        dest="youth_kit_fee",
+        help="Valor do kit de treino (camadas jovens)",
+    )
+    add_player.add_argument(
+        "--youth-kit-paid",
+        action="store_true",
+        dest="youth_kit_paid",
+        help="Assinala kit de treino como pago",
+    )
 
     def handle_add(args: argparse.Namespace) -> None:
-        player = service.add_player(
-            name=args.name,
-            position=args.position,
-            squad=args.squad,
-            birthdate=parse_date(args.birthdate),
-            contact=args.contact,
-            shirt_number=args.shirt_number,
-        )
+        try:
+            player = service.add_player(
+                name=args.name,
+                position=args.position,
+                squad=args.squad,
+                birthdate=parse_date(args.birthdate),
+                contact=args.contact,
+                shirt_number=args.shirt_number,
+                youth_monthly_fee=args.youth_monthly_fee,
+                youth_monthly_paid=args.youth_monthly_paid,
+                youth_kit_fee=args.youth_kit_fee,
+                youth_kit_paid=args.youth_kit_paid,
+            )
+        except ValueError as exc:
+            print(f"Erro: {exc}")
+            return
         print("Jogador criado:")
         print(f"  {services.format_person(player)} | {player.position} | {player.squad} | #{player.shirt_number or '-'}")
 
@@ -59,7 +91,23 @@ def _configure_player_commands(subparsers: argparse._SubParsersAction, service: 
             print("Sem jogadores registados.")
             return
         for player in players:
-            print(f"- {services.format_person(player)} | {player.position} | {player.squad} | #{player.shirt_number or '-'}")
+            base = f"- {services.format_person(player)} | {player.position} | {player.squad} | #{player.shirt_number or '-'}"
+            extras = []
+            squad_value = (player.squad or "").lower()
+            if squad_value in services.YOUTH_SQUADS:
+                if player.youth_monthly_fee is not None or player.youth_monthly_paid:
+                    monthly = "Mensalidade: " + ("Pago" if player.youth_monthly_paid else "Em falta")
+                    if player.youth_monthly_fee is not None:
+                        monthly += f" ({player.youth_monthly_fee:.2f}€)"
+                    extras.append(monthly)
+                if player.youth_kit_fee is not None or player.youth_kit_paid:
+                    kit = "Kit: " + ("Pago" if player.youth_kit_paid else "Em falta")
+                    if player.youth_kit_fee is not None:
+                        kit += f" ({player.youth_kit_fee:.2f}€)"
+                    extras.append(kit)
+            if extras:
+                base = f"{base} | {' / '.join(extras)}"
+            print(base)
 
     list_player.set_defaults(func=handle_list)
 

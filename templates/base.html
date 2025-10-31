@@ -374,6 +374,22 @@
         gap: 0.6rem;
       }
 
+      fieldset {
+        border: 1px solid rgba(24, 24, 24, 0.18);
+        border-radius: 12px;
+        padding: 0.75rem 0.85rem 1rem;
+        background: rgba(245, 196, 0, 0.08);
+      }
+
+      fieldset legend {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary-dark);
+        padding: 0 0.5rem;
+      }
+
       label {
         font-size: 0.85rem;
         font-weight: 600;
@@ -383,6 +399,17 @@
       }
 
       @media (prefers-color-scheme: dark) {
+        fieldset {
+          background: rgba(245, 196, 0, 0.2);
+          border-color: rgba(245, 196, 0, 0.45);
+        }
+
+        fieldset legend {
+          color: #050505;
+          background: rgba(245, 196, 0, 0.85);
+          border-radius: 999px;
+        }
+
         label {
           color: var(--primary);
         }
@@ -767,10 +794,62 @@
         margin-inline-start: 0.35rem;
       }
 
+      .status-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        background: rgba(24, 24, 24, 0.15);
+        color: #0d0d0d;
+        border: 1px solid transparent;
+      }
+
+      .status-chip.success {
+        background: var(--success);
+        color: #f9f6ea;
+      }
+
+      .status-chip.pending {
+        background: rgba(245, 196, 0, 0.55);
+        color: #181818;
+        border-color: rgba(24, 24, 24, 0.2);
+      }
+
+      .status-detail {
+        display: block;
+        font-size: 0.75rem;
+        margin-top: 0.2rem;
+        color: rgba(24, 24, 24, 0.72);
+      }
+
       @media (prefers-color-scheme: dark) {
         .tag {
           background: rgba(245, 196, 0, 0.24);
           color: #181818;
+        }
+
+        .status-chip {
+          background: rgba(245, 196, 0, 0.28);
+          color: #050505;
+        }
+
+        .status-chip.success {
+          background: #0b7d2a;
+          color: #eef7eb;
+        }
+
+        .status-chip.pending {
+          background: rgba(245, 196, 0, 0.75);
+          color: #050505;
+          border-color: rgba(0, 0, 0, 0.35);
+        }
+
+        .status-detail {
+          color: rgba(245, 245, 245, 0.75);
         }
       }
 

@@ -10,7 +10,7 @@ from uuid import uuid4
 from flask import Flask, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
-from .services import ClubService
+from .services import ClubService, YOUTH_SQUADS
 from .storage import parse_date
 
 
@@ -391,6 +391,21 @@ def create_app() -> Flask:
             return False, None
         return True, parsed
 
+    def _handle_amount(field: str) -> Tuple[bool, Optional[float]]:
+        raw = request.form.get(field, "")
+        if raw is None:
+            return True, None
+        text = raw.strip().replace(",", ".")
+        if not text:
+            return True, None
+        try:
+            value = float(text)
+        except ValueError:
+            return False, None
+        if value < 0:
+            return False, None
+        return True, value
+
     def _flash_invalid(message: str) -> None:
         flash(message, "error")
 
@@ -412,6 +427,7 @@ def create_app() -> Flask:
         if player_id_raw and player_id is None:
             _flash_invalid("Jogador selecionado é inválido para edição.")
             return redirect(url_for("players_page"))
+        target = url_for("players_page", edit=player_id) if player_id is not None else url_for("players_page")
         name = request.form.get("name", "").strip()
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
@@ -420,17 +436,39 @@ def create_app() -> Flask:
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o jogador.")
-            return redirect(url_for("players_page"))
+            return redirect(target)
         shirt_number = None
         if shirt_number_raw:
             try:
                 shirt_number = int(shirt_number_raw)
             except ValueError:
                 _flash_invalid("Número da camisola inválido.")
-                return redirect(url_for("players_page"))
+                return redirect(target)
+        ok_monthly_fee, youth_monthly_fee = _handle_amount("youth_monthly_fee")
+        if not ok_monthly_fee:
+            _flash_invalid("O valor da mensalidade é inválido.")
+            return redirect(target)
+        ok_kit_fee, youth_kit_fee = _handle_amount("youth_kit_fee")
+        if not ok_kit_fee:
+            _flash_invalid("O valor do kit de treino é inválido.")
+            return redirect(target)
+        youth_monthly_paid = request.form.get("youth_monthly_paid") == "on"
+        youth_kit_paid = request.form.get("youth_kit_paid") == "on"
+        is_youth_squad = squad.lower() in YOUTH_SQUADS
+        if is_youth_squad and youth_monthly_paid and (youth_monthly_fee is None or youth_monthly_fee <= 0):
+            _flash_invalid("Indique um valor para a mensalidade antes de a marcar como paga.")
+            return redirect(target)
+        if is_youth_squad and youth_kit_paid and (youth_kit_fee is None or youth_kit_fee <= 0):
+            _flash_invalid("Indique um valor para o kit de treino antes de o marcar como pago.")
+            return redirect(target)
+        if not is_youth_squad:
+            youth_monthly_fee = None
+            youth_monthly_paid = False
+            youth_kit_fee = None
+            youth_kit_paid = False
         if not name or not position:
             _flash_invalid("Nome e posição são obrigatórios.")
-            return redirect(url_for("players_page"))
+            return redirect(target)
         service = get_service()
         existing_player = None
         if player_id is not None:
@@ -438,24 +476,31 @@ def create_app() -> Flask:
             existing_player = next((player for player in players if player.id == player_id), None)
             if existing_player is None:
                 _flash_invalid("Jogador não encontrado para edição.")
-                return redirect(url_for("players_page"))
+                return redirect(target)
         photo_value, photo_changed, photo_error = _process_photo_upload(
             "photo", existing=existing_player.photo_url if existing_player else None
         )
         if photo_error:
             _flash_invalid(photo_error)
-            target = url_for("players_page", edit=player_id) if player_id is not None else url_for("players_page")
             return redirect(target)
         if player_id is None:
-            service.add_player(
-                name=name,
-                position=position,
-                squad=squad or "senior",
-                birthdate=birthdate,
-                contact=contact,
-                shirt_number=shirt_number,
-                photo_url=photo_value if photo_changed else None,
-            )
+            try:
+                service.add_player(
+                    name=name,
+                    position=position,
+                    squad=squad or "senior",
+                    birthdate=birthdate,
+                    contact=contact,
+                    shirt_number=shirt_number,
+                    photo_url=photo_value if photo_changed else None,
+                    youth_monthly_fee=youth_monthly_fee,
+                    youth_monthly_paid=youth_monthly_paid,
+                    youth_kit_fee=youth_kit_fee,
+                    youth_kit_paid=youth_kit_paid,
+                )
+            except ValueError as exc:
+                _flash_invalid(str(exc))
+                return redirect(target)
             flash("Jogador gravado com sucesso!", "success")
         else:
             try:
@@ -466,6 +511,10 @@ def create_app() -> Flask:
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
+                    youth_monthly_fee=youth_monthly_fee,
+                    youth_monthly_paid=youth_monthly_paid,
+                    youth_kit_fee=youth_kit_fee,
+                    youth_kit_paid=youth_kit_paid,
                 )
                 if photo_changed:
                     update_kwargs["photo_url"] = photo_value
@@ -475,7 +524,7 @@ def create_app() -> Flask:
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
-                return redirect(url_for("players_page", edit=player_id))
+                return redirect(target)
             flash("Jogador atualizado com sucesso!", "success")
         return redirect(url_for("players_page"))
 

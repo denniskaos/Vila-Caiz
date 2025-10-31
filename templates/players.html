@@ -39,6 +39,49 @@
       <label for="player-contact">Contacto</label>
       <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_player.contact if editing_player else '' }}" />
 
+      <fieldset>
+        <legend>Camadas Jovens</legend>
+        <p class="form-hint">Registe mensalidade e kit de treino para escalões de formação.</p>
+
+        <label for="player-monthly-fee">Mensalidade (€)</label>
+        <input
+          id="player-monthly-fee"
+          name="youth_monthly_fee"
+          type="number"
+          step="0.01"
+          min="0"
+          value="{{ editing_player.youth_monthly_fee if editing_player and editing_player.youth_monthly_fee is not none else '' }}"
+        />
+
+        <label for="player-monthly-paid" class="checkbox-label">
+          <input
+            id="player-monthly-paid"
+            name="youth_monthly_paid"
+            type="checkbox"{% if editing_player and editing_player.youth_monthly_paid %} checked{% endif %}
+          />
+          <span>Mensalidade liquidada</span>
+        </label>
+
+        <label for="player-kit-fee">Kit de Treino (€)</label>
+        <input
+          id="player-kit-fee"
+          name="youth_kit_fee"
+          type="number"
+          step="0.01"
+          min="0"
+          value="{{ editing_player.youth_kit_fee if editing_player and editing_player.youth_kit_fee is not none else '' }}"
+        />
+
+        <label for="player-kit-paid" class="checkbox-label">
+          <input
+            id="player-kit-paid"
+            name="youth_kit_paid"
+            type="checkbox"{% if editing_player and editing_player.youth_kit_paid %} checked{% endif %}
+          />
+          <span>Kit de treino liquidado</span>
+        </label>
+      </fieldset>
+
       <label for="player-photo">Fotografia</label>
       <input id="player-photo" name="photo" type="file" accept="image/*" />
       <p class="form-hint">Carregue uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
@@ -64,6 +107,8 @@
               <th>Nome</th>
               <th>Posição</th>
               <th>Escalão</th>
+              <th>Mensalidade</th>
+              <th>Kit Treino</th>
               <th>Nascimento</th>
               <th>Contacto</th>
               <th>Ações</th>
@@ -84,6 +129,32 @@
                 <td data-label="Nome">{{ player.name }}</td>
                 <td data-label="Posição">{{ player.position }}</td>
                 <td data-label="Escalão">{{ player.squad|title }}</td>
+                {% set youth_squads = ['juniores', 'juvenis', 'iniciados', 'infantis'] %}
+                {% set is_youth = player.squad and player.squad|lower in youth_squads %}
+                <td data-label="Mensalidade">
+                  {% if is_youth %}
+                    <span class="status-chip {{ 'success' if player.youth_monthly_paid else 'pending' }}">
+                      {{ 'Pago' if player.youth_monthly_paid else 'Em Falta' }}
+                    </span>
+                    {% if player.youth_monthly_fee is not none %}
+                      <span class="status-detail">{{ player.youth_monthly_fee | format_currency }}</span>
+                    {% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+                <td data-label="Kit Treino">
+                  {% if is_youth %}
+                    <span class="status-chip {{ 'success' if player.youth_kit_paid else 'pending' }}">
+                      {{ 'Pago' if player.youth_kit_paid else 'Em Falta' }}
+                    </span>
+                    {% if player.youth_kit_fee is not none %}
+                      <span class="status-detail">{{ player.youth_kit_fee | format_currency }}</span>
+                    {% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
                 <td data-label="Nascimento">{{ player.birthdate or '-' }}</td>
                 <td data-label="Contacto">{{ player.contact or '-' }}</td>
                 <td data-label="Ações">

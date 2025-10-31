@@ -29,6 +29,12 @@ class Player(Person):
     position: str = ""
     squad: str = "senior"
     shirt_number: Optional[int] = None
+    youth_monthly_fee: Optional[float] = None
+    youth_monthly_paid: bool = False
+    youth_kit_fee: Optional[float] = None
+    youth_kit_paid: bool = False
+    youth_monthly_revenue_id: Optional[int] = None
+    youth_kit_revenue_id: Optional[int] = None
 
 
 @dataclass

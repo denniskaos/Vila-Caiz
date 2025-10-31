@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Receitas</h2>
+  <p>Registe entradas financeiras e acompanhe as fontes de receita do clube.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-revenue">
+    <h3 id="form-revenue">{{ 'Editar Receita' if editing_revenue else 'Registar Receita' }}</h3>
+    <form method="post" action="{{ url_for('add_revenue') }}">
+      {% if editing_revenue %}
+        <input type="hidden" name="revenue_id" value="{{ editing_revenue.id }}" />
+      {% endif %}
+      <label for="revenue-date">Data</label>
+      <input id="revenue-date" name="record_date" type="date" value="{{ editing_revenue.record_date.isoformat() if editing_revenue else '' }}" required />
+
+      <label for="revenue-description">Descrição</label>
+      <input id="revenue-description" name="description" type="text" value="{{ editing_revenue.description if editing_revenue else '' }}" required />
+
+      <label for="revenue-category">Categoria</label>
+      <input id="revenue-category" name="category" type="text" placeholder="Bilheteira, Patrocínio..." value="{{ editing_revenue.category if editing_revenue else '' }}" required />
+
+      <label for="revenue-source">Origem</label>
+      <input id="revenue-source" name="source" type="text" placeholder="Empresa, Sócio..." value="{{ editing_revenue.source if editing_revenue else '' }}" />
+
+      <label for="revenue-amount">Montante (€)</label>
+      <input id="revenue-amount" name="amount" type="number" step="0.01" min="0" value="{{ editing_revenue.amount if editing_revenue else '' }}" required />
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_revenue else 'Gravar' }}</button>
+        {% if editing_revenue %}
+          <a href="{{ url_for('finances_revenue_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Histórico de Receitas</h3>
+    {% if revenues %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de receitas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Descrição</th>
+              <th>Categoria</th>
+              <th>Origem</th>
+              <th>Montante</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for entry in revenues %}
+              <tr>
+                <td>{{ entry.record_date }}</td>
+                <td>{{ entry.description }}</td>
+                <td>{{ entry.category }}</td>
+                <td>{{ entry.source or '-' }}</td>
+                <td>{{ entry.amount | format_currency }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('finances_revenue_page', edit=entry.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_revenue', revenue_id=entry.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta receita?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Sem receitas registadas.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

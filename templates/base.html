@@ -611,6 +611,82 @@
         background: transparent;
       }
 
+      @media (max-width: 760px) {
+        .table-wrapper {
+          overflow-x: visible;
+        }
+
+        .table-wrapper table {
+          min-width: 0;
+        }
+
+        .table-wrapper table thead {
+          display: none;
+        }
+
+        .table-wrapper table tbody {
+          display: grid;
+          gap: 0.9rem;
+        }
+
+        .table-wrapper table tr {
+          display: grid;
+          gap: 0;
+          border-radius: 16px;
+          overflow: hidden;
+          background: rgba(245, 196, 0, 0.08);
+          box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+        }
+
+        .table-wrapper table td {
+          display: grid;
+          grid-template-columns: minmax(120px, 45%) 1fr;
+          gap: 0.5rem;
+          align-items: start;
+          padding: 0.95rem 1rem;
+          border-bottom: 1px solid rgba(24, 24, 24, 0.12);
+        }
+
+        .table-wrapper table td:last-child {
+          border-bottom: none;
+        }
+
+        .table-wrapper table td::before {
+          content: attr(data-label);
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          font-weight: 700;
+          color: rgba(24, 24, 24, 0.7);
+        }
+
+        .table-wrapper .actions {
+          justify-content: flex-start;
+        }
+
+        .table-wrapper .actions .button {
+          width: auto;
+        }
+
+        .table-wrapper .inline-form {
+          width: auto;
+        }
+      }
+
+      @media (max-width: 760px) and (prefers-color-scheme: dark) {
+        .table-wrapper table tr {
+          background: rgba(245, 196, 0, 0.12);
+        }
+
+        .table-wrapper table td {
+          border-bottom-color: rgba(245, 196, 0, 0.22);
+        }
+
+        .table-wrapper table td::before {
+          color: rgba(245, 196, 0, 0.78);
+        }
+      }
+
       .avatar-thumb {
         width: 48px;
         height: 48px;

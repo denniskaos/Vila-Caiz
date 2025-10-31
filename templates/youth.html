@@ -55,11 +55,11 @@
           <tbody>
             {% for team in youth_teams %}
               <tr>
-                <td>{{ team.name }}</td>
-                <td>{{ team.age_group }}</td>
-                <td>{{ coach_lookup.get(team.coach_id, '—') }}</td>
-                <td>{{ team.player_ids | length }}</td>
-                <td>
+                <td data-label="Nome">{{ team.name }}</td>
+                <td data-label="Escalão">{{ team.age_group }}</td>
+                <td data-label="Treinador">{{ coach_lookup.get(team.coach_id, '—') }}</td>
+                <td data-label="Atletas">{{ team.player_ids | length }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('youth_page', edit=team.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_youth_team', team_id=team.id) }}" class="inline-form">

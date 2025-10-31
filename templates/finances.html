@@ -95,37 +95,39 @@
     <article class="card">
       <h3>Histórico de Receitas</h3>
       {% if revenues %}
-        <table aria-label="Lista de receitas">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Origem</th>
-              <th>Montante</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in revenues %}
+        <div class="table-wrapper">
+          <table aria-label="Lista de receitas">
+            <thead>
               <tr>
-                <td>{{ entry.record_date }}</td>
-                <td>{{ entry.description }}</td>
-                <td>{{ entry.category }}</td>
-                <td>{{ entry.source or '-' }}</td>
-                <td>{{ entry.amount | format_currency }}</td>
-                <td>
-                  <div class="actions">
-                    <a href="{{ url_for('finances_revenue_page', edit=entry.id) }}" class="button secondary">Editar</a>
-                    <form method="post" action="{{ url_for('delete_revenue', revenue_id=entry.id) }}" class="inline-form">
-                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta receita?');">Eliminar</button>
-                    </form>
-                  </div>
-                </td>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Origem</th>
+                <th>Montante</th>
+                <th>Ações</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for entry in revenues %}
+                <tr>
+                  <td data-label="Data">{{ entry.record_date }}</td>
+                  <td data-label="Descrição">{{ entry.description }}</td>
+                  <td data-label="Categoria">{{ entry.category }}</td>
+                  <td data-label="Origem">{{ entry.source or '-' }}</td>
+                  <td data-label="Montante">{{ entry.amount | format_currency }}</td>
+                  <td data-label="Ações">
+                    <div class="actions">
+                      <a href="{{ url_for('finances_revenue_page', edit=entry.id) }}" class="button secondary">Editar</a>
+                      <form method="post" action="{{ url_for('delete_revenue', revenue_id=entry.id) }}" class="inline-form">
+                        <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta receita?');">Eliminar</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
         <p class="empty-state">Sem receitas registadas.</p>
       {% endif %}
@@ -169,37 +171,39 @@
     <article class="card">
       <h3>Histórico de Despesas</h3>
       {% if expenses %}
-        <table aria-label="Lista de despesas">
-          <thead>
-            <tr>
-              <th>Data</th>
-              <th>Descrição</th>
-              <th>Categoria</th>
-              <th>Fornecedor</th>
-              <th>Montante</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for entry in expenses %}
+        <div class="table-wrapper">
+          <table aria-label="Lista de despesas">
+            <thead>
               <tr>
-                <td>{{ entry.record_date }}</td>
-                <td>{{ entry.description }}</td>
-                <td>{{ entry.category }}</td>
-                <td>{{ entry.vendor or '-' }}</td>
-                <td>{{ entry.amount | format_currency }}</td>
-                <td>
-                  <div class="actions">
-                    <a href="{{ url_for('finances_expense_page', edit=entry.id) }}" class="button secondary">Editar</a>
-                    <form method="post" action="{{ url_for('delete_expense', expense_id=entry.id) }}" class="inline-form">
-                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta despesa?');">Eliminar</button>
-                    </form>
-                  </div>
-                </td>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Fornecedor</th>
+                <th>Montante</th>
+                <th>Ações</th>
               </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {% for entry in expenses %}
+                <tr>
+                  <td data-label="Data">{{ entry.record_date }}</td>
+                  <td data-label="Descrição">{{ entry.description }}</td>
+                  <td data-label="Categoria">{{ entry.category }}</td>
+                  <td data-label="Fornecedor">{{ entry.vendor or '-' }}</td>
+                  <td data-label="Montante">{{ entry.amount | format_currency }}</td>
+                  <td data-label="Ações">
+                    <div class="actions">
+                      <a href="{{ url_for('finances_expense_page', edit=entry.id) }}" class="button secondary">Editar</a>
+                      <form method="post" action="{{ url_for('delete_expense', expense_id=entry.id) }}" class="inline-form">
+                        <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta despesa?');">Eliminar</button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       {% else %}
         <p class="empty-state">Sem despesas registadas.</p>
       {% endif %}

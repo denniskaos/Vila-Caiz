@@ -56,12 +56,12 @@
           <tbody>
             {% for entry in revenues %}
               <tr>
-                <td>{{ entry.record_date }}</td>
-                <td>{{ entry.description }}</td>
-                <td>{{ entry.category }}</td>
-                <td>{{ entry.source or '-' }}</td>
-                <td>{{ entry.amount | format_currency }}</td>
-                <td>
+                <td data-label="Data">{{ entry.record_date }}</td>
+                <td data-label="Descrição">{{ entry.description }}</td>
+                <td data-label="Categoria">{{ entry.category }}</td>
+                <td data-label="Origem">{{ entry.source or '-' }}</td>
+                <td data-label="Montante">{{ entry.amount | format_currency }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('finances_revenue_page', edit=entry.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_revenue', revenue_id=entry.id) }}" class="inline-form">

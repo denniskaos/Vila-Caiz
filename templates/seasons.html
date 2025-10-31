@@ -55,17 +55,17 @@
           <tbody>
             {% for season in seasons %}
               <tr>
-                <td>{{ season.name }}</td>
-                <td>{{ season.start_date.strftime('%d/%m/%Y') }} – {{ season.end_date.strftime('%d/%m/%Y') }}</td>
-                <td>{{ season.notes or '-' }}</td>
-                <td>
+                <td data-label="Nome">{{ season.name }}</td>
+                <td data-label="Período">{{ season.start_date.strftime('%d/%m/%Y') }} – {{ season.end_date.strftime('%d/%m/%Y') }}</td>
+                <td data-label="Notas">{{ season.notes or '-' }}</td>
+                <td data-label="Estado">
                   {% if active_season and season.id == active_season.id %}
                     <span class="tag">Ativa</span>
                   {% else %}
                     <span class="tag" style="background: rgba(245, 196, 0, 0.1); color: var(--primary-dark);">Planeada</span>
                   {% endif %}
                 </td>
-                <td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('seasons_page', edit=season.id) }}" class="button secondary">Editar</a>
                     {% if not active_season or season.id != active_season.id %}

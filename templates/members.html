@@ -78,33 +78,33 @@
             </tr>
           </thead>
           <tbody>
-            {% for member in members %}
-              {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
-              <tr>
-                <td>
-                  {% set member_photo = member.photo_url|photo_path %}
-                  {% if member_photo %}
-                    <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" class="avatar-thumb" />
-                  {% else %}
-                    <span class="avatar-placeholder" aria-hidden="true">{{ member.name[:2]|upper }}</span>
-                  {% endif %}
-                </td>
-                <td>{{ member.member_number or member.id }}</td>
-                <td>{{ member.name }}</td>
-                <td>
-                  {{ member.membership_type or '—' }}
-                  {% if type_info %}
-                    <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
-                  {% endif %}
-                </td>
-                <td>{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
-                <td>{{ member.dues_paid_until or '-' }}</td>
-                <td>{{ member.birthdate or '-' }}</td>
-                <td>{{ member.contact or '-' }}</td>
-                <td>
-                  <div class="actions">
-                    <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
-                    <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
+              {% for member in members %}
+                {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
+                <tr>
+                  <td data-label="Foto">
+                    {% set member_photo = member.photo_url|photo_path %}
+                    {% if member_photo %}
+                      <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" class="avatar-thumb" />
+                    {% else %}
+                      <span class="avatar-placeholder" aria-hidden="true">{{ member.name[:2]|upper }}</span>
+                    {% endif %}
+                  </td>
+                  <td data-label="Nº Sócio">{{ member.member_number or member.id }}</td>
+                  <td data-label="Nome">{{ member.name }}</td>
+                  <td data-label="Tipo">
+                    {{ member.membership_type or '—' }}
+                    {% if type_info %}
+                      <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
+                    {% endif %}
+                  </td>
+                  <td data-label="Estado">{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
+                  <td data-label="Validade">{{ member.dues_paid_until or '-' }}</td>
+                  <td data-label="Nascimento">{{ member.birthdate or '-' }}</td>
+                  <td data-label="Contacto">{{ member.contact or '-' }}</td>
+                  <td data-label="Ações">
+                    <div class="actions">
+                      <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
+                      <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
                       <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
                     </form>
                   </div>
@@ -165,11 +165,11 @@
           <tbody>
             {% for membership_type in membership_types %}
               <tr>
-                <td>{{ membership_type.name }}</td>
-                <td>{{ membership_type.amount|format_currency }}</td>
-                <td>{{ membership_type.frequency }}</td>
-                <td>{{ membership_type.description or '-' }}</td>
-                <td>
+                <td data-label="Nome">{{ membership_type.name }}</td>
+                <td data-label="Valor">{{ membership_type.amount|format_currency }}</td>
+                <td data-label="Periodicidade">{{ membership_type.frequency }}</td>
+                <td data-label="Notas">{{ membership_type.description or '-' }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('members_page', edit_type=membership_type.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_membership_type', type_id=membership_type.id) }}" class="inline-form">
@@ -256,19 +256,19 @@
               {% set member = member_lookup.get(payment.member_id) %}
               {% set type_info = type_lookup.get(payment.membership_type_id) if payment.membership_type_id is not none else None %}
               <tr>
-                <td>{{ payment.paid_on }}</td>
-                <td>
+                <td data-label="Data">{{ payment.paid_on }}</td>
+                <td data-label="Sócio">
                   {% if member %}
                     [{{ member.member_number or member.id }}] {{ member.name }}
                   {% else %}
                     Sócio #{{ payment.member_id }}
                   {% endif %}
                 </td>
-                <td>{{ type_info.name if type_info else member.membership_type if member else '-' }}</td>
-                <td>{{ payment.period }}</td>
-                <td>{{ payment.amount|format_currency }}</td>
-                <td>{{ payment.notes or '-' }}</td>
-                <td>
+                <td data-label="Tipo">{{ type_info.name if type_info else member.membership_type if member else '-' }}</td>
+                <td data-label="Período">{{ payment.period }}</td>
+                <td data-label="Valor">{{ payment.amount|format_currency }}</td>
+                <td data-label="Notas">{{ payment.notes or '-' }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <form method="post" action="{{ url_for('delete_membership_payment', payment_id=payment.id) }}" class="inline-form">
                       <button type="submit" class="button danger" onclick="return confirm('Remover este registo de pagamento?');">Eliminar</button>

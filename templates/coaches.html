@@ -61,7 +61,7 @@
           <tbody>
             {% for coach in coaches %}
               <tr>
-                <td>
+                <td data-label="Foto">
                   {% set coach_photo = coach.photo_url|photo_path %}
                   {% if coach_photo %}
                     <img src="{{ coach_photo }}" alt="Fotografia de {{ coach.name }}" class="avatar-thumb" />
@@ -69,12 +69,12 @@
                     <span class="avatar-placeholder" aria-hidden="true">{{ coach.name[:2]|upper }}</span>
                   {% endif %}
                 </td>
-                <td>{{ coach.name }}</td>
-                <td>{{ coach.role }}</td>
-                <td>{{ coach.license_level or '-' }}</td>
-                <td>{{ coach.birthdate or '-' }}</td>
-                <td>{{ coach.contact or '-' }}</td>
-                <td>
+                <td data-label="Nome">{{ coach.name }}</td>
+                <td data-label="Função">{{ coach.role }}</td>
+                <td data-label="Licença">{{ coach.license_level or '-' }}</td>
+                <td data-label="Nascimento">{{ coach.birthdate or '-' }}</td>
+                <td data-label="Contacto">{{ coach.contact or '-' }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('coaches_page', edit=coach.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_coach', coach_id=coach.id) }}" class="inline-form">

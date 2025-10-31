@@ -57,7 +57,7 @@
           <tbody>
             {% for physio in physios %}
               <tr>
-                <td>
+                <td data-label="Foto">
                   {% set physio_photo = physio.photo_url|photo_path %}
                   {% if physio_photo %}
                     <img src="{{ physio_photo }}" alt="Fotografia de {{ physio.name }}" class="avatar-thumb" />
@@ -65,11 +65,11 @@
                     <span class="avatar-placeholder" aria-hidden="true">{{ physio.name[:2]|upper }}</span>
                   {% endif %}
                 </td>
-                <td>{{ physio.name }}</td>
-                <td>{{ physio.specialization or '-' }}</td>
-                <td>{{ physio.birthdate or '-' }}</td>
-                <td>{{ physio.contact or '-' }}</td>
-                <td>
+                <td data-label="Nome">{{ physio.name }}</td>
+                <td data-label="Especialidade">{{ physio.specialization or '-' }}</td>
+                <td data-label="Nascimento">{{ physio.birthdate or '-' }}</td>
+                <td data-label="Contacto">{{ physio.contact or '-' }}</td>
+                <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('physios_page', edit=physio.id) }}" class="button secondary">Editar</a>
                     <form method="post" action="{{ url_for('delete_physio', physio_id=physio.id) }}" class="inline-form">

@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Planificação de Jogo</h2>
+  <p>Organize a convocatória, titulares e suplentes com toda a informação do encontro pronta a imprimir.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+  <form method="get" class="inline-filter" aria-label="Selecionar plantel">
+    <label for="filter-squad">Plantel</label>
+    <select id="filter-squad" name="squad" onchange="this.form.submit()">
+      {% for squad in squads %}
+        <option value="{{ squad }}"{% if squad == selected_squad %} selected{% endif %}>{{ squad|title }}</option>
+      {% endfor %}
+    </select>
+    {% if request.args.get('edit') %}
+      <input type="hidden" name="edit" value="{{ request.args.get('edit') }}" />
+    {% endif %}
+  </form>
+</section>
+{% if active_treatments %}
+  <article class="card alert-card">
+    <h3>Alertas Clínicos</h3>
+    <p>Os seguintes atletas estão sinalizados pelo departamento médico:</p>
+    <ul class="list-tags">
+      {% for player_id, treatments in active_treatments|dictsort %}
+        {% set player = player_lookup.get(player_id) %}
+        {% if treatments %}
+          {% set treatment = treatments[0] %}
+          <li>
+            {{ player.name if player else 'Jogador #' ~ player_id }} — {{ treatment.diagnosis }}
+            {% if treatment.expected_return %}
+              (Regresso {{ treatment.expected_return.strftime('%d/%m/%Y') }})
+            {% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </article>
+{% endif %}
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="match-plan-form">
+    <h3 id="match-plan-form">{{ 'Editar plano de jogo' if editing_plan else 'Novo plano de jogo' }}</h3>
+    <form method="post" action="{{ url_for('save_match_plan') }}">
+      {% if editing_plan %}
+        <input type="hidden" name="plan_id" value="{{ editing_plan.id }}" />
+      {% endif %}
+      <label for="plan-squad">Plantel</label>
+      <select id="plan-squad" name="squad">
+        {% for squad in squads %}
+          {% set is_selected = (editing_plan and editing_plan.squad == squad) or (not editing_plan and squad == selected_squad) %}
+          <option value="{{ squad }}"{% if is_selected %} selected{% endif %}>{{ squad|title }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="plan-match-date">Data do jogo</label>
+      <input id="plan-match-date" name="match_date" type="date" value="{{ editing_plan.match_date.isoformat() if editing_plan else '' }}" required />
+
+      <label for="plan-kickoff">Hora</label>
+      <input id="plan-kickoff" name="kickoff_time" type="time" value="{{ editing_plan.kickoff_time if editing_plan and editing_plan.kickoff_time else '' }}" required />
+
+      <label for="plan-venue">Local</label>
+      <input id="plan-venue" name="venue" type="text" placeholder="Estádio Municipal" value="{{ editing_plan.venue if editing_plan and editing_plan.venue else '' }}" required />
+
+      <label for="plan-opponent">Adversário</label>
+      <input id="plan-opponent" name="opponent" type="text" placeholder="Adversário" value="{{ editing_plan.opponent if editing_plan else '' }}" required />
+
+      <label for="plan-competition">Competição</label>
+      <input id="plan-competition" name="competition" type="text" placeholder="Campeonato, Taça..." value="{{ editing_plan.competition if editing_plan and editing_plan.competition else '' }}" />
+
+      <label for="plan-notes">Observações</label>
+      <textarea id="plan-notes" name="notes" rows="3" placeholder="Notas adicionais para a equipa ou delegado.">{{ editing_plan.notes if editing_plan and editing_plan.notes else '' }}</textarea>
+
+      <div class="lineup-groups" role="group" aria-label="Selecionar jogadores">
+        <section class="lineup-group" aria-labelledby="lineup-starters-heading">
+          <div>
+            <h4 id="lineup-starters-heading">Titulares</h4>
+            <p class="select-note">Selecione até 11 titulares. Basta marcar as caixas correspondentes.</p>
+          </div>
+          <div class="lineup-options" role="list">
+            {% for player in players %}
+              {% set selected = editing_plan and player.id in editing_plan.starters %}
+              {% set warnings = active_treatments.get(player.id, []) %}
+              <label class="lineup-option" role="listitem">
+                <input type="checkbox" name="starters" value="{{ player.id }}"{% if selected %} checked{% endif %} />
+                <span class="lineup-option__body">
+                  <span class="lineup-option__name">
+                    {% if player.shirt_number is not none %}
+                      Nº {{ '%02d'|format(player.shirt_number) }} ·
+                    {% endif %}
+                    {{ player.name }}
+                  </span>
+                  {% set has_meta = player.position or player.af_porto_id or player.contact %}
+                  {% if has_meta %}
+                    <span class="lineup-option__meta">
+                      {% if player.position %}
+                        <span>{{ player.position }}</span>
+                      {% endif %}
+                      {% if player.af_porto_id %}
+                        <span class="lineup-option__badge">AF Porto {{ player.af_porto_id }}</span>
+                      {% endif %}
+                      {% if player.contact %}
+                        <span>{{ player.contact }}</span>
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                  {% if warnings %}
+                    <span class="lineup-option__badges">
+                      <span class="lineup-option__badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                    </span>
+                  {% endif %}
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+        <section class="lineup-group" aria-labelledby="lineup-subs-heading">
+          <div>
+            <h4 id="lineup-subs-heading">Suplentes</h4>
+            <p class="select-note">Marque os jogadores que iniciam no banco.</p>
+          </div>
+          <div class="lineup-options" role="list">
+            {% for player in players %}
+              {% set selected = editing_plan and player.id in editing_plan.substitutes %}
+              {% set warnings = active_treatments.get(player.id, []) %}
+              <label class="lineup-option" role="listitem">
+                <input type="checkbox" name="substitutes" value="{{ player.id }}"{% if selected %} checked{% endif %} />
+                <span class="lineup-option__body">
+                  <span class="lineup-option__name">
+                    {% if player.shirt_number is not none %}
+                      Nº {{ '%02d'|format(player.shirt_number) }} ·
+                    {% endif %}
+                    {{ player.name }}
+                  </span>
+                  {% set has_meta = player.position or player.af_porto_id or player.contact %}
+                  {% if has_meta %}
+                    <span class="lineup-option__meta">
+                      {% if player.position %}
+                        <span>{{ player.position }}</span>
+                      {% endif %}
+                      {% if player.af_porto_id %}
+                        <span class="lineup-option__badge">AF Porto {{ player.af_porto_id }}</span>
+                      {% endif %}
+                      {% if player.contact %}
+                        <span>{{ player.contact }}</span>
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                  {% if warnings %}
+                    <span class="lineup-option__badges">
+                      <span class="lineup-option__badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                    </span>
+                  {% endif %}
+                </span>
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar plano' if editing_plan else 'Gravar plano' }}</button>
+        {% set cancel_url = url_for('match_plans_page', squad=editing_plan.squad if editing_plan else selected_squad) %}
+        {% if editing_plan %}
+          <a href="{{ cancel_url }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <div class="card-heading">
+      <h3>Planos registados</h3>
+      {% if plans %}
+        <p class="card-subtitle">Todos os detalhes do encontro prontos para revisão rápida e impressão.</p>
+      {% endif %}
+    </div>
+    {% if plans %}
+      <div class="entity-grid match-plan-grid" role="list">
+        {% for plan in plans %}
+          <section class="record-card" role="listitem" aria-label="Plano de jogo {{ plan.match_date.strftime('%d/%m/%Y') }}">
+            <header class="match-plan-header">
+              <div>
+                <p class="match-plan-date">{{ plan.match_date.strftime('%d/%m/%Y') }}</p>
+                <h4>{{ plan.opponent }}</h4>
+              </div>
+              <div class="match-plan-meta">
+                <span class="badge badge--number">{{ plan.kickoff_time or 'Hora a definir' }}</span>
+                {% if plan.competition %}
+                  <span class="badge badge--outline">{{ plan.competition }}</span>
+                {% endif %}
+              </div>
+            </header>
+            <dl class="match-plan-details">
+              <div>
+                <dt>Local</dt>
+                <dd>{{ plan.venue or 'Por definir' }}</dd>
+              </div>
+              <div>
+                <dt>Plantel</dt>
+                <dd>{{ plan.squad|title }}</dd>
+              </div>
+            </dl>
+            <div class="match-plan-lineups">
+              <div>
+                <h5>Titulares</h5>
+                {% if plan.starters %}
+                  <ul class="lineup-list">
+                    {% for player_id in plan.starters %}
+                      {% set player = player_lookup.get(player_id) %}
+                      {% if player %}
+                        <li>
+                          <span class="lineup-name">
+                            {% if player.shirt_number is not none %}
+                              Nº {{ '%02d'|format(player.shirt_number) }} ·
+                            {% endif %}
+                            {{ player.name }}
+                          </span>
+                          {% if player.af_porto_id %}
+                            <span class="lineup-badge">AF Porto {{ player.af_porto_id }}</span>
+                          {% endif %}
+                          {% set warnings = active_treatments.get(player.id, []) %}
+                          {% if warnings %}
+                            <span class="lineup-badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                          {% endif %}
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="empty-sub">Sem titulares atribuídos.</p>
+                {% endif %}
+              </div>
+              <div>
+                <h5>Suplentes</h5>
+                {% if plan.substitutes %}
+                  <ul class="lineup-list">
+                    {% for player_id in plan.substitutes %}
+                      {% set player = player_lookup.get(player_id) %}
+                      {% if player %}
+                        <li>
+                          <span class="lineup-name">
+                            {% if player.shirt_number is not none %}
+                              Nº {{ '%02d'|format(player.shirt_number) }} ·
+                            {% endif %}
+                            {{ player.name }}
+                          </span>
+                          {% if player.af_porto_id %}
+                            <span class="lineup-badge">AF Porto {{ player.af_porto_id }}</span>
+                          {% endif %}
+                          {% set warnings = active_treatments.get(player.id, []) %}
+                          {% if warnings %}
+                            <span class="lineup-badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                          {% endif %}
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+                {% else %}
+                  <p class="empty-sub">Sem suplentes atribuídos.</p>
+                {% endif %}
+              </div>
+            </div>
+            {% if plan.notes %}
+              <div class="match-plan-notes">
+                <h5>Observações</h5>
+                <p>{{ plan.notes }}</p>
+              </div>
+            {% endif %}
+            <footer class="record-actions">
+              <a href="{{ url_for('match_plans_page', squad=plan.squad, edit=plan.id) }}" class="button secondary">Editar</a>
+              <a href="{{ url_for('print_match_plan', plan_id=plan.id) }}" class="button" target="_blank" rel="noopener">Imprimir</a>
+              <form method="post" action="{{ url_for('delete_match_plan', plan_id=plan.id) }}" class="inline-form">
+                <button type="submit" class="button danger" onclick="return confirm('Confirma eliminar este plano de jogo?');">Eliminar</button>
+              </form>
+            </footer>
+          </section>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem planificações para este plantel.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

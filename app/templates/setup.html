@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-wrapper">
+  <article class="card auth-card" aria-labelledby="setup-title">
+    <h2 id="setup-title">Configurar administrador</h2>
+    <p class="auth-hint">Crie o primeiro acesso com permissões totais para começar a gerir o clube.</p>
+    <form method="post" action="{{ url_for('setup_admin') }}" novalidate>
+      <label for="setup-full-name">Nome completo</label>
+      <input id="setup-full-name" name="full_name" type="text" placeholder="Nome e apelido" />
+
+      <label for="setup-username">Utilizador</label>
+      <input id="setup-username" name="username" type="text" required autofocus />
+
+      <label for="setup-password">Palavra-passe</label>
+      <input id="setup-password" name="password" type="password" required />
+
+      <label for="setup-confirm">Confirmar palavra-passe</label>
+      <input id="setup-confirm" name="confirm_password" type="password" required />
+
+      <div class="form-actions">
+        <button type="submit">Criar administrador</button>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}

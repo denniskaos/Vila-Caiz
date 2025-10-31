@@ -7,7 +7,7 @@
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-jogadores">
     <h3 id="form-jogadores">{{ 'Editar Jogador' if editing_player else 'Adicionar Jogador' }}</h3>
-    <form method="post" action="{{ url_for('add_player') }}">
+    <form method="post" action="{{ url_for('add_player') }}" enctype="multipart/form-data">
       {% if editing_player %}
         <input type="hidden" name="player_id" value="{{ editing_player.id }}" />
       {% endif %}
@@ -36,8 +36,9 @@
       <label for="player-contact">Contacto</label>
       <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_player.contact if editing_player else '' }}" />
 
-      <label for="player-photo">Fotografia (URL)</label>
-      <input id="player-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_player.photo_url if editing_player and editing_player.photo_url else '' }}" />
+      <label for="player-photo">Fotografia</label>
+      <input id="player-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Carregue uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
 
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_player else 'Gravar' }}</button>
@@ -69,8 +70,9 @@
             {% for player in players %}
               <tr>
                 <td>
-                  {% if player.photo_url %}
-                    <img src="{{ player.photo_url }}" alt="Fotografia de {{ player.name }}" class="avatar-thumb" />
+                  {% set player_photo = player.photo_url|photo_path %}
+                  {% if player_photo %}
+                    <img src="{{ player_photo }}" alt="Fotografia de {{ player.name }}" class="avatar-thumb" />
                   {% else %}
                     <span class="avatar-placeholder" aria-hidden="true">{{ player.name[:2]|upper }}</span>
                   {% endif %}

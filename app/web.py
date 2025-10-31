@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import argparse
 from datetime import date
+from pathlib import Path
 from typing import Dict, Optional, Tuple
+from uuid import uuid4
 
 from flask import Flask, flash, redirect, render_template, request, url_for
+from werkzeug.utils import secure_filename
 
 from .services import ClubService
 from .storage import parse_date
@@ -16,6 +19,10 @@ def create_app() -> Flask:
 
     app = Flask(__name__, template_folder="../templates")
     app.config["SECRET_KEY"] = "vila-caiz-demo"
+    upload_folder = Path(app.static_folder) / "uploads"
+    upload_folder.mkdir(parents=True, exist_ok=True)
+    app.config["UPLOAD_FOLDER"] = upload_folder
+    app.config["ALLOWED_IMAGE_EXTENSIONS"] = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
 
     def get_service() -> ClubService:
         return ClubService()
@@ -37,6 +44,36 @@ def create_app() -> Flask:
             elif key.startswith("expense:"):
                 expense_categories[key.split(":", 1)[1]] = value
         return revenue_categories, expense_categories
+
+    @app.template_filter("photo_path")
+    def photo_path(source: Optional[str]) -> Optional[str]:
+        if not source:
+            return None
+        if source.startswith(("http://", "https://", "/")):
+            return source
+        return url_for("static", filename=source)
+
+    def _process_photo_upload(field_name: str, *, existing: Optional[str] = None) -> Tuple[Optional[str], bool, Optional[str]]:
+        file = request.files.get(field_name)
+        if file is None or not file.filename:
+            return existing, False, None
+        filename = secure_filename(file.filename)
+        if not filename:
+            return existing, False, "Ficheiro de imagem inválido."
+        extension = Path(filename).suffix.lower()
+        allowed_extensions = app.config["ALLOWED_IMAGE_EXTENSIONS"]
+        if extension not in allowed_extensions:
+            return existing, False, "Formato de imagem não suportado. Utilize PNG, JPG, JPEG, GIF ou WEBP."
+        upload_dir = Path(app.config["UPLOAD_FOLDER"])
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        new_filename = f"{uuid4().hex}{extension}"
+        destination = upload_dir / new_filename
+        file.save(destination)
+        if existing and not existing.startswith(("http://", "https://", "/")):
+            old_path = Path(app.static_folder) / existing
+            if old_path.exists():
+                old_path.unlink()
+        return f"uploads/{new_filename}", True, None
 
     @app.get("/")
     def dashboard():
@@ -262,7 +299,6 @@ def create_app() -> Flask:
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
         contact = request.form.get("contact", "").strip() or None
-        photo_url = request.form.get("photo_url", "").strip()
         shirt_number_raw = request.form.get("shirt_number", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
@@ -279,6 +315,20 @@ def create_app() -> Flask:
             _flash_invalid("Nome e posição são obrigatórios.")
             return redirect(url_for("players_page"))
         service = get_service()
+        existing_player = None
+        if player_id is not None:
+            players = service.list_players()
+            existing_player = next((player for player in players if player.id == player_id), None)
+            if existing_player is None:
+                _flash_invalid("Jogador não encontrado para edição.")
+                return redirect(url_for("players_page"))
+        photo_value, photo_changed, photo_error = _process_photo_upload(
+            "photo", existing=existing_player.photo_url if existing_player else None
+        )
+        if photo_error:
+            _flash_invalid(photo_error)
+            target = url_for("players_page", edit=player_id) if player_id is not None else url_for("players_page")
+            return redirect(target)
         if player_id is None:
             service.add_player(
                 name=name,
@@ -287,20 +337,24 @@ def create_app() -> Flask:
                 birthdate=birthdate,
                 contact=contact,
                 shirt_number=shirt_number,
-                photo_url=photo_url or None,
+                photo_url=photo_value if photo_changed else None,
             )
             flash("Jogador gravado com sucesso!", "success")
         else:
             try:
-                service.update_player(
-                    player_id,
+                update_kwargs = dict(
                     name=name,
                     position=position,
                     squad=squad or "senior",
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
-                    photo_url=photo_url,
+                )
+                if photo_changed:
+                    update_kwargs["photo_url"] = photo_value
+                service.update_player(
+                    player_id,
+                    **update_kwargs,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -330,7 +384,6 @@ def create_app() -> Flask:
         role = request.form.get("role", "").strip()
         license_level = request.form.get("license_level", "").strip() or None
         contact = request.form.get("contact", "").strip() or None
-        photo_url = request.form.get("photo_url", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o treinador.")
@@ -339,6 +392,20 @@ def create_app() -> Flask:
             _flash_invalid("Nome e função são obrigatórios.")
             return redirect(url_for("coaches_page"))
         service = get_service()
+        existing_coach = None
+        if coach_id is not None:
+            coaches = service.list_coaches()
+            existing_coach = next((coach for coach in coaches if coach.id == coach_id), None)
+            if existing_coach is None:
+                _flash_invalid("Treinador não encontrado para edição.")
+                return redirect(url_for("coaches_page"))
+        photo_value, photo_changed, photo_error = _process_photo_upload(
+            "photo", existing=existing_coach.photo_url if existing_coach else None
+        )
+        if photo_error:
+            _flash_invalid(photo_error)
+            target = url_for("coaches_page", edit=coach_id) if coach_id is not None else url_for("coaches_page")
+            return redirect(target)
         if coach_id is None:
             service.add_coach(
                 name=name,
@@ -346,19 +413,23 @@ def create_app() -> Flask:
                 license_level=license_level,
                 birthdate=birthdate,
                 contact=contact,
-                photo_url=photo_url or None,
+                photo_url=photo_value if photo_changed else None,
             )
             flash("Treinador gravado com sucesso!", "success")
         else:
             try:
-                service.update_coach(
-                    coach_id,
+                update_kwargs = dict(
                     name=name,
                     role=role,
                     license_level=license_level,
                     birthdate=birthdate,
                     contact=contact,
-                    photo_url=photo_url,
+                )
+                if photo_changed:
+                    update_kwargs["photo_url"] = photo_value
+                service.update_coach(
+                    coach_id,
+                    **update_kwargs,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -387,7 +458,6 @@ def create_app() -> Flask:
         name = request.form.get("name", "").strip()
         specialization = request.form.get("specialization", "").strip() or None
         contact = request.form.get("contact", "").strip() or None
-        photo_url = request.form.get("photo_url", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o profissional.")
@@ -396,24 +466,42 @@ def create_app() -> Flask:
             _flash_invalid("O nome do profissional é obrigatório.")
             return redirect(url_for("physios_page"))
         service = get_service()
+        existing_physio = None
+        if physio_id is not None:
+            physios = service.list_physiotherapists()
+            existing_physio = next((physio for physio in physios if physio.id == physio_id), None)
+            if existing_physio is None:
+                _flash_invalid("Profissional não encontrado para edição.")
+                return redirect(url_for("physios_page"))
+        photo_value, photo_changed, photo_error = _process_photo_upload(
+            "photo", existing=existing_physio.photo_url if existing_physio else None
+        )
+        if photo_error:
+            _flash_invalid(photo_error)
+            target = url_for("physios_page", edit=physio_id) if physio_id is not None else url_for("physios_page")
+            return redirect(target)
         if physio_id is None:
             service.add_physiotherapist(
                 name=name,
                 specialization=specialization,
                 birthdate=birthdate,
                 contact=contact,
-                photo_url=photo_url or None,
+                photo_url=photo_value if photo_changed else None,
             )
             flash("Profissional gravado com sucesso!", "success")
         else:
             try:
-                service.update_physiotherapist(
-                    physio_id,
+                update_kwargs = dict(
                     name=name,
                     specialization=specialization,
                     birthdate=birthdate,
                     contact=contact,
-                    photo_url=photo_url,
+                )
+                if photo_changed:
+                    update_kwargs["photo_url"] = photo_value
+                service.update_physiotherapist(
+                    physio_id,
+                    **update_kwargs,
                 )
             except ValueError as exc:
                 _flash_invalid(str(exc))
@@ -497,7 +585,6 @@ def create_app() -> Flask:
             _flash_invalid("Tipo de sócio selecionado é inválido.")
             return redirect(url_for("members_page"))
         contact = request.form.get("contact", "").strip() or None
-        photo_url = request.form.get("photo_url", "").strip()
         dues_paid_until = request.form.get("dues_paid_until", "").strip() or None
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
@@ -519,6 +606,20 @@ def create_app() -> Flask:
             _flash_invalid("Escolha um tipo de sócio ou indique um novo tipo de quota.")
             return redirect(url_for("members_page"))
         service = get_service()
+        existing_member = None
+        if member_id is not None:
+            members = service.list_members()
+            existing_member = next((member for member in members if member.id == member_id), None)
+            if existing_member is None:
+                _flash_invalid("Sócio não encontrado para edição.")
+                return redirect(url_for("members_page"))
+        photo_value, photo_changed, photo_error = _process_photo_upload(
+            "photo", existing=existing_member.photo_url if existing_member else None
+        )
+        if photo_error:
+            _flash_invalid(photo_error)
+            target = url_for("members_page", edit_member=member_id) if member_id is not None else url_for("members_page")
+            return redirect(target)
         try:
             if member_id is None:
                 service.add_member(
@@ -530,7 +631,7 @@ def create_app() -> Flask:
                     membership_type_id=membership_type_id,
                     dues_paid_until=dues_paid_until,
                     member_number=member_number,
-                    photo_url=photo_url or None,
+                    photo_url=photo_value if photo_changed else None,
                 )
                 flash("Sócio gravado com sucesso!", "success")
             else:
@@ -541,8 +642,9 @@ def create_app() -> Flask:
                     contact=contact,
                     birthdate=birthdate,
                     member_number=member_number,
-                    photo_url=photo_url,
                 )
+                if photo_changed:
+                    update_kwargs["photo_url"] = photo_value
                 if membership_type_id is not None:
                     type_info = service.get_membership_type(membership_type_id)
                     if type_info is None:

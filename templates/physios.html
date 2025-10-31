@@ -7,7 +7,7 @@
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-physio">
     <h3 id="form-physio">{{ 'Editar Profissional' if editing_physio else 'Adicionar Profissional' }}</h3>
-    <form method="post" action="{{ url_for('add_physio') }}">
+    <form method="post" action="{{ url_for('add_physio') }}" enctype="multipart/form-data">
       {% if editing_physio %}
         <input type="hidden" name="physio_id" value="{{ editing_physio.id }}" />
       {% endif %}
@@ -23,8 +23,9 @@
       <label for="physio-contact">Contacto</label>
       <input id="physio-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_physio.contact if editing_physio else '' }}" />
 
-      <label for="physio-photo">Fotografia (URL)</label>
-      <input id="physio-photo" name="photo_url" type="url" placeholder="https://" value="{{ editing_physio.photo_url if editing_physio and editing_physio.photo_url else '' }}" />
+      <label for="physio-photo">Fotografia</label>
+      <input id="physio-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Envie uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
 
       <div class="form-actions">
         <button type="submit">{{ 'Atualizar' if editing_physio else 'Gravar' }}</button>
@@ -54,8 +55,9 @@
             {% for physio in physios %}
               <tr>
                 <td>
-                  {% if physio.photo_url %}
-                    <img src="{{ physio.photo_url }}" alt="Fotografia de {{ physio.name }}" class="avatar-thumb" />
+                  {% set physio_photo = physio.photo_url|photo_path %}
+                  {% if physio_photo %}
+                    <img src="{{ physio_photo }}" alt="Fotografia de {{ physio.name }}" class="avatar-thumb" />
                   {% else %}
                     <span class="avatar-placeholder" aria-hidden="true">{{ physio.name[:2]|upper }}</span>
                   {% endif %}

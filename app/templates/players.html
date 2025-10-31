@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Jogadores · {{ selected_squad_label }}</h2>
+  <p>Gestão dedicada aos {{ selected_squad_label|lower }} nesta época.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+
+<nav class="squad-nav" aria-label="Escalões do plantel">
+  {% for option in squad_options %}
+    <a
+      href="{{ url_for('players_page', squad_slug=option.slug) }}"
+      class="{{ 'active' if option.slug == selected_squad_slug else '' }}"
+      {% if option.slug == selected_squad_slug %}aria-current="page"{% endif %}
+    >
+      <span class="squad-name">{{ option.label }}</span>
+      <span class="squad-count">{{ option.count }} {{ 'jogador' if option.count == 1 else 'jogadores' }}</span>
+    </a>
+  {% endfor %}
+</nav>
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="form-jogadores">
+    <h3 id="form-jogadores">
+      {{ 'Editar Jogador' if editing_player else 'Adicionar Jogador' }}
+      <small>· {{ selected_squad_label }}</small>
+    </h3>
+    <form method="post" action="{{ url_for('add_player') }}" enctype="multipart/form-data">
+      {% if editing_player %}
+        <input type="hidden" name="player_id" value="{{ editing_player.id }}" />
+      {% endif %}
+      <input type="hidden" name="current_slug" value="{{ selected_squad_slug }}" />
+      <label for="player-name">Nome</label>
+      <input id="player-name" name="name" type="text" value="{{ editing_player.name if editing_player else '' }}" required />
+
+      <label for="player-birthdate">Data de Nascimento</label>
+      <input id="player-birthdate" name="birthdate" type="date" value="{{ editing_player.birthdate.isoformat() if editing_player and editing_player.birthdate else '' }}" required />
+
+      <label for="player-position">Posição</label>
+      <input id="player-position" name="position" type="text" placeholder="Ex.: Médio Centro" value="{{ editing_player.position if editing_player else '' }}" required />
+
+      <label for="player-squad">Escalão</label>
+      {% set current_squad = form_squad_value %}
+      <select id="player-squad" name="squad">
+        {% for option in squad_options %}
+          <option value="{{ option.value }}"{% if current_squad == option.value %} selected{% endif %}>{{ option.label }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="player-shirt">Número da Camisola</label>
+      <input id="player-shirt" name="shirt_number" type="number" min="0" value="{{ editing_player.shirt_number if editing_player and editing_player.shirt_number is not none else '' }}" />
+
+      <label for="player-af-porto">Nº Identificação AF Porto</label>
+      <input
+        id="player-af-porto"
+        name="af_porto_id"
+        type="text"
+        placeholder="Introduza o número do cartão da AF Porto"
+        value="{{ editing_player.af_porto_id if editing_player and editing_player.af_porto_id else '' }}"
+      />
+
+      <label for="player-contact">Contacto</label>
+      <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_player.contact if editing_player else '' }}" />
+
+      <fieldset>
+        <legend>Camadas Jovens</legend>
+        <p class="form-hint">Registe mensalidade e kit de treino para escalões de formação.</p>
+
+        <label for="player-monthly-fee">Mensalidade (€)</label>
+        <input
+          id="player-monthly-fee"
+          name="youth_monthly_fee"
+          type="number"
+          step="0.01"
+          min="0"
+          value="{{ editing_player.youth_monthly_fee if editing_player and editing_player.youth_monthly_fee is not none else '' }}"
+        />
+
+        <label for="player-monthly-paid" class="checkbox-label">
+          <input
+            id="player-monthly-paid"
+            name="youth_monthly_paid"
+            type="checkbox"{% if editing_player and editing_player.youth_monthly_paid %} checked{% endif %}
+          />
+          <span>Mensalidade liquidada</span>
+        </label>
+
+        <label for="player-kit-fee">Kit de Treino (€)</label>
+        <input
+          id="player-kit-fee"
+          name="youth_kit_fee"
+          type="number"
+          step="0.01"
+          min="0"
+          value="{{ editing_player.youth_kit_fee if editing_player and editing_player.youth_kit_fee is not none else '' }}"
+        />
+
+        <label for="player-kit-paid" class="checkbox-label">
+          <input
+            id="player-kit-paid"
+            name="youth_kit_paid"
+            type="checkbox"{% if editing_player and editing_player.youth_kit_paid %} checked{% endif %}
+          />
+          <span>Kit de treino liquidado</span>
+        </label>
+      </fieldset>
+
+      <label for="player-photo">Fotografia</label>
+      <input id="player-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Carregue uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_player else 'Gravar' }}</button>
+        {% if editing_player %}
+          <a href="{{ url_for('players_page', squad_slug=selected_squad_slug) }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card" aria-live="polite">
+    <h3>Plantel {{ selected_squad_label }}</h3>
+    {% if players %}
+      <div class="entity-grid players-grid">
+        {% set youth_squads = ['juniores', 'juvenis', 'iniciados', 'infantis'] %}
+        {% for player in players %}
+          {% set player_squad_value = player.squad|lower if player.squad else '' %}
+          {% set is_youth = player.squad and player.squad|lower in youth_squads %}
+          <article class="record-card player-card">
+            <header class="record-header">
+              <div class="record-avatar">
+                {% set player_photo = player.photo_url|photo_path %}
+                {% if player_photo %}
+                  <img src="{{ player_photo }}" alt="Fotografia de {{ player.name }}" />
+                {% else %}
+                  <span aria-hidden="true">{{ player.name[:2]|upper }}</span>
+                {% endif %}
+              </div>
+              <div class="record-title">
+                <h4>{{ player.name }}</h4>
+                <p>
+                  <span class="badge badge--number">{{ player.shirt_number or '—' }}</span>
+                  {{ player.position }}
+                </p>
+                <p class="record-subtitle">
+                  {{ selected_squad_label if player_squad_value == selected_squad_value else player.squad|title }}
+                </p>
+              </div>
+              <div class="record-extra">
+                <span class="badge badge--outline">AF Porto · {{ player.af_porto_id or '—' }}</span>
+              </div>
+            </header>
+
+            <dl class="record-meta">
+              <div>
+                <dt>Nascimento</dt>
+                <dd>{{ player.birthdate or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ player.contact or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Mensalidade</dt>
+                <dd>
+                  {% if is_youth %}
+                    <span class="status-chip {{ 'success' if player.youth_monthly_paid else 'pending' }}">
+                      {{ 'Pago' if player.youth_monthly_paid else 'Em Falta' }}
+                    </span>
+                    {% if player.youth_monthly_fee is not none %}
+                      <span class="status-detail">{{ player.youth_monthly_fee | format_currency }}</span>
+                    {% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
+                <dt>Kit Treino</dt>
+                <dd>
+                  {% if is_youth %}
+                    <span class="status-chip {{ 'success' if player.youth_kit_paid else 'pending' }}">
+                      {{ 'Pago' if player.youth_kit_paid else 'Em Falta' }}
+                    </span>
+                    {% if player.youth_kit_fee is not none %}
+                      <span class="status-detail">{{ player.youth_kit_fee | format_currency }}</span>
+                    {% endif %}
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+            </dl>
+
+            <div class="record-status">
+              {% set treatments = player_treatments.get(player.id, []) %}
+              {% if treatments %}
+                {% for treatment in treatments %}
+                  <div class="status-group">
+                    <span class="status-chip danger">Em tratamento</span>
+                    <span class="status-detail">{{ treatment.diagnosis }}</span>
+                    {% if treatment.expected_return %}
+                      <span class="status-detail">Regresso: {{ treatment.expected_return.strftime('%d/%m/%Y') }}</span>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              {% else %}
+                <span class="status-chip success">Disponível</span>
+              {% endif %}
+            </div>
+
+            <div class="record-actions">
+              <a href="{{ url_for('players_page', squad_slug=selected_squad_slug, edit=player.id) }}" class="button secondary">Editar</a>
+              <form method="post" action="{{ url_for('delete_player', player_id=player.id) }}" class="inline-form">
+                <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste jogador?');">Eliminar</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem jogadores registados neste escalão.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

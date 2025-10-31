@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Épocas</h2>
+  <p>Defina e organize as épocas desportivas para isolar plantéis, staff, sócios e finanças por temporada.</p>
+  {% if active_season %}
+    <p class="season-note">
+      Época ativa: <strong>{{ active_season.name }}</strong>
+      ({{ active_season.start_date.strftime('%d/%m/%Y') }} – {{ active_season.end_date.strftime('%d/%m/%Y') }})
+    </p>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-season">
+    <h3 id="form-season">{{ 'Editar Época' if editing_season else 'Criar Época' }}</h3>
+    <form method="post" action="{{ url_for('save_season') }}">
+      {% if editing_season %}
+        <input type="hidden" name="season_id" value="{{ editing_season.id }}" />
+      {% endif %}
+      <label for="season-name">Nome</label>
+      <input id="season-name" name="name" type="text" value="{{ editing_season.name if editing_season else '' }}" placeholder="Ex.: 2024/2025" required />
+
+      <label for="season-start">Data de Início</label>
+      <input id="season-start" name="start_date" type="date" value="{{ editing_season.start_date.isoformat() if editing_season else '' }}" required />
+
+      <label for="season-end">Data de Fim</label>
+      <input id="season-end" name="end_date" type="date" value="{{ editing_season.end_date.isoformat() if editing_season else '' }}" required />
+
+      <label for="season-notes">Notas</label>
+      <textarea id="season-notes" name="notes" rows="3" placeholder="Observações opcionais sobre a época">{{ editing_season.notes if editing_season and editing_season.notes else '' }}</textarea>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_season else 'Criar' }}</button>
+        {% if editing_season %}
+          <a href="{{ url_for('seasons_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Histórico de Épocas</h3>
+    {% if seasons %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de épocas">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Período</th>
+              <th>Notas</th>
+              <th>Estado</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for season in seasons %}
+              <tr>
+                <td data-label="Nome">{{ season.name }}</td>
+                <td data-label="Período">{{ season.start_date.strftime('%d/%m/%Y') }} – {{ season.end_date.strftime('%d/%m/%Y') }}</td>
+                <td data-label="Notas">{{ season.notes or '-' }}</td>
+                <td data-label="Estado">
+                  {% if active_season and season.id == active_season.id %}
+                    <span class="tag">Ativa</span>
+                  {% else %}
+                    <span class="tag" style="background: rgba(245, 196, 0, 0.1); color: var(--primary-dark);">Planeada</span>
+                  {% endif %}
+                </td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('seasons_page', edit=season.id) }}" class="button secondary">Editar</a>
+                    {% if not active_season or season.id != active_season.id %}
+                      <form method="post" action="{{ url_for('activate_season', season_id=season.id) }}" class="inline-form">
+                        <button type="submit" class="button">Ativar</button>
+                      </form>
+                      <form method="post" action="{{ url_for('delete_season', season_id=season.id) }}" class="inline-form">
+                        <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação desta época?');">Eliminar</button>
+                      </form>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem épocas registadas.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

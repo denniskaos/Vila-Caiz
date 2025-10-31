@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section id="resumo">
+  <div class="page-header">
+    <h2>Resumo Geral</h2>
+    <p>Visão rápida do pulso desportivo e financeiro do G.C.D. Vila Caiz.</p>
+    {% if active_season %}
+      <p class="season-note">
+        Época em análise: <strong>{{ active_season.name }}</strong>
+        ({{ active_season.start_date.strftime('%d/%m/%Y') }} – {{ active_season.end_date.strftime('%d/%m/%Y') }})
+      </p>
+    {% endif %}
+  </div>
+  <div class="card-grid" style="margin-bottom: 2rem;">
+    <article class="card">
+      <h3>Jogadores</h3>
+      <p><strong>{{ players|length }}</strong></p>
+      <p>Ativos no plantel sénior e formação.</p>
+    </article>
+    <article class="card">
+      <h3>Equipa Técnica</h3>
+      <p><strong>{{ coaches|length }}</strong></p>
+      <p>Elementos que lideram o coletivo.</p>
+    </article>
+    <article class="card">
+      <h3>Departamento Médico</h3>
+      <p><strong>{{ physios|length }}</strong></p>
+      <p>Profissionais dedicados ao bem-estar.</p>
+    </article>
+    <article class="card">
+      <h3>Camadas Jovens</h3>
+      <p><strong>{{ youth_teams|length }}</strong></p>
+      <p>Equipas em desenvolvimento contínuo.</p>
+    </article>
+    <article class="card">
+      <h3>Sócios Ativos</h3>
+      <p><strong>{{ members|length }}</strong></p>
+      <p>Comunidade que apoia o clube.</p>
+    </article>
+  </div>
+  <div class="card-grid">
+    <article class="card">
+      <h3>Saldo Atual</h3>
+      <p><strong>{{ summary.balance | format_currency }}</strong></p>
+      <p>Resultado entre receitas e despesas.</p>
+    </article>
+    <article class="card">
+      <h3>Total de Receitas</h3>
+      <p><strong>{{ summary.total_revenue | format_currency }}</strong></p>
+      <p>Entradas acumuladas no período.</p>
+    </article>
+    <article class="card">
+      <h3>Total de Despesas</h3>
+      <p><strong>{{ summary.total_expense | format_currency }}</strong></p>
+      <p>Investimentos realizados no clube.</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

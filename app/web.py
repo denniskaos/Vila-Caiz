@@ -964,6 +964,7 @@ def create_app() -> Flask:
     def match_plans_page():
         service = get_service()
         players = service.list_players()
+        coaches = sorted(service.list_coaches(), key=lambda coach: coach.name)
         active_treatments = service.treatments_by_player(active_only=True)
         plans = service.list_match_plans()
         squad_options = sorted(
@@ -984,6 +985,7 @@ def create_app() -> Flask:
             except ValueError:
                 _flash_invalid("Plano de jogo selecionado não existe.")
         player_lookup = {player.id: player for player in players}
+        coach_lookup = {coach.id: coach for coach in coaches}
         available_players = [
             player for player in players if (player.squad or "senior") == selected_squad
         ]
@@ -1008,6 +1010,8 @@ def create_app() -> Flask:
             plans=squad_plans,
             editing_plan=editing_plan,
             player_lookup=player_lookup,
+            coaches=coaches,
+            coach_lookup=coach_lookup,
             active_treatments=active_treatments,
         )
 
@@ -1043,6 +1047,7 @@ def create_app() -> Flask:
             _flash_invalid("Indique o local do jogo.")
             return _redirect_back(include_edit=True)
         competition = request.form.get("competition", "").strip()
+        coach_id_raw = request.form.get("coach_id", "").strip()
         notes = request.form.get("notes", "").strip()
         starters = request.form.getlist("starters")
         substitutes = request.form.getlist("substitutes")
@@ -1057,6 +1062,7 @@ def create_app() -> Flask:
                     venue=venue,
                     opponent=opponent,
                     competition=competition or None,
+                    coach_id=coach_id_raw or None,
                     notes=notes or None,
                     starters=starters,
                     substitutes=substitutes,
@@ -1071,6 +1077,7 @@ def create_app() -> Flask:
                     venue=venue,
                     opponent=opponent,
                     competition=competition or None,
+                    coach_id=coach_id_raw or None,
                     notes=notes or None,
                     starters=starters,
                     substitutes=substitutes,
@@ -1116,6 +1123,8 @@ def create_app() -> Flask:
         players = service.list_players()
         player_lookup = {player.id: player for player in players}
         physio_lookup = {physio.id: physio for physio in service.list_physiotherapists()}
+        coaches = service.list_coaches()
+        coach_lookup = {coach.id: coach for coach in coaches}
         active_treatments = service.treatments_by_player(active_only=True)
         starters = [player_lookup[pid] for pid in plan.starters if pid in player_lookup]
         substitutes = [
@@ -1134,6 +1143,8 @@ def create_app() -> Flask:
             active_treatments=active_treatments,
             physio_lookup=physio_lookup,
             player_lookup=player_lookup,
+            coach_lookup=coach_lookup,
+            coach=coach_lookup.get(plan.coach_id) if plan.coach_id is not None else None,
         )
 
     @app.get("/departamento-medico")

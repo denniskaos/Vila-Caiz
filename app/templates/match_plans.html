@@ -53,6 +53,15 @@
         {% endfor %}
       </select>
 
+      <label for="plan-coach">Treinador responsável</label>
+      <select id="plan-coach" name="coach_id">
+        <option value="">Selecionar treinador</option>
+        {% for coach in coaches %}
+          {% set selected = editing_plan and editing_plan.coach_id == coach.id %}
+          <option value="{{ coach.id }}"{% if selected %} selected{% endif %}>{{ coach.name }}</option>
+        {% endfor %}
+      </select>
+
       <label for="plan-match-date">Data do jogo</label>
       <input id="plan-match-date" name="match_date" type="date" value="{{ editing_plan.match_date.isoformat() if editing_plan else '' }}" required />
 
@@ -69,7 +78,7 @@
       <input id="plan-competition" name="competition" type="text" placeholder="Campeonato, Taça..." value="{{ editing_plan.competition if editing_plan and editing_plan.competition else '' }}" />
 
       <label for="plan-notes">Observações</label>
-      <textarea id="plan-notes" name="notes" rows="3" placeholder="Notas adicionais para a equipa ou delegado.">{{ editing_plan.notes if editing_plan and editing_plan.notes else '' }}</textarea>
+      <textarea id="plan-notes" name="notes" rows="2" class="textarea--compact" placeholder="Notas adicionais para a equipa ou delegado.">{{ editing_plan.notes if editing_plan and editing_plan.notes else '' }}</textarea>
 
       <div class="lineup-groups" role="group" aria-label="Selecionar jogadores">
         <section class="lineup-group" aria-labelledby="lineup-starters-heading">
@@ -199,6 +208,11 @@
               <div>
                 <dt>Plantel</dt>
                 <dd>{{ plan.squad|title }}</dd>
+              </div>
+              <div>
+                <dt>Treinador</dt>
+                {% set coach = coach_lookup.get(plan.coach_id) if plan.coach_id else None %}
+                <dd>{{ coach.name if coach else 'Não atribuído' }}</dd>
               </div>
             </dl>
             <div class="match-plan-lineups">

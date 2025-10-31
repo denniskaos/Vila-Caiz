@@ -94,6 +94,7 @@ class MatchPlan:
     venue: Optional[str] = None
     opponent: str = ""
     competition: Optional[str] = None
+    coach_id: Optional[int] = None
     notes: Optional[str] = None
     starters: List[int] = field(default_factory=list)
     substitutes: List[int] = field(default_factory=list)

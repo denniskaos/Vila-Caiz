@@ -510,6 +510,15 @@ class ClubService:
             seen.add(player_id)
         return normalized
 
+    def _normalize_coach(self, coach_id: Any) -> Optional[int]:
+        value = self._coerce_int(coach_id)
+        if value is None:
+            return None
+        valid_coaches = {coach.id for coach in self.list_coaches()}
+        if value not in valid_coaches:
+            raise ValueError("Treinador selecionado não existe.")
+        return value
+
     def _sync_youth_revenue(
         self,
         *,
@@ -868,6 +877,7 @@ class ClubService:
         venue: Optional[str],
         opponent: str,
         competition: Optional[str],
+        coach_id: Optional[Any] = None,
         notes: Optional[str],
         starters: Iterable[Any],
         substitutes: Iterable[Any],
@@ -884,6 +894,7 @@ class ClubService:
             competition.strip() if isinstance(competition, str) and competition.strip() else None
         )
         notes_clean = notes.strip() if isinstance(notes, str) and notes.strip() else None
+        coach_value = self._normalize_coach(coach_id)
         if kickoff_clean is None:
             raise ValueError("Indique uma hora válida para o jogo.")
         if venue_clean is None:
@@ -900,6 +911,7 @@ class ClubService:
                 venue=venue_clean,
                 opponent=opponent_clean,
                 competition=competition_clean,
+                coach_id=coach_value,
                 notes=notes_clean,
                 starters=starter_ids,
                 substitutes=substitute_ids,
@@ -919,6 +931,7 @@ class ClubService:
         venue: object = UNSET,
         opponent: Optional[str] = None,
         competition: object = UNSET,
+        coach_id: object = UNSET,
         notes: object = UNSET,
         starters: Optional[Iterable[Any]] = None,
         substitutes: Optional[Iterable[Any]] = None,
@@ -950,6 +963,8 @@ class ClubService:
             updates["opponent"] = opponent_clean
         if competition is not UNSET:
             updates["competition"] = competition.strip() if competition else None
+        if coach_id is not UNSET:
+            updates["coach_id"] = self._normalize_coach(coach_id)
         if notes is not UNSET:
             updates["notes"] = notes.strip() if notes else None
         if starters is not None:

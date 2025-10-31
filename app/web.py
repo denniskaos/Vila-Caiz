@@ -443,6 +443,11 @@ def create_app() -> Flask:
             title="Iniciar Sessão",
             next_url=next_url,
             can_create_user=not has_users,
+            create_user_url=(
+                url_for("setup_admin")
+                if not has_users
+                else url_for("users_page")
+            ),
         )
 
     @app.post("/login")

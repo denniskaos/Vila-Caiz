@@ -104,6 +104,7 @@
                   <td data-label="Ações">
                     <div class="actions">
                       <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
+                      <a href="{{ url_for('member_card_preview', member_id=member.id) }}" class="button tertiary">Cartão</a>
                       <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
                       <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
                     </form>

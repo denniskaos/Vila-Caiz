@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 from werkzeug.utils import secure_filename
 
 from .services import ClubService, YOUTH_SQUADS
@@ -533,6 +533,42 @@ def create_app() -> Flask:
             total_payments=total_payments,
             editing_member=editing_member,
             editing_type=editing_type,
+        )
+
+    @app.get("/socios/<int:member_id>/cartao")
+    def member_card_preview(member_id: int):
+        service = get_service()
+        members = service.list_members()
+        member = next((item for item in members if item.id == member_id), None)
+        if member is None:
+            abort(404)
+        membership_type = None
+        if member.membership_type_id is not None:
+            membership_types = service.list_membership_types()
+            membership_type = next(
+                (item for item in membership_types if item.id == member.membership_type_id),
+                None,
+            )
+        payments = service.list_member_payments(member.id)
+        member_since_value = None
+        latest_period = None
+        if payments:
+            earliest_payment = min(payments, key=lambda payment: payment.paid_on)
+            member_since_value = earliest_payment.paid_on.strftime("%d/%m/%Y")
+            latest_payment = max(payments, key=lambda payment: payment.paid_on)
+            latest_period = latest_payment.period
+        elif member.dues_paid_until:
+            latest_period = member.dues_paid_until
+        return render_template(
+            "member_card.html",
+            title="Cartão de Sócio",
+            active_group="financas",
+            active_page="members",
+            member=member,
+            membership_type_name=membership_type.name if membership_type else member.membership_type,
+            member_since=member_since_value,
+            latest_period=latest_period,
+            body_class="card-preview-page",
         )
 
     def _render_finances(

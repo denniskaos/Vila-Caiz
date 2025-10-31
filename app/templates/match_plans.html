@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Planificação de Jogo</h2>
+  <p>Organize a convocatória, titulares e suplentes com toda a informação do encontro pronta a imprimir.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+  <form method="get" class="inline-filter" aria-label="Selecionar plantel">
+    <label for="filter-squad">Plantel</label>
+    <select id="filter-squad" name="squad" onchange="this.form.submit()">
+      {% for squad in squads %}
+        <option value="{{ squad }}"{% if squad == selected_squad %} selected{% endif %}>{{ squad|title }}</option>
+      {% endfor %}
+    </select>
+    {% if request.args.get('edit') %}
+      <input type="hidden" name="edit" value="{{ request.args.get('edit') }}" />
+    {% endif %}
+  </form>
+</section>
+{% if active_treatments %}
+  <article class="card alert-card">
+    <h3>Alertas Clínicos</h3>
+    <p>Os seguintes atletas estão sinalizados pelo departamento médico:</p>
+    <ul class="list-tags">
+      {% for player_id, treatments in active_treatments|dictsort %}
+        {% set player = player_lookup.get(player_id) %}
+        {% if treatments %}
+          {% set treatment = treatments[0] %}
+          <li>
+            {{ player.name if player else 'Jogador #' ~ player_id }} — {{ treatment.diagnosis }}
+            {% if treatment.expected_return %}
+              (Regresso {{ treatment.expected_return.strftime('%d/%m/%Y') }})
+            {% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ul>
+  </article>
+{% endif %}
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="match-plan-form">
+    <h3 id="match-plan-form">{{ 'Editar plano de jogo' if editing_plan else 'Novo plano de jogo' }}</h3>
+    <form method="post" action="{{ url_for('save_match_plan') }}">
+      {% if editing_plan %}
+        <input type="hidden" name="plan_id" value="{{ editing_plan.id }}" />
+      {% endif %}
+      <label for="plan-squad">Plantel</label>
+      <select id="plan-squad" name="squad">
+        {% for squad in squads %}
+          {% set is_selected = (editing_plan and editing_plan.squad == squad) or (not editing_plan and squad == selected_squad) %}
+          <option value="{{ squad }}"{% if is_selected %} selected{% endif %}>{{ squad|title }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="plan-match-date">Data do jogo</label>
+      <input id="plan-match-date" name="match_date" type="date" value="{{ editing_plan.match_date.isoformat() if editing_plan else '' }}" required />
+
+      <label for="plan-kickoff">Hora</label>
+      <input id="plan-kickoff" name="kickoff_time" type="time" value="{{ editing_plan.kickoff_time if editing_plan and editing_plan.kickoff_time else '' }}" required />
+
+      <label for="plan-venue">Local</label>
+      <input id="plan-venue" name="venue" type="text" placeholder="Estádio Municipal" value="{{ editing_plan.venue if editing_plan and editing_plan.venue else '' }}" required />
+
+      <label for="plan-opponent">Adversário</label>
+      <input id="plan-opponent" name="opponent" type="text" placeholder="Adversário" value="{{ editing_plan.opponent if editing_plan else '' }}" required />
+
+      <label for="plan-competition">Competição</label>
+      <input id="plan-competition" name="competition" type="text" placeholder="Campeonato, Taça..." value="{{ editing_plan.competition if editing_plan and editing_plan.competition else '' }}" />
+
+      <label for="plan-notes">Observações</label>
+      <textarea id="plan-notes" name="notes" rows="3" placeholder="Notas adicionais para a equipa ou delegado.">{{ editing_plan.notes if editing_plan and editing_plan.notes else '' }}</textarea>
+
+      <div class="dual-selects" role="group" aria-label="Selecionar jogadores">
+        <div>
+          <label for="plan-starters">Titulares</label>
+          <select id="plan-starters" name="starters" multiple size="10">
+            {% for player in players %}
+              {% set selected = editing_plan and player.id in editing_plan.starters %}
+              {% set warnings = active_treatments.get(player.id, []) %}
+              <option value="{{ player.id }}"{% if selected %} selected{% endif %}>
+                {% if player.shirt_number is not none %}
+                  Nº {{ '%02d'|format(player.shirt_number) }} - {{ player.name }}
+                {% else %}
+                  {{ player.name }}
+                {% endif %}
+                {% if player.af_porto_id %}
+                  (ID AF Porto: {{ player.af_porto_id }})
+                {% endif %}
+                {% if warnings %}
+                  ⚠ Em tratamento: {{ warnings[0].diagnosis }}
+                {% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <p class="select-note">Escolha até 11 titulares. Utilize Ctrl/Cmd + clique para selecionar múltiplos jogadores.</p>
+        </div>
+        <div>
+          <label for="plan-substitutes">Suplentes</label>
+          <select id="plan-substitutes" name="substitutes" multiple size="10">
+            {% for player in players %}
+              {% set selected = editing_plan and player.id in editing_plan.substitutes %}
+              {% set warnings = active_treatments.get(player.id, []) %}
+              <option value="{{ player.id }}"{% if selected %} selected{% endif %}>
+                {% if player.shirt_number is not none %}
+                  Nº {{ '%02d'|format(player.shirt_number) }} - {{ player.name }}
+                {% else %}
+                  {{ player.name }}
+                {% endif %}
+                {% if player.af_porto_id %}
+                  (ID AF Porto: {{ player.af_porto_id }})
+                {% endif %}
+                {% if warnings %}
+                  ⚠ Em tratamento: {{ warnings[0].diagnosis }}
+                {% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          <p class="select-note">Indique os jogadores que iniciam no banco.</p>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar plano' if editing_plan else 'Gravar plano' }}</button>
+        {% set cancel_url = url_for('match_plans_page', squad=editing_plan.squad if editing_plan else selected_squad) %}
+        {% if editing_plan %}
+          <a href="{{ cancel_url }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Planos registados</h3>
+    {% if plans %}
+      <div class="table-wrapper">
+        <table aria-label="Planos de jogo">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Hora</th>
+              <th>Adversário</th>
+              <th>Local</th>
+              <th>Competição</th>
+              <th>Titulares</th>
+              <th>Suplentes</th>
+              <th>Observações</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for plan in plans %}
+              <tr>
+                <td data-label="Data">{{ plan.match_date.strftime('%d/%m/%Y') }}</td>
+                <td data-label="Hora">{{ plan.kickoff_time or '-' }}</td>
+                <td data-label="Adversário">{{ plan.opponent }}</td>
+                <td data-label="Local">{{ plan.venue or '-' }}</td>
+                <td data-label="Competição">{{ plan.competition or '-' }}</td>
+                <td data-label="Titulares">
+                  {% if plan.starters %}
+                    <ul class="list-tags">
+                      {% for player_id in plan.starters %}
+                        {% set player = player_lookup.get(player_id) %}
+                        {% if player %}
+                          <li>
+                        {% if player.shirt_number is not none %}
+                          Nº {{ '%02d'|format(player.shirt_number) }} -
+                        {% endif %}
+                        {{ player.name }}
+                        {% if player.af_porto_id %}
+                          <span class="plan-badge">ID AF Porto: {{ player.af_porto_id }}</span>
+                        {% endif %}
+                        {% set warnings = active_treatments.get(player.id, []) %}
+                        {% if warnings %}
+                          <span class="plan-badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                        {% endif %}
+                      </li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <span>-</span>
+                  {% endif %}
+                </td>
+                <td data-label="Suplentes">
+                  {% if plan.substitutes %}
+                    <ul class="list-tags">
+                      {% for player_id in plan.substitutes %}
+                        {% set player = player_lookup.get(player_id) %}
+                        {% if player %}
+                          <li>
+                        {% if player.shirt_number is not none %}
+                          Nº {{ '%02d'|format(player.shirt_number) }} -
+                        {% endif %}
+                        {{ player.name }}
+                        {% if player.af_porto_id %}
+                          <span class="plan-badge">ID AF Porto: {{ player.af_porto_id }}</span>
+                        {% endif %}
+                        {% set warnings = active_treatments.get(player.id, []) %}
+                        {% if warnings %}
+                          <span class="plan-badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                        {% endif %}
+                      </li>
+                        {% endif %}
+                      {% endfor %}
+                    </ul>
+                  {% else %}
+                    <span>-</span>
+                  {% endif %}
+                </td>
+                <td data-label="Observações">{{ plan.notes or '-' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('match_plans_page', squad=plan.squad, edit=plan.id) }}" class="button secondary">Editar</a>
+                    <a href="{{ url_for('print_match_plan', plan_id=plan.id) }}" class="button" target="_blank" rel="noopener">Imprimir</a>
+                    <form method="post" action="{{ url_for('delete_match_plan', plan_id=plan.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma eliminar este plano de jogo?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem planificações para este plantel.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

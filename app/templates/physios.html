@@ -10,7 +10,7 @@
     <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
   {% endif %}
 </section>
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-physio">
     <h3 id="form-physio">{{ 'Editar Profissional' if editing_physio else 'Adicionar Profissional' }}</h3>
     <form method="post" action="{{ url_for('add_physio') }}" enctype="multipart/form-data">

@@ -10,7 +10,7 @@
     </p>
   {% endif %}
 </section>
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-season">
     <h3 id="form-season">{{ 'Editar Época' if editing_season else 'Criar Época' }}</h3>
     <form method="post" action="{{ url_for('save_season') }}">

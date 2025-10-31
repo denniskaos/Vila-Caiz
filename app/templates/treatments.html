@@ -7,7 +7,7 @@
     <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
   {% endif %}
 </section>
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-treatment">
     <h3 id="form-treatment">{{ 'Editar Tratamento' if editing_treatment else 'Novo Tratamento' }}</h3>
     <form method="post" action="{{ url_for('save_treatment') }}">

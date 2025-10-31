@@ -38,7 +38,7 @@
     </ul>
   </article>
 {% endif %}
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="match-plan-form">
     <h3 id="match-plan-form">{{ 'Editar plano de jogo' if editing_plan else 'Novo plano de jogo' }}</h3>
     <form method="post" action="{{ url_for('save_match_plan') }}">

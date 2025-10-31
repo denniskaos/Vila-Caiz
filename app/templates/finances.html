@@ -61,7 +61,7 @@
 
 <section id="receitas" aria-labelledby="heading-receitas">
   <h2 id="heading-receitas">Receitas</h2>
-  <div class="section-grid">
+  <div class="section-grid section-grid--sidebar">
     <article class="card form-card" aria-labelledby="form-revenue">
       <h3 id="form-revenue">{{ 'Editar Receita' if editing_revenue else 'Registar Receita' }}</h3>
       <form method="post" action="{{ url_for('add_revenue') }}">
@@ -137,7 +137,7 @@
 
 <section id="despesas" aria-labelledby="heading-despesas">
   <h2 id="heading-despesas">Despesas</h2>
-  <div class="section-grid">
+  <div class="section-grid section-grid--sidebar">
     <article class="card form-card" aria-labelledby="form-expense">
       <h3 id="form-expense">{{ 'Editar Despesa' if editing_expense else 'Registar Despesa' }}</h3>
       <form method="post" action="{{ url_for('add_expense') }}">

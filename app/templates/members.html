@@ -7,7 +7,7 @@
     <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
   {% endif %}
 </section>
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-members">
     <h3 id="form-members">{{ 'Editar Sócio' if editing_member else 'Adicionar Sócio' }}</h3>
     <form method="post" action="{{ url_for('add_member') }}" enctype="multipart/form-data">
@@ -138,7 +138,7 @@
   </article>
 </section>
 
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-membership-type">
     <h3 id="form-membership-type">{{ 'Editar Tipo de Sócio' if editing_type else 'Tipos de Sócio' }}</h3>
     <form method="post" action="{{ url_for('create_membership_type') }}">
@@ -206,7 +206,7 @@
   </article>
 </section>
 
-<section class="section-grid">
+<section class="section-grid section-grid--sidebar">
   <article class="card form-card" aria-labelledby="form-membership-payment">
     <h3 id="form-membership-payment">Registar Pagamento de Quotas</h3>
     <form method="post" action="{{ url_for('record_membership_payment') }}">

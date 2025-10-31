@@ -68,69 +68,86 @@
     </form>
   </article>
 
-  <article class="card">
+  <article class="card" aria-live="polite">
     <h3>Comunidade Vila-Caiz</h3>
     {% if members %}
-      <div class="table-wrapper">
-        <table aria-label="Lista de sócios">
-          <thead>
-            <tr>
-              <th>Foto</th>
-              <th>Nº Sócio</th>
-              <th>Nome</th>
-              <th>Tipo</th>
-              <th>Sócio desde</th>
-              <th>Estado</th>
-              <th>Validade</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-              {% for member in members %}
-                {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
-                <tr>
-                  <td data-label="Foto">
-                    {% set member_photo = member.photo_url|photo_path %}
-                    {% if member_photo %}
-                      <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" class="avatar-thumb" />
-                    {% else %}
-                      <span class="avatar-placeholder" aria-hidden="true">{{ member.name[:2]|upper }}</span>
-                    {% endif %}
-                  </td>
-                  <td data-label="Nº Sócio">{{ member.member_number or member.id }}</td>
-                  <td data-label="Nome">{{ member.name }}</td>
-                  <td data-label="Tipo">
-                    {{ member.membership_type or '—' }}
-                    {% if type_info %}
-                      <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
-                    {% endif %}
-                  </td>
-                  <td data-label="Sócio desde">
-                    {% if member.membership_since %}
-                      {{ member.membership_since.strftime('%d/%m/%Y') }}
-                    {% else %}
-                      —
-                    {% endif %}
-                  </td>
-                  <td data-label="Estado">{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>
-                  <td data-label="Validade">{{ member.dues_paid_until or '-' }}</td>
-                  <td data-label="Nascimento">{{ member.birthdate or '-' }}</td>
-                  <td data-label="Contacto">{{ member.contact or '-' }}</td>
-                  <td data-label="Ações">
-                    <div class="actions">
-                      <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
-                      <a href="{{ url_for('member_card_preview', member_id=member.id) }}" class="button tertiary">Cartão</a>
-                      <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
-                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+      <div class="entity-grid members-grid">
+        {% for member in members %}
+          {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
+          <article class="record-card member-card">
+            <header class="record-header">
+              <div class="record-avatar">
+                {% set member_photo = member.photo_url|photo_path %}
+                {% if member_photo %}
+                  <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" />
+                {% else %}
+                  <span aria-hidden="true">{{ member.name[:2]|upper }}</span>
+                {% endif %}
+              </div>
+              <div class="record-title">
+                <h4>{{ member.name }}</h4>
+                <p class="record-subtitle">
+                  {{ member.membership_type or 'Tipo por definir' }}
+                  {% if type_info %}
+                    <span class="badge badge--outline">{{ type_info.amount|format_currency }} / {{ type_info.frequency or '—' }}</span>
+                  {% endif %}
+                </p>
+              </div>
+              <div class="record-extra">
+                <span class="badge badge--number">Sócio nº {{ member.member_number or member.id }}</span>
+              </div>
+            </header>
+
+            <dl class="record-meta">
+              <div>
+                <dt>Sócio desde</dt>
+                <dd>
+                  {% if member.membership_since %}
+                    {{ member.membership_since.strftime('%d/%m/%Y') }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
+                <dt>Validade</dt>
+                <dd>{{ member.dues_paid_until or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Nascimento</dt>
+                <dd>{{ member.birthdate or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ member.contact or '—' }}</dd>
+              </div>
+            </dl>
+
+            <div class="record-status">
+              <div class="status-group">
+                <span class="status-chip {{ 'success' if member.dues_paid else 'pending' }}">
+                  {{ 'Quotas em dia' if member.dues_paid else 'Quotas em atraso' }}
+                </span>
+                {% if member.dues_paid_until %}
+                  <span class="status-detail">Válidas até {{ member.dues_paid_until }}</span>
+                {% endif %}
+              </div>
+              {% if type_info and type_info.description %}
+                <div class="status-group">
+                  <span class="status-detail">{{ type_info.description }}</span>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="record-actions">
+              <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
+              <a href="{{ url_for('member_card_preview', member_id=member.id) }}" class="button tertiary">Cartão</a>
+              <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
+                <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
       </div>
     {% else %}
       <p class="empty-state">Sem sócios registados neste momento.</p>

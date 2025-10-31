@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import unicodedata
 from datetime import date
 from pathlib import Path
 from typing import Dict, Optional, Tuple
@@ -165,6 +166,14 @@ def create_app() -> Flask:
         if not cleaned.startswith("/"):
             cleaned = f"/{cleaned.lstrip('/')}"
         return cleaned
+
+    def _normalize_label(value: Optional[str]) -> str:
+        if not value:
+            return ""
+        normalized = unicodedata.normalize("NFKD", value)
+        normalized = "".join(char for char in normalized if not unicodedata.combining(char))
+        normalized = re.sub(r"[^a-z0-9]+", "", normalized.lower())
+        return normalized
 
     @app.before_request
     def enforce_authentication():
@@ -945,8 +954,26 @@ def create_app() -> Flask:
     def youth_page():
         service = get_service()
         youth_teams = service.list_youth_teams()
+        players = service.list_players()
         coaches = service.list_coaches()
         coach_lookup = {coach.id: coach.name for coach in coaches}
+        player_lookup = {player.id: player for player in players}
+        players_by_key: Dict[str, list] = {}
+        for player in players:
+            normalized = _normalize_label(player.squad)
+            if not normalized:
+                continue
+            players_by_key.setdefault(normalized, []).append(player)
+        youth_rosters: Dict[int, list] = {}
+        for team in youth_teams:
+            roster = [player_lookup[player_id] for player_id in team.player_ids if player_id in player_lookup]
+            if not roster:
+                for label in (team.age_group, team.name):
+                    key = _normalize_label(label)
+                    if key and key in players_by_key:
+                        roster = players_by_key[key]
+                        break
+            youth_rosters[team.id] = roster
         editing_team = None
         edit_id = _parse_optional_int(request.args.get("edit"))
         if edit_id is not None:
@@ -959,6 +986,7 @@ def create_app() -> Flask:
             youth_teams=youth_teams,
             coaches=coaches,
             coach_lookup=coach_lookup,
+            youth_rosters=youth_rosters,
             editing_team=editing_team,
         )
 

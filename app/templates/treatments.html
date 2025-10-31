@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Tratamentos Clínicos</h2>
+  <p>Registe o estado clínico dos atletas, acompanhe tempos de recuperação e mantenha a equipa técnica informada.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-treatment">
+    <h3 id="form-treatment">{{ 'Editar Tratamento' if editing_treatment else 'Novo Tratamento' }}</h3>
+    <form method="post" action="{{ url_for('save_treatment') }}">
+      {% if editing_treatment %}
+        <input type="hidden" name="treatment_id" value="{{ editing_treatment.id }}" />
+      {% endif %}
+
+      <label for="treatment-player">Jogador</label>
+      <select id="treatment-player" name="player_id" required>
+        <option value="">Selecione o atleta</option>
+        {% for player in players %}
+          <option value="{{ player.id }}"{% if editing_treatment and editing_treatment.player_id == player.id %} selected{% endif %}>
+            {{ player.name }}{% if player.shirt_number %} — Nº {{ '%02d'|format(player.shirt_number) }}{% endif %}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label for="treatment-physio">Fisioterapeuta responsável</label>
+      <select id="treatment-physio" name="physio_id">
+        <option value="">Sem atribuição</option>
+        {% for physio in physios %}
+          <option value="{{ physio.id }}"{% if editing_treatment and editing_treatment.physio_id == physio.id %} selected{% endif %}>
+            {{ physio.name }}
+          </option>
+        {% endfor %}
+      </select>
+
+      <label for="treatment-diagnosis">Situação clínica</label>
+      <input
+        id="treatment-diagnosis"
+        name="diagnosis"
+        type="text"
+        placeholder="Ex.: entorse tornozelo direito"
+        value="{{ editing_treatment.diagnosis if editing_treatment else '' }}"
+        required
+      />
+
+      <label for="treatment-plan">Plano terapêutico</label>
+      <textarea
+        id="treatment-plan"
+        name="treatment_plan"
+        rows="3"
+        placeholder="Descreva o tratamento ou reabilitação em curso"
+        required>{{ editing_treatment.treatment_plan if editing_treatment else '' }}</textarea>
+
+      <label for="treatment-start">Início</label>
+      <input
+        id="treatment-start"
+        name="start_date"
+        type="date"
+        value="{{ editing_treatment.start_date.isoformat() if editing_treatment else '' }}"
+        required
+      />
+
+      <label for="treatment-expected">Regresso previsto</label>
+      <input
+        id="treatment-expected"
+        name="expected_return"
+        type="date"
+        value="{{ editing_treatment.expected_return.isoformat() if editing_treatment and editing_treatment.expected_return else '' }}"
+      />
+
+      <label class="checkbox-label" for="treatment-unavailable">
+        <input
+          id="treatment-unavailable"
+          name="unavailable"
+          type="checkbox"
+          {% if not editing_treatment or editing_treatment.unavailable %}checked{% endif %}
+        />
+        <span>Jogador indisponível para competir</span>
+      </label>
+
+      <label for="treatment-notes">Notas adicionais</label>
+      <textarea
+        id="treatment-notes"
+        name="notes"
+        rows="2"
+        placeholder="Observações para treinador ou delegado">{{ editing_treatment.notes if editing_treatment and editing_treatment.notes else '' }}</textarea>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_treatment else 'Gravar' }}</button>
+        {% if editing_treatment %}
+          <a href="{{ url_for('treatments_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Histórico de Tratamentos</h3>
+    {% if treatments %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de tratamentos clínicos">
+          <thead>
+            <tr>
+              <th>Jogador</th>
+              <th>Diagnóstico</th>
+              <th>Tratamento</th>
+              <th>Início</th>
+              <th>Regresso Previsto</th>
+              <th>Fisioterapeuta</th>
+              <th>Estado</th>
+              <th>Notas</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for treatment in treatments %}
+              {% set player = player_lookup.get(treatment.player_id) %}
+              {% set physio = physio_lookup.get(treatment.physio_id) %}
+              <tr>
+                <td data-label="Jogador">
+                  {{ player.name if player else 'Jogador #' ~ treatment.player_id }}
+                  {% if player and player.shirt_number %}
+                    <span class="status-detail">Nº {{ '%02d'|format(player.shirt_number) }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="Diagnóstico">{{ treatment.diagnosis }}</td>
+                <td data-label="Tratamento">{{ treatment.treatment_plan }}</td>
+                <td data-label="Início">{{ treatment.start_date.strftime('%d/%m/%Y') }}</td>
+                <td data-label="Regresso">{{ treatment.expected_return.strftime('%d/%m/%Y') if treatment.expected_return else '—' }}</td>
+                <td data-label="Fisioterapeuta">{{ physio.name if physio else '—' }}</td>
+                <td data-label="Estado">
+                  <span class="status-chip {{ 'danger' if treatment.unavailable else 'success' }}">
+                    {{ 'Indisponível' if treatment.unavailable else 'Disponível' }}
+                  </span>
+                </td>
+                <td data-label="Notas">{{ treatment.notes or '—' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('treatments_page', edit=treatment.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_treatment', treatment_id=treatment.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste tratamento?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem tratamentos registados para esta época.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

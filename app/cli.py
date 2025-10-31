@@ -36,7 +36,11 @@ def _configure_player_commands(subparsers: argparse._SubParsersAction, service: 
     add_player.add_argument("--birthdate", help=DATE_HELP)
     add_player.add_argument("--contact", help="Contacto (email ou telefone)")
     add_player.add_argument("--shirt-number", type=int, dest="shirt_number", help="Número da camisola")
-    add_player.add_argument("--federation-id", dest="federation_id", help="Número do cartão federativo")
+    add_player.add_argument(
+        "--af-porto-id",
+        dest="af_porto_id",
+        help="Número do cartão da AF Porto",
+    )
     add_player.add_argument(
         "--youth-monthly-fee",
         type=float,
@@ -71,7 +75,7 @@ def _configure_player_commands(subparsers: argparse._SubParsersAction, service: 
                 birthdate=parse_date(args.birthdate),
                 contact=args.contact,
                 shirt_number=args.shirt_number,
-                federation_id=args.federation_id,
+                af_porto_id=args.af_porto_id,
                 youth_monthly_fee=args.youth_monthly_fee,
                 youth_monthly_paid=args.youth_monthly_paid,
                 youth_kit_fee=args.youth_kit_fee,
@@ -94,8 +98,8 @@ def _configure_player_commands(subparsers: argparse._SubParsersAction, service: 
             return
         for player in players:
             base = f"- {services.format_person(player)} | {player.position} | {player.squad} | #{player.shirt_number or '-'}"
-            if player.federation_id:
-                base = f"{base} | ID Federação: {player.federation_id}"
+            if player.af_porto_id:
+                base = f"{base} | ID AF Porto: {player.af_porto_id}"
             extras = []
             squad_value = (player.squad or "").lower()
             if squad_value in services.YOUTH_SQUADS:

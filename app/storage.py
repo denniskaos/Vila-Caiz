@@ -98,6 +98,9 @@ def instantiate(model_cls: Type[T], payload: Dict[str, Any]) -> T:
 
     kwargs = dict(payload)
     type_hints = get_type_hints(model_cls)
+
+    if model_cls is models.Player and "af_porto_id" not in kwargs and "federation_id" in kwargs:
+        kwargs["af_porto_id"] = kwargs.pop("federation_id")
     for field in model_cls.__dataclass_fields__.values():  # type: ignore[attr-defined]
         value = kwargs.get(field.name)
         if not isinstance(value, str):

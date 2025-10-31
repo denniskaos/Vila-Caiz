@@ -36,13 +36,13 @@
       <label for="player-shirt">Número da Camisola</label>
       <input id="player-shirt" name="shirt_number" type="number" min="0" value="{{ editing_player.shirt_number if editing_player and editing_player.shirt_number is not none else '' }}" />
 
-      <label for="player-federation">Nº Identificação Federação</label>
+      <label for="player-af-porto">Nº Identificação AF Porto</label>
       <input
-        id="player-federation"
-        name="federation_id"
+        id="player-af-porto"
+        name="af_porto_id"
         type="text"
-        placeholder="Introduza o número do cartão federativo"
-        value="{{ editing_player.federation_id if editing_player and editing_player.federation_id else '' }}"
+        placeholder="Introduza o número do cartão da AF Porto"
+        value="{{ editing_player.af_porto_id if editing_player and editing_player.af_porto_id else '' }}"
       />
 
       <label for="player-contact">Contacto</label>
@@ -113,7 +113,7 @@
             <tr>
               <th>Foto</th>
               <th>#</th>
-              <th>ID Federação</th>
+              <th>ID AF Porto</th>
               <th>Nome</th>
               <th>Posição</th>
               <th>Escalão</th>
@@ -136,7 +136,7 @@
                   {% endif %}
                 </td>
                 <td data-label="#">{{ player.shirt_number or '-' }}</td>
-                <td data-label="ID Federação">{{ player.federation_id or '-' }}</td>
+                <td data-label="ID AF Porto">{{ player.af_porto_id or '-' }}</td>
                 <td data-label="Nome">{{ player.name }}</td>
                 <td data-label="Posição">{{ player.position }}</td>
                 <td data-label="Escalão">{{ player.squad|title }}</td>

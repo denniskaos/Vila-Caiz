@@ -36,6 +36,17 @@ class ClubService:
         self._data = storage.load_data()
         self._active_season_id: Optional[int] = None
         self._ensure_season_setup()
+        self._migrate_legacy_fields()
+
+    def _migrate_legacy_fields(self) -> None:
+        changed = False
+        players = self._data.setdefault("players", [])
+        for player in players:
+            if "af_porto_id" not in player and "federation_id" in player:
+                player["af_porto_id"] = player.pop("federation_id")
+                changed = True
+        if changed:
+            self._persist()
 
     # Season helpers -------------------------------------------------
     def _ensure_season_setup(self) -> None:
@@ -355,7 +366,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
-        federation_id: Optional[str] = None,
+        af_porto_id: Optional[str] = None,
         photo_url: Optional[str] = None,
         youth_monthly_fee: Optional[float] = None,
         youth_monthly_paid: bool = False,
@@ -382,7 +393,7 @@ class ClubService:
                 birthdate=birthdate,
                 contact=contact,
                 shirt_number=shirt_number,
-                federation_id=federation_id,
+                af_porto_id=af_porto_id,
                 photo_url=photo_url or None,
                 season_id=self.active_season_id,
                 youth_monthly_fee=monthly_fee,
@@ -435,7 +446,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         contact: Optional[str] = None,
         shirt_number: Optional[int] = None,
-        federation_id: object | str | None = UNSET,
+        af_porto_id: object | str | None = UNSET,
         photo_url: object | str | None = UNSET,
         youth_monthly_fee: object = UNSET,
         youth_monthly_paid: object = UNSET,
@@ -495,8 +506,8 @@ class ClubService:
             updates["contact"] = contact
         if shirt_number is not None:
             updates["shirt_number"] = shirt_number
-        if federation_id is not UNSET:
-            updates["federation_id"] = federation_id or None
+        if af_porto_id is not UNSET:
+            updates["af_porto_id"] = af_porto_id or None
         if photo_url is not UNSET:
             updates["photo_url"] = photo_url or None
         updates["youth_monthly_fee"] = final_monthly_fee

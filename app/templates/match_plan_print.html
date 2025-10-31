@@ -188,8 +188,8 @@
                   Nº {{ '%02d'|format(player.shirt_number) }} -
                 {% endif %}
                 {{ player.name }}
-                {% if player.federation_id %}
-                  — ID Federação: {{ player.federation_id }}
+                {% if player.af_porto_id %}
+                  — ID AF Porto: {{ player.af_porto_id }}
                 {% endif %}
               </li>
             {% endfor %}
@@ -208,8 +208,8 @@
                   Nº {{ '%02d'|format(player.shirt_number) }} -
                 {% endif %}
                 {{ player.name }}
-                {% if player.federation_id %}
-                  — ID Federação: {{ player.federation_id }}
+                {% if player.af_porto_id %}
+                  — ID AF Porto: {{ player.af_porto_id }}
                 {% endif %}
               </li>
             {% endfor %}

@@ -606,7 +606,7 @@ def create_app() -> Flask:
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
         contact = request.form.get("contact", "").strip() or None
-        federation_id = request.form.get("federation_id", "").strip() or None
+        af_porto_id = request.form.get("af_porto_id", "").strip() or None
         shirt_number_raw = request.form.get("shirt_number", "").strip()
         ok_birthdate, birthdate = _handle_date("birthdate")
         if not ok_birthdate:
@@ -667,7 +667,7 @@ def create_app() -> Flask:
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
-                    federation_id=federation_id,
+                    af_porto_id=af_porto_id,
                     photo_url=photo_value if photo_changed else None,
                     youth_monthly_fee=youth_monthly_fee,
                     youth_monthly_paid=youth_monthly_paid,
@@ -687,7 +687,7 @@ def create_app() -> Flask:
                     birthdate=birthdate,
                     contact=contact,
                     shirt_number=shirt_number,
-                    federation_id=federation_id,
+                    af_porto_id=af_porto_id,
                     youth_monthly_fee=youth_monthly_fee,
                     youth_monthly_paid=youth_monthly_paid,
                     youth_kit_fee=youth_kit_fee,

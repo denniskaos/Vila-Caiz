@@ -29,7 +29,7 @@ class Player(Person):
     position: str = ""
     squad: str = "senior"
     shirt_number: Optional[int] = None
-    federation_id: Optional[str] = None
+    af_porto_id: Optional[str] = None
     youth_monthly_fee: Optional[float] = None
     youth_monthly_paid: bool = False
     youth_kit_fee: Optional[float] = None

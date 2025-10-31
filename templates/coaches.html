@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Equipa Técnica</h2>
+  <p>Organize o staff responsável pela estratégia e treino.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-coaches">
+    <h3 id="form-coaches">{{ 'Editar Treinador' if editing_coach else 'Adicionar Treinador' }}</h3>
+    <form method="post" action="{{ url_for('add_coach') }}" enctype="multipart/form-data">
+      {% if editing_coach %}
+        <input type="hidden" name="coach_id" value="{{ editing_coach.id }}" />
+      {% endif %}
+      <label for="coach-name">Nome</label>
+      <input id="coach-name" name="name" type="text" value="{{ editing_coach.name if editing_coach else '' }}" required />
+
+      <label for="coach-birthdate">Data de Nascimento</label>
+      <input id="coach-birthdate" name="birthdate" type="date" value="{{ editing_coach.birthdate.isoformat() if editing_coach and editing_coach.birthdate else '' }}" required />
+
+      <label for="coach-role">Função</label>
+      <input id="coach-role" name="role" type="text" placeholder="Ex.: Treinador Principal" value="{{ editing_coach.role if editing_coach else '' }}" required />
+
+      <label for="coach-license">Licença</label>
+      <input id="coach-license" name="license_level" type="text" placeholder="UEFA B" value="{{ editing_coach.license_level if editing_coach else '' }}" />
+
+      <label for="coach-contact">Contacto</label>
+      <input id="coach-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_coach.contact if editing_coach else '' }}" />
+
+      <label for="coach-photo">Fotografia</label>
+      <input id="coach-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Faça upload de uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_coach else 'Gravar' }}</button>
+        {% if editing_coach %}
+          <a href="{{ url_for('coaches_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Staff Técnico</h3>
+    {% if coaches %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de treinadores">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Nome</th>
+              <th>Função</th>
+              <th>Licença</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for coach in coaches %}
+              <tr>
+                <td>
+                  {% set coach_photo = coach.photo_url|photo_path %}
+                  {% if coach_photo %}
+                    <img src="{{ coach_photo }}" alt="Fotografia de {{ coach.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ coach.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
+                <td>{{ coach.name }}</td>
+                <td>{{ coach.role }}</td>
+                <td>{{ coach.license_level or '-' }}</td>
+                <td>{{ coach.birthdate or '-' }}</td>
+                <td>{{ coach.contact or '-' }}</td>
+                <td>
+                  <div class="actions">
+                    <a href="{{ url_for('coaches_page', edit=coach.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_coach', coach_id=coach.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste treinador?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem elementos técnicos registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

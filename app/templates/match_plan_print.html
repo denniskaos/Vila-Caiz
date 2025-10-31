@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <title>{{ title or 'Plano de Jogo' }}</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        margin: 0;
+        padding: 2rem;
+        color: #111;
+        background: #fffef7;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 4px solid #f5c400;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+      }
+
+      header h1 {
+        font-size: 1.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin: 0;
+      }
+
+      header img {
+        height: 82px;
+        width: auto;
+      }
+
+      .meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem 1.5rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .meta dt {
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.08em;
+        color: #555;
+      }
+
+      .meta dd {
+        margin: 0.25rem 0 0.75rem;
+        font-size: 1.05rem;
+        font-weight: 600;
+      }
+
+      .roster {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .roster section h2 {
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 1rem;
+        margin-bottom: 0.6rem;
+        border-bottom: 2px solid #f5c400;
+        padding-bottom: 0.4rem;
+      }
+
+      ol,
+      ul {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      li {
+        margin-bottom: 0.35rem;
+        font-size: 1rem;
+      }
+
+      .notes {
+        margin-top: 1.5rem;
+        border: 1px solid rgba(17, 17, 17, 0.15);
+        padding: 0.85rem 1rem;
+        border-radius: 8px;
+        min-height: 60px;
+      }
+
+      .notes strong {
+        display: block;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.75rem;
+        margin-bottom: 0.4rem;
+        color: #555;
+      }
+
+      footer {
+        margin-top: 2rem;
+        font-size: 0.75rem;
+        color: #555;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      @media print {
+        body {
+          padding: 1.2cm;
+        }
+
+        .print-actions {
+          display: none;
+        }
+      }
+
+      .print-actions {
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .print-actions button {
+        background: #f5c400;
+        border: none;
+        color: #111;
+        padding: 0.5rem 1.2rem;
+        border-radius: 999px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-actions">
+      <button type="button" onclick="window.print()">Imprimir</button>
+    </div>
+    <header>
+      <div>
+        <h1>Plano de Jogo</h1>
+        <p><strong>Plantel:</strong> {{ plan.squad|title }}</p>
+        {% if active_season %}
+          <p><strong>Época:</strong> {{ active_season.name }}</p>
+        {% endif %}
+      </div>
+      <img src="{{ url_for('static', filename='0bee0246-d183-416b-8602-1124015149f1.png') }}" alt="Emblema do Vila Caiz" />
+    </header>
+
+    <dl class="meta">
+      <div>
+        <dt>Data</dt>
+        <dd>{{ plan.match_date.strftime('%d/%m/%Y') }}</dd>
+      </div>
+      <div>
+        <dt>Hora</dt>
+        <dd>{{ plan.kickoff_time or '-' }}</dd>
+      </div>
+      <div>
+        <dt>Local</dt>
+        <dd>{{ plan.venue or '-' }}</dd>
+      </div>
+      <div>
+        <dt>Adversário</dt>
+        <dd>{{ plan.opponent }}</dd>
+      </div>
+      <div>
+        <dt>Competição</dt>
+        <dd>{{ plan.competition or '-' }}</dd>
+      </div>
+    </dl>
+
+    <div class="roster">
+      <section>
+        <h2>Titulares</h2>
+        {% if starters %}
+          <ol>
+            {% for player in starters %}
+              <li>
+                {% if player.shirt_number is not none %}
+                  Nº {{ '%02d'|format(player.shirt_number) }} -
+                {% endif %}
+                {{ player.name }}
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p>Sem titulares definidos.</p>
+        {% endif %}
+      </section>
+      <section>
+        <h2>Suplentes</h2>
+        {% if substitutes %}
+          <ol>
+            {% for player in substitutes %}
+              <li>
+                {% if player.shirt_number is not none %}
+                  Nº {{ '%02d'|format(player.shirt_number) }} -
+                {% endif %}
+                {{ player.name }}
+              </li>
+            {% endfor %}
+          </ol>
+        {% else %}
+          <p>Sem suplentes definidos.</p>
+        {% endif %}
+      </section>
+    </div>
+
+    <div class="notes">
+      <strong>Notas para o delegado / equipa</strong>
+      <p>{{ plan.notes or '—' }}</p>
+    </div>
+
+    <footer>
+      <span>Impresso em {{ generated_at.strftime('%d/%m/%Y') }}</span>
+      <span>Assinatura do delegado ____________________________</span>
+    </footer>
+  </body>
+</html>

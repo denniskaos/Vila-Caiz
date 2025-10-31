@@ -17,6 +17,12 @@
         <button type="submit">Entrar</button>
       </div>
     </form>
+    {% if can_create_user %}
+      <div class="auth-extra">
+        <p class="auth-note">Ainda não existem contas ativas. Crie o primeiro utilizador para continuar.</p>
+        <a class="button secondary" href="{{ url_for('setup_admin') }}">Criar utilizador</a>
+      </div>
+    {% endif %}
   </article>
 </section>
 {% endblock %}

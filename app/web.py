@@ -301,8 +301,7 @@ def create_app() -> Flask:
     @app.get("/login")
     def login_view():
         service = get_service()
-        if not service.has_users():
-            return redirect(url_for("setup_admin"))
+        has_users = service.has_users()
         if g.get("current_user") is not None:
             return redirect(url_for("dashboard"))
         next_url = _sanitize_next_url(request.args.get("next"))
@@ -310,6 +309,7 @@ def create_app() -> Flask:
             "login.html",
             title="Iniciar Sessão",
             next_url=next_url,
+            can_create_user=not has_users,
         )
 
     @app.post("/login")

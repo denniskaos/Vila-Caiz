@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 320" role="img" aria-labelledby="title desc">
+  <title id="title">Emblema oficial do G.C.D. Vila Caiz</title>
+  <desc id="desc">Escudo dourado com faixas pretas, coroa mural e cruz preta com bola dourada ao centro.</desc>
+  <defs>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffe16c" />
+      <stop offset="55%" stop-color="#f2c400" />
+      <stop offset="100%" stop-color="#d49d00" />
+    </linearGradient>
+    <linearGradient id="shadow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a1a" />
+      <stop offset="100%" stop-color="#050505" />
+    </linearGradient>
+    <clipPath id="shield-shape">
+      <path d="M130 8 L240 56 L220 202 Q196 270 130 308 Q64 270 40 202 L20 56 Z" />
+    </clipPath>
+    <path id="merlon" d="M0 0 L30 0 L40 34 L10 34 Z" />
+  </defs>
+  <g stroke-linejoin="round" stroke-linecap="round">
+    <path d="M130 8 L240 56 L220 202 Q196 270 130 308 Q64 270 40 202 L20 56 Z" fill="url(#gold)" stroke="#0b0b0b" stroke-width="10" />
+    <g clip-path="url(#shield-shape)">
+      <rect x="10" y="36" width="240" height="250" fill="url(#shadow)" />
+      <rect x="54" y="36" width="34" height="250" fill="#f8d13a" opacity="0.7" />
+      <rect x="172" y="36" width="34" height="250" fill="#f8d13a" opacity="0.7" />
+      <rect x="98" y="36" width="34" height="250" fill="#f8d13a" opacity="0.45" />
+      <rect x="142" y="36" width="34" height="250" fill="#f8d13a" opacity="0.45" />
+    </g>
+    <path d="M130 44 C170 44 202 64 210 100 C214 122 210 150 196 172 C178 204 156 226 130 234 C104 226 82 204 64 172 C50 150 46 122 50 100 C58 64 90 44 130 44 Z" fill="none" stroke="#f6d95a" stroke-width="6" />
+    <g fill="#f6d95a" stroke="#0b0b0b" stroke-width="6">
+      <use href="#merlon" x="52" y="14" />
+      <use href="#merlon" x="100" y="14" />
+      <use href="#merlon" x="148" y="14" />
+      <use href="#merlon" x="196" y="14" />
+    </g>
+    <g transform="translate(130 168)">
+      <path d="M0 -78 L32 -78 L24 -40 L76 -40 L76 -8 L24 -8 L32 28 L0 28 L-32 28 L-24 -8 L-76 -8 L-76 -40 L-24 -40 L-32 -78 Z" fill="#0b0b0b" stroke="#f6d95a" stroke-width="6" />
+      <circle cx="0" cy="-6" r="30" fill="#f6d95a" stroke="#0b0b0b" stroke-width="6" />
+      <circle cx="0" cy="-6" r="18" fill="#0b0b0b" stroke="#f6d95a" stroke-width="4" />
+      <path d="M-12 -6 h24" stroke="#f6d95a" stroke-width="3" />
+      <path d="M0 -18 v24" stroke="#f6d95a" stroke-width="3" />
+      <path d="M-10 10 q10 6 20 0" stroke="#f6d95a" stroke-width="3" fill="none" />
+      <text x="0" y="-56" text-anchor="middle" font-family="'Cinzel', 'Times New Roman', serif" font-size="20" fill="#f6d95a" letter-spacing="6">G C D</text>
+      <text x="0" y="18" text-anchor="middle" font-family="'Cinzel', 'Times New Roman', serif" font-size="22" fill="#f6d95a">V C</text>
+    </g>
+    <path d="M130 308 Q198 266 220 206" fill="none" stroke="#0b0b0b" stroke-width="8" />
+    <path d="M40 206 Q62 266 130 308" fill="none" stroke="#0b0b0b" stroke-width="8" />
+  </g>
+</svg>

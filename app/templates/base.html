@@ -720,6 +720,176 @@
         justify-content: center;
       }
 
+      .card-heading {
+        display: grid;
+        gap: 0.35rem;
+        margin-bottom: 1.2rem;
+      }
+
+      .card-heading h3 {
+        margin: 0;
+      }
+
+      .card-subtitle {
+        margin: 0;
+        font-size: 0.95rem;
+        color: rgba(245, 245, 245, 0.72);
+      }
+
+      .match-plan-grid .record-card {
+        background: linear-gradient(165deg, rgba(18, 18, 18, 0.92), rgba(245, 196, 0, 0.18));
+        border-color: rgba(245, 196, 0, 0.55);
+      }
+
+      .match-plan-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+
+      .match-plan-header h4 {
+        margin: 0.25rem 0 0;
+        font-size: 1.25rem;
+        color: rgba(255, 255, 255, 0.95);
+      }
+
+      .match-plan-date {
+        margin: 0;
+        font-size: 0.85rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 245, 245, 0.7);
+      }
+
+      .match-plan-meta {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .match-plan-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.8rem;
+        margin: 0;
+      }
+
+      .match-plan-details div {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .match-plan-details dt {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(245, 245, 245, 0.6);
+      }
+
+      .match-plan-details dd {
+        margin: 0;
+        font-size: 0.95rem;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .match-plan-lineups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+      }
+
+      .match-plan-lineups h5 {
+        margin: 0 0 0.4rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--primary);
+      }
+
+      .lineup-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .lineup-list li {
+        display: grid;
+        gap: 0.25rem;
+        background: rgba(17, 17, 17, 0.65);
+        border-radius: 12px;
+        border: 1px solid rgba(245, 196, 0, 0.35);
+        padding: 0.55rem 0.7rem;
+      }
+
+      .lineup-name {
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .lineup-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.2rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        background: rgba(245, 196, 0, 0.18);
+        color: var(--primary);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        border: 1px solid rgba(245, 196, 0, 0.4);
+        width: fit-content;
+      }
+
+      .lineup-badge.danger {
+        background: rgba(220, 20, 60, 0.18);
+        border-color: rgba(220, 20, 60, 0.5);
+        color: #ff7b8a;
+      }
+
+      .empty-sub {
+        margin: 0;
+        font-size: 0.85rem;
+        color: rgba(245, 245, 245, 0.64);
+      }
+
+      .match-plan-notes {
+        display: grid;
+        gap: 0.4rem;
+        background: rgba(17, 17, 17, 0.55);
+        border-radius: 12px;
+        border: 1px solid rgba(245, 196, 0, 0.25);
+        padding: 0.7rem 0.9rem;
+      }
+
+      .match-plan-notes h5 {
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.82rem;
+        color: rgba(245, 196, 0, 0.9);
+      }
+
+      .match-plan-notes p {
+        margin: 0;
+        color: rgba(245, 245, 245, 0.82);
+      }
+
+      @media (max-width: 720px) {
+        .match-plan-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .match-plan-meta {
+          justify-content: flex-start;
+        }
+      }
+
       .players-grid .record-card {
         background: linear-gradient(165deg, rgba(18, 18, 18, 0.92), rgba(245, 196, 0, 0.12));
       }

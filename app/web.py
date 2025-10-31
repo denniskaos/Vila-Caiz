@@ -552,9 +552,12 @@ def create_app() -> Flask:
         payments = service.list_member_payments(member.id)
         member_since_value = None
         latest_period = None
+        if member.membership_since:
+            member_since_value = member.membership_since.strftime("%d/%m/%Y")
         if payments:
             earliest_payment = min(payments, key=lambda payment: payment.paid_on)
-            member_since_value = earliest_payment.paid_on.strftime("%d/%m/%Y")
+            if member_since_value is None:
+                member_since_value = earliest_payment.paid_on.strftime("%d/%m/%Y")
             latest_payment = max(payments, key=lambda payment: payment.paid_on)
             latest_period = latest_payment.period
         elif member.dues_paid_until:
@@ -1077,6 +1080,10 @@ def create_app() -> Flask:
         if not ok_birthdate:
             _flash_invalid("Data de nascimento inválida para o sócio.")
             return redirect(url_for("members_page"))
+        ok_member_since, membership_since = _handle_date("membership_since")
+        if not ok_member_since:
+            _flash_invalid("Data de adesão inválida para o sócio.")
+            return redirect(url_for("members_page"))
         dues_paid = request.form.get("dues_paid") == "on"
         member_number_raw = request.form.get("member_number", "").strip()
         member_number = None
@@ -1119,6 +1126,7 @@ def create_app() -> Flask:
                     dues_paid_until=dues_paid_until,
                     member_number=member_number,
                     photo_url=photo_value if photo_changed else None,
+                    membership_since=membership_since,
                 )
                 flash("Sócio gravado com sucesso!", "success")
             else:
@@ -1129,6 +1137,7 @@ def create_app() -> Flask:
                     contact=contact,
                     birthdate=birthdate,
                     member_number=member_number,
+                    membership_since=membership_since,
                 )
                 if photo_changed:
                     update_kwargs["photo_url"] = photo_value

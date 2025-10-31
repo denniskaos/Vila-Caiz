@@ -1079,6 +1079,7 @@ class ClubService:
         dues_paid_until: Optional[str] = None,
         member_number: Optional[int] = None,
         photo_url: Optional[str] = None,
+        membership_since: Optional[date] = None,
     ) -> models.Member:
         resolved_type = membership_type
         if membership_type_id is not None:
@@ -1099,6 +1100,7 @@ class ClubService:
                 contact=contact,
                 birthdate=birthdate,
                 photo_url=photo_url or None,
+                membership_since=membership_since,
                 season_id=self.active_season_id,
             )
         )
@@ -1121,6 +1123,7 @@ class ClubService:
         birthdate: Optional[date] = None,
         member_number: Optional[int] = None,
         photo_url: object | str | None = UNSET,
+        membership_since: object | date | None = UNSET,
     ) -> models.Member:
         updates: Dict[str, Any] = {}
         if name is not None:
@@ -1141,6 +1144,8 @@ class ClubService:
             updates["member_number"] = member_number
         if photo_url is not UNSET:
             updates["photo_url"] = photo_url or None
+        if membership_since is not UNSET:
+            updates["membership_since"] = membership_since.isoformat() if membership_since else None
         record = self._update_entity("members", member_id, updates)
         return storage.instantiate(models.Member, record)
 
@@ -1193,6 +1198,8 @@ class ClubService:
         if membership_type_id is not None and membership_type_name:
             updates["membership_type_id"] = membership_type_id
             updates["membership_type"] = membership_type_name
+        if not member_record.get("membership_since"):
+            updates["membership_since"] = paid_on.isoformat()
         self._update_entity("members", member_id, updates)
         member_name = member_record.get("name", f"Sócio #{member_id}")
         member_number = member_record.get("member_number") or member_record.get("id")

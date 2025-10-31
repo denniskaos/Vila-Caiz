@@ -36,6 +36,15 @@
       <label for="member-type">Descrição da Quota</label>
       <input id="member-type" name="membership_type" type="text" placeholder="Ex.: Sócio Efetivo" value="{{ editing_member.membership_type if editing_member else '' }}" />
 
+      <label for="member-since">Sócio desde</label>
+      <input
+        id="member-since"
+        name="membership_since"
+        type="date"
+        value="{{ editing_member.membership_since.isoformat() if editing_member and editing_member.membership_since else '' }}"
+      />
+      <p class="form-hint">Indique a data de adesão original para que apareça no cartão do sócio.</p>
+
       <label for="member-contact">Contacto</label>
       <input id="member-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_member.contact if editing_member else '' }}" />
 
@@ -70,6 +79,7 @@
               <th>Nº Sócio</th>
               <th>Nome</th>
               <th>Tipo</th>
+              <th>Sócio desde</th>
               <th>Estado</th>
               <th>Validade</th>
               <th>Nascimento</th>
@@ -95,6 +105,13 @@
                     {{ member.membership_type or '—' }}
                     {% if type_info %}
                       <span class="tag">{{ type_info.amount|format_currency }} / {{ type_info.frequency }}</span>
+                    {% endif %}
+                  </td>
+                  <td data-label="Sócio desde">
+                    {% if member.membership_since %}
+                      {{ member.membership_since.strftime('%d/%m/%Y') }}
+                    {% else %}
+                      —
                     {% endif %}
                   </td>
                   <td data-label="Estado">{{ 'Em dia' if member.dues_paid else 'Em atraso' }}</td>

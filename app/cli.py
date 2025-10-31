@@ -400,6 +400,11 @@ def _configure_member_commands(subparsers: argparse._SubParsersAction, service: 
     add_member.add_argument("--dues-paid", action="store_true", help="Quota em dia")
     add_member.add_argument("--contact", help="Contacto")
     add_member.add_argument("--birthdate", help=DATE_HELP)
+    add_member.add_argument(
+        "--member-since",
+        dest="membership_since",
+        help="Data de adesão do sócio (AAAA-MM-DD)",
+    )
 
     def handle_add(args: argparse.Namespace) -> None:
         member = service.add_member(
@@ -408,10 +413,12 @@ def _configure_member_commands(subparsers: argparse._SubParsersAction, service: 
             dues_paid=args.dues_paid,
             contact=args.contact,
             birthdate=parse_date(args.birthdate),
+            membership_since=parse_date(args.membership_since),
         )
         status = "Quota em dia" if member.dues_paid else "Quota em atraso"
         print("Sócio criado:")
-        print(f"  {services.format_person(member)} | {member.membership_type} | {status}")
+        extra = f" | Sócio desde {member.membership_since.isoformat()}" if member.membership_since else ""
+        print(f"  {services.format_person(member)} | {member.membership_type} | {status}{extra}")
 
     add_member.set_defaults(func=handle_add)
 
@@ -424,7 +431,8 @@ def _configure_member_commands(subparsers: argparse._SubParsersAction, service: 
             return
         for member in members:
             status = "Quota em dia" if member.dues_paid else "Quota em atraso"
-            print(f"- {services.format_person(member)} | {member.membership_type} | {status}")
+            extra = f" | Sócio desde {member.membership_since.isoformat()}" if member.membership_since else ""
+            print(f"- {services.format_person(member)} | {member.membership_type} | {status}{extra}")
 
     list_member.set_defaults(func=handle_list)
 

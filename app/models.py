@@ -19,8 +19,9 @@ class Person:
 
     def to_dict(self) -> Dict:
         data = asdict(self)
-        if self.birthdate is not None:
-            data["birthdate"] = self.birthdate.isoformat()
+        for key, value in list(data.items()):
+            if isinstance(value, date):
+                data[key] = value.isoformat()
         return data
 
 
@@ -123,6 +124,7 @@ class Member(Person):
     membership_type_id: Optional[int] = None
     dues_paid: bool = False
     dues_paid_until: Optional[str] = None
+    membership_since: Optional[date] = None
 
 
 @dataclass

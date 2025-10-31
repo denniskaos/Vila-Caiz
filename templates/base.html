@@ -79,6 +79,41 @@
         align-items: center;
         justify-content: space-between;
         gap: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .season-control {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+
+      .season-control form {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .season-control label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(245, 196, 0, 0.85);
+      }
+
+      .season-control select {
+        background: rgba(245, 196, 0, 0.18);
+        border: 1px solid rgba(245, 196, 0, 0.45);
+        color: #181818;
+        font-weight: 600;
+        border-radius: 999px;
+        padding: 0.35rem 0.85rem;
+        min-width: 150px;
+      }
+
+      .season-control select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
       }
 
       .primary-nav {
@@ -214,6 +249,31 @@
         color: #181818;
       }
 
+      .season-control .season-manage {
+        text-decoration: none;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-weight: 700;
+        padding: 0.3rem 0.75rem;
+        border-radius: 999px;
+        border: 1px solid rgba(245, 196, 0, 0.45);
+        color: var(--primary);
+        transition: background 0.2s ease, color 0.2s ease;
+      }
+
+      .season-control .season-manage:hover,
+      .season-control .season-manage:focus-visible {
+        background: var(--primary);
+        color: #181818;
+      }
+
+      .season-note {
+        margin: 0.5rem 0 0;
+        font-size: 0.85rem;
+        color: rgba(24, 24, 24, 0.7);
+      }
+
       main {
         padding: 2.5rem 0 4rem;
       }
@@ -241,6 +301,20 @@
       @media (prefers-color-scheme: dark) {
         .page-header p {
           color: rgba(254, 245, 199, 0.75);
+        }
+
+        .season-control select {
+          background: rgba(245, 196, 0, 0.28);
+          color: #050505;
+          border-color: rgba(245, 196, 0, 0.55);
+        }
+
+        .season-control label {
+          color: rgba(245, 196, 0, 0.9);
+        }
+
+        .season-note {
+          color: rgba(254, 245, 199, 0.82);
         }
       }
 
@@ -698,6 +772,11 @@
           justify-content: center;
         }
 
+        .season-control {
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
         .submenu-wrapper {
           justify-content: center;
         }
@@ -711,8 +790,32 @@
           <img src="{{ url_for('static', filename='crest.svg') }}" alt="Emblema do G.C.D. Vila Caiz" />
           <h1>G.C.D. Vila Caiz</h1>
         </div>
+        <div class="season-control">
+          <form method="post" action="{{ url_for('set_active_season_route') }}">
+            <label for="season-select">Época</label>
+            <select
+              id="season-select"
+              name="season_id"
+              {% if not season_options %}disabled{% endif %}
+              onchange="this.form.submit()"
+            >
+              {% if season_options %}
+                {% for season in season_options %}
+                  <option value="{{ season.id }}"{% if active_season and season.id == active_season.id %} selected{% endif %}>
+                    {{ season.name }}
+                  </option>
+                {% endfor %}
+              {% else %}
+                <option selected>Sem épocas</option>
+              {% endif %}
+            </select>
+            <input type="hidden" name="next" value="{{ request.full_path if request.query_string else request.path }}" />
+          </form>
+          <a class="season-manage" href="{{ url_for('seasons_page') }}">Gerir Épocas</a>
+        </div>
         <nav class="primary-nav" aria-label="Secções principais">
           <a href="{{ url_for('dashboard') }}" class="{{ 'active' if active_page == 'dashboard' else '' }}"{% if active_page == 'dashboard' %} aria-current="page"{% endif %}>Centro Operacional</a>
+          <a href="{{ url_for('seasons_page') }}" class="{{ 'active' if active_page == 'seasons' else '' }}"{% if active_page == 'seasons' %} aria-current="page"{% endif %}>Épocas</a>
           <button type="button" class="menu-toggle" data-menu="plantel" aria-expanded="false">Plantel &amp; Staff</button>
           <button type="button" class="menu-toggle" data-menu="financas" aria-expanded="false">Finanças</button>
         </nav>

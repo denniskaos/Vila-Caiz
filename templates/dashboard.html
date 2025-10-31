@@ -4,6 +4,12 @@
   <div class="page-header">
     <h2>Resumo Geral</h2>
     <p>Visão rápida do pulso desportivo e financeiro do G.C.D. Vila Caiz.</p>
+    {% if active_season %}
+      <p class="season-note">
+        Época em análise: <strong>{{ active_season.name }}</strong>
+        ({{ active_season.start_date.strftime('%d/%m/%Y') }} – {{ active_season.end_date.strftime('%d/%m/%Y') }})
+      </p>
+    {% endif %}
   </div>
   <div class="card-grid" style="margin-bottom: 2rem;">
     <article class="card">

@@ -15,6 +15,7 @@ class Person:
     birthdate: Optional[date] = None
     contact: Optional[str] = None
     photo_url: Optional[str] = None
+    season_id: Optional[int] = None
 
     def to_dict(self) -> Dict:
         data = asdict(self)
@@ -48,6 +49,7 @@ class YouthTeam:
     age_group: str
     coach_id: Optional[int] = None
     player_ids: List[int] = field(default_factory=list)
+    season_id: Optional[int] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -60,6 +62,7 @@ class MembershipType:
     amount: float
     frequency: str = "Mensal"
     description: Optional[str] = None
+    season_id: Optional[int] = None
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -83,6 +86,7 @@ class MembershipPayment:
     period: str
     paid_on: date
     notes: Optional[str] = None
+    season_id: Optional[int] = None
 
     def to_dict(self) -> Dict:
         data = asdict(self)
@@ -97,6 +101,7 @@ class FinancialRecord:
     amount: float
     category: str
     record_date: date
+    season_id: Optional[int] = None
 
     def to_dict(self) -> Dict:
         data = asdict(self)
@@ -112,6 +117,21 @@ class Revenue(FinancialRecord):
 @dataclass
 class Expense(FinancialRecord):
     vendor: Optional[str] = None
+
+
+@dataclass
+class Season:
+    id: int
+    name: str
+    start_date: date
+    end_date: date
+    notes: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        data = asdict(self)
+        data["start_date"] = self.start_date.isoformat()
+        data["end_date"] = self.end_date.isoformat()
+        return data
 
 
 EntityType = Dict[str, List[Dict]]

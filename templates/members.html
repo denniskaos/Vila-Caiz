@@ -3,6 +3,9 @@
 <section class="page-header">
   <h2>Sócios</h2>
   <p>Organize os diferentes perfis de associado, defina valores das quotas e mantenha um histórico transparente dos pagamentos.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
 </section>
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-members">

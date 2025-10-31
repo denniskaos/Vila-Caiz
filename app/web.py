@@ -27,6 +27,27 @@ def create_app() -> Flask:
     def get_service() -> ClubService:
         return ClubService()
 
+    @app.context_processor
+    def inject_season_context():
+        service = get_service()
+        seasons = service.list_seasons()
+        active_season = None
+        try:
+            active_id = service.active_season_id
+        except ValueError:
+            active_id = None
+        if active_id is not None:
+            for season in seasons:
+                if season.id == active_id:
+                    active_season = season
+                    break
+        elif seasons:
+            active_season = seasons[0]
+        return {
+            "season_options": seasons,
+            "active_season": active_season,
+        }
+
     @app.template_filter("format_currency")
     def format_currency(value: float) -> str:
         formatted = f"{value:,.2f}"
@@ -96,6 +117,24 @@ def create_app() -> Flask:
             summary=summary,
         )
 
+    @app.get("/epocas")
+    def seasons_page():
+        service = get_service()
+        seasons = service.list_seasons()
+        editing_season = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_season = next((season for season in seasons if season.id == edit_id), None)
+            if editing_season is None:
+                _flash_invalid("Época selecionada para edição não encontrada.")
+        return render_template(
+            "seasons.html",
+            title="Épocas",
+            active_page="seasons",
+            seasons=seasons,
+            editing_season=editing_season,
+        )
+
     @app.get("/jogadores")
     def players_page():
         service = get_service()
@@ -112,6 +151,84 @@ def create_app() -> Flask:
             players=players,
             editing_player=editing_player,
         )
+
+    @app.post("/epocas")
+    def save_season():
+        season_id = _parse_optional_int(request.form.get("season_id"))
+        name = request.form.get("name", "").strip()
+        notes_raw = request.form.get("notes", "").strip()
+        notes = notes_raw or None
+        ok_start, start_date = _handle_date("start_date")
+        ok_end, end_date = _handle_date("end_date")
+        target = url_for("seasons_page", edit=season_id) if season_id else url_for("seasons_page")
+        if not name:
+            _flash_invalid("O nome da época é obrigatório.")
+            return redirect(target)
+        if not ok_start or start_date is None:
+            _flash_invalid("A data de início é inválida.")
+            return redirect(target)
+        if not ok_end or end_date is None:
+            _flash_invalid("A data de fim é inválida.")
+            return redirect(target)
+        service = get_service()
+        try:
+            if season_id is None:
+                service.create_season(name=name, start_date=start_date, end_date=end_date, notes=notes)
+                flash("Nova época criada com sucesso!", "success")
+            else:
+                service.update_season(
+                    season_id,
+                    name=name,
+                    start_date=start_date,
+                    end_date=end_date,
+                    notes=notes,
+                )
+                flash("Época atualizada com sucesso!", "success")
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            return redirect(target)
+        return redirect(url_for("seasons_page"))
+
+    @app.post("/epocas/ativa")
+    def set_active_season_route():
+        season_id = _parse_optional_int(request.form.get("season_id"))
+        fallback = url_for("dashboard")
+        next_url = request.form.get("next") or request.referrer or fallback
+        if not next_url or next_url.startswith("http"):
+            next_url = fallback
+        if season_id is None:
+            _flash_invalid("Selecione uma época válida.")
+            return redirect(next_url)
+        service = get_service()
+        try:
+            season = service.set_active_season(season_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash(f"Época {season.name} definida como ativa.", "success")
+        return redirect(next_url)
+
+    @app.post("/epocas/<int:season_id>/ativar")
+    def activate_season(season_id: int):
+        service = get_service()
+        try:
+            service.set_active_season(season_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Época marcada como ativa.", "success")
+        return redirect(url_for("seasons_page"))
+
+    @app.post("/epocas/<int:season_id>/eliminar")
+    def delete_season(season_id: int):
+        service = get_service()
+        try:
+            service.remove_season(season_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Época eliminada com sucesso.", "success")
+        return redirect(url_for("seasons_page"))
 
     @app.get("/equipa-tecnica")
     def coaches_page():

@@ -10,6 +10,7 @@ Vila-Caiz.
 * Gestão de sócios e do estado de quotas.
 * Registo de receitas e despesas com resumo financeiro automático.
 * Painel web com formulários e visualização dos dados do clube.
+* Organização das operações por épocas com seleção dinâmica da época ativa.
 
 Os dados são armazenados em `data/club.json` num formato legível (JSON).
 

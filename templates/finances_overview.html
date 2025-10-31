@@ -3,6 +3,9 @@
 <section class="page-header">
   <h2>Finanças</h2>
   <p>Visão geral das contas do G.C.D. Vila Caiz com destaque para o saldo e as tendências por categoria.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
 </section>
 <section class="card-grid" aria-label="Resumo financeiro">
   <article class="card">

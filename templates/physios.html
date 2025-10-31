@@ -3,6 +3,9 @@
 <section class="page-header">
   <h2>Departamento Médico</h2>
   <p>Controle os especialistas que apoiam a recuperação dos atletas.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
 </section>
 <section class="section-grid">
   <article class="card form-card" aria-labelledby="form-physio">

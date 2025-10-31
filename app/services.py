@@ -10,33 +10,218 @@ from . import models, storage
 
 UNSET = object()
 
+SEASONAL_COLLECTIONS = {
+    "players",
+    "coaches",
+    "physiotherapists",
+    "youth_teams",
+    "members",
+    "membership_types",
+    "membership_payments",
+    "revenues",
+    "expenses",
+}
+
 
 class ClubService:
     """Facade that exposes CRUD helpers for the different entities."""
 
     def __init__(self) -> None:
         self._data = storage.load_data()
+        self._active_season_id: Optional[int] = None
+        self._ensure_season_setup()
+
+    # Season helpers -------------------------------------------------
+    def _ensure_season_setup(self) -> None:
+        seasons = self._data.setdefault("seasons", [])
+        active_id = self._data.get("active_season_id")
+        changed = False
+
+        if not seasons:
+            today = date.today()
+            start_year = today.year if today.month >= 7 else today.year - 1
+            end_year = start_year + 1
+            default_name = f"Época {start_year}/{end_year}"
+            default_season = storage.serialize_entity(
+                models.Season(
+                    id=0,
+                    name=default_name,
+                    start_date=date(start_year, 7, 1),
+                    end_date=date(end_year, 6, 30),
+                )
+            )
+            default_season["id"] = storage.next_id(seasons)
+            seasons.append(default_season)
+            active_id = default_season["id"]
+            changed = True
+
+        active_int: Optional[int] = None
+        if active_id is not None:
+            try:
+                active_int = int(active_id)
+            except (TypeError, ValueError):
+                active_int = None
+
+        if seasons and (active_int is None or all(int(season.get("id", 0)) != active_int for season in seasons)):
+            first = seasons[0]
+            active_int = int(first.get("id", 1))
+            changed = True
+
+        self._active_season_id = active_int
+        self._data["active_season_id"] = active_int
+
+        if self._assign_missing_season_ids(active_int):
+            changed = True
+
+        if changed:
+            self._persist()
+
+    def _assign_missing_season_ids(self, season_id: Optional[int]) -> bool:
+        if season_id is None:
+            return False
+        changed = False
+        for key in SEASONAL_COLLECTIONS:
+            collection = self._data.setdefault(key, [])
+            for item in collection:
+                current = item.get("season_id")
+                try:
+                    current_int = int(current) if current is not None else None
+                except (TypeError, ValueError):
+                    current_int = None
+                if current_int is None or current_int == 0:
+                    item["season_id"] = season_id
+                    changed = True
+        return changed
+
+    @property
+    def active_season_id(self) -> int:
+        if self._active_season_id is None:
+            active_id = self._data.get("active_season_id")
+            if active_id is None:
+                self._ensure_season_setup()
+                active_id = self._data.get("active_season_id")
+            if active_id is None:
+                raise ValueError("Nenhuma época ativa definida")
+            self._active_season_id = int(active_id)
+        return self._active_season_id
+
+    def list_seasons(self) -> List[models.Season]:
+        seasons = self._data.setdefault("seasons", [])
+        return [storage.instantiate(models.Season, item) for item in seasons]
+
+    def get_active_season(self) -> models.Season:
+        active_id = self.active_season_id
+        for season in self._data.setdefault("seasons", []):
+            if int(season.get("id", 0)) == active_id:
+                return storage.instantiate(models.Season, season)
+        raise ValueError("Época ativa não encontrada")
+
+    def create_season(self, name: str, start_date: date, end_date: date, notes: Optional[str] = None) -> models.Season:
+        if end_date < start_date:
+            raise ValueError("A data de fim deve ser posterior à data de início da época.")
+        seasons = self._data.setdefault("seasons", [])
+        payload = storage.serialize_entity(
+            models.Season(id=0, name=name, start_date=start_date, end_date=end_date, notes=notes)
+        )
+        payload["id"] = storage.next_id(seasons)
+        seasons.append(payload)
+        self._persist()
+        return storage.instantiate(models.Season, payload)
+
+    def update_season(
+        self,
+        season_id: int,
+        *,
+        name: Optional[str] = None,
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        notes: Optional[str] = UNSET,
+    ) -> models.Season:
+        seasons = self._data.setdefault("seasons", [])
+        for season in seasons:
+            if int(season.get("id", 0)) != season_id:
+                continue
+            current_start = storage.parse_date(season.get("start_date"))
+            current_end = storage.parse_date(season.get("end_date"))
+            new_start = start_date or current_start
+            new_end = end_date or current_end
+            if new_start and new_end and new_end < new_start:
+                raise ValueError("A data de fim deve ser posterior à data de início da época.")
+            if name is not None:
+                season["name"] = name
+            if start_date is not None:
+                season["start_date"] = start_date.isoformat()
+            if end_date is not None:
+                season["end_date"] = end_date.isoformat()
+            if notes is not UNSET:
+                season["notes"] = notes
+            self._persist()
+            return storage.instantiate(models.Season, season)
+        raise ValueError(f"Época com id {season_id} não encontrada")
+
+    def set_active_season(self, season_id: int) -> models.Season:
+        seasons = self._data.setdefault("seasons", [])
+        for season in seasons:
+            if int(season.get("id", 0)) == season_id:
+                self._data["active_season_id"] = season_id
+                self._active_season_id = season_id
+                self._persist()
+                return storage.instantiate(models.Season, season)
+        raise ValueError(f"Época com id {season_id} não encontrada")
+
+    def remove_season(self, season_id: int) -> None:
+        if season_id == self.active_season_id:
+            raise ValueError("Não é possível eliminar a época ativa.")
+        seasons = self._data.setdefault("seasons", [])
+        for index, season in enumerate(seasons):
+            if int(season.get("id", 0)) == season_id:
+                del seasons[index]
+                break
+        else:
+            raise ValueError(f"Época com id {season_id} não encontrada")
+
+        for key in SEASONAL_COLLECTIONS:
+            collection = self._data.setdefault(key, [])
+            self._data[key] = [
+                item for item in collection if int(item.get("season_id", 0) or 0) != season_id
+            ]
+        self._persist()
 
     # Generic helpers -------------------------------------------------
     def _create_entity(self, key: str, payload: Dict) -> Dict:
-        collection = self._data[key]
+        collection = self._data.setdefault(key, [])
         payload = dict(payload)
         payload["id"] = storage.next_id(collection)
+        if key in SEASONAL_COLLECTIONS:
+            payload["season_id"] = payload.get("season_id") or self.active_season_id
         collection.append(payload)
         self._persist()
         return payload
 
-    def _list_entities(self, key: str) -> List[Dict]:
-        return list(self._data[key])
+    def _list_entities(self, key: str, *, include_all: bool = False) -> List[Dict]:
+        collection = self._data.setdefault(key, [])
+        if include_all or key not in SEASONAL_COLLECTIONS:
+            return list(collection)
+        active_id = self.active_season_id
+        filtered: List[Dict] = []
+        for item in collection:
+            season_value = item.get("season_id")
+            try:
+                season_int = int(season_value) if season_value is not None else None
+            except (TypeError, ValueError):
+                season_int = None
+            if season_int == active_id:
+                filtered.append(item)
+        return filtered
 
     def _find_entity(self, key: str, entity_id: int) -> Dict | None:
-        for item in self._data[key]:
+        for item in self._data.setdefault(key, []):
             if int(item.get("id")) == entity_id:
                 return item
         return None
 
     def _update_entity(self, key: str, entity_id: int, updates: Dict) -> Dict:
-        for item in self._data[key]:
+        for item in self._data.setdefault(key, []):
             if int(item.get("id")) == entity_id:
                 item.update(updates)
                 self._persist()
@@ -44,7 +229,7 @@ class ClubService:
         raise ValueError(f"{key[:-1].capitalize()} with id {entity_id} not found")
 
     def _remove_entity(self, key: str, entity_id: int) -> None:
-        collection = self._data[key]
+        collection = self._data.setdefault(key, [])
         for index, item in enumerate(collection):
             if int(item.get("id")) == entity_id:
                 del collection[index]
@@ -54,6 +239,8 @@ class ClubService:
 
     def _persist(self) -> None:
         storage.save_data(self._data)
+        active_id = self._data.get("active_season_id")
+        self._active_season_id = int(active_id) if active_id is not None else None
 
     # Players ---------------------------------------------------------
     def add_player(
@@ -76,6 +263,7 @@ class ClubService:
                 contact=contact,
                 shirt_number=shirt_number,
                 photo_url=photo_url or None,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("players", payload)
@@ -136,6 +324,7 @@ class ClubService:
                 birthdate=birthdate,
                 contact=contact,
                 photo_url=photo_url or None,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("coaches", payload)
@@ -191,6 +380,7 @@ class ClubService:
                 birthdate=birthdate,
                 contact=contact,
                 photo_url=photo_url or None,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("physiotherapists", payload)
@@ -241,13 +431,17 @@ class ClubService:
             name=name,
             age_group=age_group,
             coach_id=coach_id,
+            season_id=self.active_season_id,
         ).to_dict()
         stored = self._create_entity("youth_teams", payload)
         return storage.instantiate(models.YouthTeam, stored)
 
     def assign_player_to_team(self, team_id: int, player_id: int) -> models.YouthTeam:
-        for team in self._data["youth_teams"]:
+        for team in self._data.setdefault("youth_teams", []):
             if int(team.get("id")) == team_id:
+                team_season = team.get("season_id")
+                if team_season is not None and int(team_season) != self.active_season_id:
+                    raise ValueError("Apenas é possível gerir equipas da época ativa.")
                 players = set(team.setdefault("player_ids", []))
                 players.add(player_id)
                 team["player_ids"] = sorted(players)
@@ -294,6 +488,7 @@ class ClubService:
                 amount=amount,
                 frequency=frequency,
                 description=description,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("membership_types", payload)
@@ -379,6 +574,7 @@ class ClubService:
                 contact=contact,
                 birthdate=birthdate,
                 photo_url=photo_url or None,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("members", payload)
@@ -424,7 +620,7 @@ class ClubService:
         return storage.instantiate(models.Member, record)
 
     def remove_member(self, member_id: int) -> None:
-        payments = self._data["membership_payments"]
+        payments = self._data.setdefault("membership_payments", [])
         self._data["membership_payments"] = [
             payment for payment in payments if int(payment.get("member_id", 0)) != member_id
         ]
@@ -443,6 +639,9 @@ class ClubService:
         member_record = self._find_entity("members", member_id)
         if member_record is None:
             raise ValueError(f"Member with id {member_id} not found")
+        member_season = member_record.get("season_id")
+        if member_season is not None and int(member_season) != self.active_season_id:
+            raise ValueError("Só é possível registar pagamentos para sócios da época ativa.")
         membership_type_name = member_record.get("membership_type")
         if membership_type_id is not None:
             type_record = self._find_entity("membership_types", membership_type_id)
@@ -458,6 +657,7 @@ class ClubService:
                 period=period,
                 paid_on=paid_on,
                 notes=notes,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("membership_payments", payload)
@@ -504,17 +704,25 @@ class ClubService:
 
         member_id = int(payment_record.get("member_id", 0))
 
-        payments = self._data["membership_payments"]
+        payments = self._data.setdefault("membership_payments", [])
         self._data["membership_payments"] = [
             item for item in payments if int(item.get("id", 0)) != payment_id
         ]
         self._persist()
 
         if member_id:
+            member_record = self._find_entity("members", member_id)
+            member_season = None
+            if member_record is not None:
+                member_season = member_record.get("season_id")
             remaining_payments = [
                 storage.instantiate(models.MembershipPayment, item)
                 for item in self._data["membership_payments"]
                 if int(item.get("member_id", 0)) == member_id
+                and (
+                    member_season is None
+                    or int(item.get("season_id", 0) or 0) == int(member_season)
+                )
             ]
             dues_paid = bool(remaining_payments)
             dues_paid_until: Optional[str]
@@ -547,6 +755,7 @@ class ClubService:
                 category=category,
                 record_date=record_date,
                 source=source,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("revenues", payload)
@@ -595,6 +804,7 @@ class ClubService:
                 category=category,
                 record_date=record_date,
                 vendor=vendor,
+                season_id=self.active_season_id,
             )
         )
         stored = self._create_entity("expenses", payload)
@@ -659,6 +869,7 @@ class ClubService:
     def refresh(self) -> None:
         """Reload data from disk to reflect external changes."""
         self._data = storage.load_data()
+        self._ensure_season_setup()
 
 
 def format_person(person: models.Person) -> str:

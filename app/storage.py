@@ -10,7 +10,9 @@ from typing import Any, Dict, Iterable, List, Optional, Type, TypeVar, get_args,
 from . import models
 
 DATA_FILE = Path("data/club.json")
-DEFAULT_STRUCTURE = {
+DEFAULT_STRUCTURE: Dict[str, Any] = {
+    "seasons": [],
+    "active_season_id": None,
     "players": [],
     "coaches": [],
     "physiotherapists": [],
@@ -33,15 +35,22 @@ def ensure_storage() -> None:
         DATA_FILE.write_text(json.dumps(DEFAULT_STRUCTURE, indent=2), encoding="utf-8")
 
 
-def load_data() -> Dict[str, List[Dict[str, Any]]]:
+def load_data() -> Dict[str, Any]:
     ensure_storage()
     data = json.loads(DATA_FILE.read_text(encoding="utf-8"))
     for key, default in DEFAULT_STRUCTURE.items():
-        data.setdefault(key, default.copy())
+        if key in data:
+            continue
+        if isinstance(default, list):
+            data[key] = default.copy()
+        elif isinstance(default, dict):
+            data[key] = default.copy()
+        else:
+            data[key] = default
     return data
 
 
-def save_data(data: Dict[str, List[Dict[str, Any]]]) -> None:
+def save_data(data: Dict[str, Any]) -> None:
     ensure_storage()
     DATA_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
 

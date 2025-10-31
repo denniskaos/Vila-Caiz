@@ -3,6 +3,9 @@
 <section class="page-header">
   <h2>Finanças</h2>
   <p>Controle a saúde financeira do clube e registe novos movimentos.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
 </section>
 <section id="financas">
   <div class="card-grid" style="margin-bottom: 1.5rem;">

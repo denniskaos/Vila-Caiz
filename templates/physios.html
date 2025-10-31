@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Departamento Médico</h2>
+  <p>Controle os especialistas que apoiam a recuperação dos atletas.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-physio">
+    <h3 id="form-physio">{{ 'Editar Profissional' if editing_physio else 'Adicionar Profissional' }}</h3>
+    <form method="post" action="{{ url_for('add_physio') }}" enctype="multipart/form-data">
+      {% if editing_physio %}
+        <input type="hidden" name="physio_id" value="{{ editing_physio.id }}" />
+      {% endif %}
+      <label for="physio-name">Nome</label>
+      <input id="physio-name" name="name" type="text" value="{{ editing_physio.name if editing_physio else '' }}" required />
+
+      <label for="physio-birthdate">Data de Nascimento</label>
+      <input id="physio-birthdate" name="birthdate" type="date" value="{{ editing_physio.birthdate.isoformat() if editing_physio and editing_physio.birthdate else '' }}" required />
+
+      <label for="physio-specialization">Especialidade</label>
+      <input id="physio-specialization" name="specialization" type="text" placeholder="Ex.: Fisioterapia Desportiva" value="{{ editing_physio.specialization if editing_physio else '' }}" />
+
+      <label for="physio-contact">Contacto</label>
+      <input id="physio-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_physio.contact if editing_physio else '' }}" />
+
+      <label for="physio-photo">Fotografia</label>
+      <input id="physio-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Envie uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_physio else 'Gravar' }}</button>
+        {% if editing_physio %}
+          <a href="{{ url_for('physios_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Equipa Clínica</h3>
+    {% if physios %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de fisioterapeutas">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>Nome</th>
+              <th>Especialidade</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for physio in physios %}
+              <tr>
+                <td data-label="Foto">
+                  {% set physio_photo = physio.photo_url|photo_path %}
+                  {% if physio_photo %}
+                    <img src="{{ physio_photo }}" alt="Fotografia de {{ physio.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ physio.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="Nome">{{ physio.name }}</td>
+                <td data-label="Especialidade">{{ physio.specialization or '-' }}</td>
+                <td data-label="Nascimento">{{ physio.birthdate or '-' }}</td>
+                <td data-label="Contacto">{{ physio.contact or '-' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('physios_page', edit=physio.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_physio', physio_id=physio.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste profissional?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem profissionais registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

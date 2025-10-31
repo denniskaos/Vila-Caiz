@@ -587,6 +587,163 @@
         }
       }
 
+      .entity-grid {
+        display: grid;
+        gap: 1.2rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        align-items: stretch;
+      }
+
+      .record-card {
+        background: rgba(24, 24, 24, 0.85);
+        border-radius: 18px;
+        border: 1px solid rgba(245, 196, 0, 0.45);
+        padding: 1.2rem;
+        display: grid;
+        gap: 1rem;
+        box-shadow: 0 14px 30px rgba(0, 0, 0, 0.35);
+      }
+
+      .record-card h4 {
+        margin: 0;
+        font-size: 1.15rem;
+        color: var(--primary);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .record-header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        gap: 1rem;
+        align-items: center;
+      }
+
+      .record-avatar {
+        width: 70px;
+        height: 70px;
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(245, 196, 0, 0.12);
+        display: grid;
+        place-items: center;
+        border: 1px solid rgba(245, 196, 0, 0.4);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--primary);
+        text-transform: uppercase;
+      }
+
+      .record-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .record-title p {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        color: rgba(245, 245, 245, 0.85);
+      }
+
+      .record-subtitle {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: rgba(245, 245, 245, 0.6);
+      }
+
+      .record-extra {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .badge--number {
+        background: var(--primary);
+        color: #111;
+      }
+
+      .badge--outline {
+        border: 1px solid rgba(245, 196, 0, 0.6);
+        color: var(--primary);
+      }
+
+      .record-meta {
+        display: grid;
+        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      }
+
+      .record-meta div {
+        display: grid;
+        gap: 0.35rem;
+      }
+
+      .record-meta dt {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: rgba(245, 245, 245, 0.6);
+      }
+
+      .record-meta dd {
+        margin: 0;
+        font-size: 0.9rem;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .record-status {
+        display: grid;
+        gap: 0.4rem;
+      }
+
+      .record-actions {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      .record-actions .button {
+        flex: 1 1 auto;
+        justify-content: center;
+      }
+
+      .players-grid .record-card {
+        background: linear-gradient(165deg, rgba(18, 18, 18, 0.92), rgba(245, 196, 0, 0.12));
+      }
+
+      .players-grid .record-title p {
+        color: rgba(245, 245, 245, 0.78);
+      }
+
+      @media (max-width: 720px) {
+        .record-header {
+          grid-template-columns: 1fr;
+          justify-items: center;
+          text-align: center;
+        }
+
+        .record-extra {
+          justify-content: center;
+        }
+
+        .record-actions {
+          flex-direction: column;
+        }
+      }
+
       .form-card {
         display: grid;
         gap: 0.85rem;

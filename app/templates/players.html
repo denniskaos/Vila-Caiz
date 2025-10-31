@@ -122,46 +122,48 @@
   <article class="card" aria-live="polite">
     <h3>Plantel {{ selected_squad_label }}</h3>
     {% if players %}
-      <div class="table-wrapper">
-        <table aria-label="Lista de jogadores">
-          <thead>
-            <tr>
-              <th>Foto</th>
-              <th>#</th>
-              <th>ID AF Porto</th>
-              <th>Nome</th>
-              <th>Posição</th>
-              <th>Escalão</th>
-              <th>Mensalidade</th>
-              <th>Kit Treino</th>
-              <th>Nascimento</th>
-              <th>Contacto</th>
-              <th>Estado Clínico</th>
-              <th>Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for player in players %}
-              <tr>
-                <td data-label="Foto">
-                  {% set player_photo = player.photo_url|photo_path %}
-                  {% if player_photo %}
-                    <img src="{{ player_photo }}" alt="Fotografia de {{ player.name }}" class="avatar-thumb" />
-                  {% else %}
-                    <span class="avatar-placeholder" aria-hidden="true">{{ player.name[:2]|upper }}</span>
-                  {% endif %}
-                </td>
-                <td data-label="#">{{ player.shirt_number or '-' }}</td>
-                <td data-label="ID AF Porto">{{ player.af_porto_id or '-' }}</td>
-                <td data-label="Nome">{{ player.name }}</td>
-                <td data-label="Posição">{{ player.position }}</td>
-                {% set player_squad_value = player.squad|lower if player.squad else '' %}
-                <td data-label="Escalão">
+      <div class="entity-grid players-grid">
+        {% set youth_squads = ['juniores', 'juvenis', 'iniciados', 'infantis'] %}
+        {% for player in players %}
+          {% set player_squad_value = player.squad|lower if player.squad else '' %}
+          {% set is_youth = player.squad and player.squad|lower in youth_squads %}
+          <article class="record-card player-card">
+            <header class="record-header">
+              <div class="record-avatar">
+                {% set player_photo = player.photo_url|photo_path %}
+                {% if player_photo %}
+                  <img src="{{ player_photo }}" alt="Fotografia de {{ player.name }}" />
+                {% else %}
+                  <span aria-hidden="true">{{ player.name[:2]|upper }}</span>
+                {% endif %}
+              </div>
+              <div class="record-title">
+                <h4>{{ player.name }}</h4>
+                <p>
+                  <span class="badge badge--number">{{ player.shirt_number or '—' }}</span>
+                  {{ player.position }}
+                </p>
+                <p class="record-subtitle">
                   {{ selected_squad_label if player_squad_value == selected_squad_value else player.squad|title }}
-                </td>
-                {% set youth_squads = ['juniores', 'juvenis', 'iniciados', 'infantis'] %}
-                {% set is_youth = player.squad and player.squad|lower in youth_squads %}
-                <td data-label="Mensalidade">
+                </p>
+              </div>
+              <div class="record-extra">
+                <span class="badge badge--outline">AF Porto · {{ player.af_porto_id or '—' }}</span>
+              </div>
+            </header>
+
+            <dl class="record-meta">
+              <div>
+                <dt>Nascimento</dt>
+                <dd>{{ player.birthdate or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ player.contact or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Mensalidade</dt>
+                <dd>
                   {% if is_youth %}
                     <span class="status-chip {{ 'success' if player.youth_monthly_paid else 'pending' }}">
                       {{ 'Pago' if player.youth_monthly_paid else 'Em Falta' }}
@@ -172,8 +174,11 @@
                   {% else %}
                     —
                   {% endif %}
-                </td>
-                <td data-label="Kit Treino">
+                </dd>
+              </div>
+              <div>
+                <dt>Kit Treino</dt>
+                <dd>
                   {% if is_youth %}
                     <span class="status-chip {{ 'success' if player.youth_kit_paid else 'pending' }}">
                       {{ 'Pago' if player.youth_kit_paid else 'Em Falta' }}
@@ -184,37 +189,35 @@
                   {% else %}
                     —
                   {% endif %}
-                </td>
-                <td data-label="Nascimento">{{ player.birthdate or '-' }}</td>
-                <td data-label="Contacto">{{ player.contact or '-' }}</td>
-                <td data-label="Estado Clínico">
-                  {% set treatments = player_treatments.get(player.id, []) %}
-                  {% if treatments %}
-                    {% for treatment in treatments %}
-                      <div class="status-group">
-                        <span class="status-chip danger">Em tratamento</span>
-                        <span class="status-detail">{{ treatment.diagnosis }}</span>
-                        {% if treatment.expected_return %}
-                          <span class="status-detail">Regresso: {{ treatment.expected_return.strftime('%d/%m/%Y') }}</span>
-                        {% endif %}
-                      </div>
-                    {% endfor %}
-                  {% else %}
-                    <span class="status-chip success">Disponível</span>
-                  {% endif %}
-                </td>
-                <td data-label="Ações">
-                  <div class="actions">
-                    <a href="{{ url_for('players_page', squad_slug=selected_squad_slug, edit=player.id) }}" class="button secondary">Editar</a>
-                    <form method="post" action="{{ url_for('delete_player', player_id=player.id) }}" class="inline-form">
-                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste jogador?');">Eliminar</button>
-                    </form>
+                </dd>
+              </div>
+            </dl>
+
+            <div class="record-status">
+              {% set treatments = player_treatments.get(player.id, []) %}
+              {% if treatments %}
+                {% for treatment in treatments %}
+                  <div class="status-group">
+                    <span class="status-chip danger">Em tratamento</span>
+                    <span class="status-detail">{{ treatment.diagnosis }}</span>
+                    {% if treatment.expected_return %}
+                      <span class="status-detail">Regresso: {{ treatment.expected_return.strftime('%d/%m/%Y') }}</span>
+                    {% endif %}
                   </div>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                {% endfor %}
+              {% else %}
+                <span class="status-chip success">Disponível</span>
+              {% endif %}
+            </div>
+
+            <div class="record-actions">
+              <a href="{{ url_for('players_page', squad_slug=selected_squad_slug, edit=player.id) }}" class="button secondary">Editar</a>
+              <form method="post" action="{{ url_for('delete_player', player_id=player.id) }}" class="inline-form">
+                <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste jogador?');">Eliminar</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
       </div>
     {% else %}
       <p class="empty-state">Ainda não existem jogadores registados neste escalão.</p>

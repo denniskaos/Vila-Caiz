@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% set body_class = "card-preview-page" %}
+{% block content %}
+<div class="card-preview-wrapper">
+  <div class="preview-controls">
+    <a class="button-link" href="{{ url_for('members_page') }}">&larr; Voltar à gestão de sócios</a>
+    <a class="button-link" href="#" onclick="window.print(); return false;">Imprimir cartão</a>
+  </div>
+  <div class="card-preview-grid" aria-label="Pré-visualização do cartão de sócio">
+    <article class="membership-card front" aria-labelledby="card-front-heading">
+      <div class="card-brand">
+        <img src="{{ url_for('static', filename='0bee0246-d183-416b-8602-1124015149f1.png') }}" alt="Emblema do G.C.D. Vila Caiz" />
+        <h2 id="card-front-heading">G.C.D. Vila Caiz</h2>
+        <p class="card-slogan">Amor, Dedicação e Glória</p>
+      </div>
+      {% set member_photo = member.photo_url|photo_path %}
+      <div class="card-photo" aria-hidden="true">
+        {% if member_photo %}
+          <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" />
+        {% else %}
+          <span class="card-photo-placeholder">{{ member.name[:2]|upper }}</span>
+        {% endif %}
+      </div>
+      <div class="card-signature">Assinatura</div>
+      <div class="card-details">
+        <span class="card-number">Sócio Nº {{ member.member_number or member.id }}</span>
+        <span><strong>Nome:</strong> {{ member.name }}</span>
+        {% if membership_type_name %}
+          <span><strong>Categoria:</strong> {{ membership_type_name }}</span>
+        {% endif %}
+        {% if member_since %}
+          <span><strong>Desde:</strong> {{ member_since }}</span>
+        {% endif %}
+        {% if latest_period %}
+          <span><strong>Quota:</strong> {{ latest_period }}</span>
+        {% endif %}
+      </div>
+    </article>
+    <article class="membership-card back" aria-labelledby="card-back-heading">
+      <div class="back-content">
+        <div class="back-top">
+          <span id="card-back-heading">Fundado em 1972</span>
+          <div class="qr-code" aria-hidden="true"></div>
+        </div>
+        <div class="back-illustration" role="presentation"></div>
+        <div class="back-bottom">
+          <span>Casa do Povo de Vila Caiz</span>
+          <span>Amor · Dedicação · Glória</span>
+        </div>
+      </div>
+    </article>
+  </div>
+  <div class="card-preview-notes">
+    <strong>Instruções de impressão</strong>
+    Imprima este cartão em modo paisagem com margens a 0&nbsp;mm. Para cartões físicos utilize papel PVC ou couché 350&nbsp;g/m² e faça
+    a plastificação posterior. Recomenda-se impressão frente e verso com alinhamento central.
+  </div>
+</div>
+{% endblock %}

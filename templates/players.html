@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Jogadores</h2>
+  <p>Gestão completa do plantel amarelo e preto.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="form-jogadores">
+    <h3 id="form-jogadores">{{ 'Editar Jogador' if editing_player else 'Adicionar Jogador' }}</h3>
+    <form method="post" action="{{ url_for('add_player') }}" enctype="multipart/form-data">
+      {% if editing_player %}
+        <input type="hidden" name="player_id" value="{{ editing_player.id }}" />
+      {% endif %}
+      <label for="player-name">Nome</label>
+      <input id="player-name" name="name" type="text" value="{{ editing_player.name if editing_player else '' }}" required />
+
+      <label for="player-birthdate">Data de Nascimento</label>
+      <input id="player-birthdate" name="birthdate" type="date" value="{{ editing_player.birthdate.isoformat() if editing_player and editing_player.birthdate else '' }}" required />
+
+      <label for="player-position">Posição</label>
+      <input id="player-position" name="position" type="text" placeholder="Ex.: Médio Centro" value="{{ editing_player.position if editing_player else '' }}" required />
+
+      <label for="player-squad">Escalão</label>
+      <select id="player-squad" name="squad">
+        {% set current_squad = editing_player.squad if editing_player else 'senior' %}
+        <option value="senior"{% if current_squad == 'senior' %} selected{% endif %}>Seniores</option>
+        <option value="juniores"{% if current_squad == 'juniores' %} selected{% endif %}>Juniores</option>
+        <option value="juvenis"{% if current_squad == 'juvenis' %} selected{% endif %}>Juvenis</option>
+        <option value="iniciados"{% if current_squad == 'iniciados' %} selected{% endif %}>Iniciados</option>
+        <option value="infantis"{% if current_squad == 'infantis' %} selected{% endif %}>Infantis</option>
+      </select>
+
+      <label for="player-shirt">Número da Camisola</label>
+      <input id="player-shirt" name="shirt_number" type="number" min="0" value="{{ editing_player.shirt_number if editing_player and editing_player.shirt_number is not none else '' }}" />
+
+      <label for="player-contact">Contacto</label>
+      <input id="player-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_player.contact if editing_player else '' }}" />
+
+      <label for="player-photo">Fotografia</label>
+      <input id="player-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Carregue uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_player else 'Gravar' }}</button>
+        {% if editing_player %}
+          <a href="{{ url_for('players_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card" aria-live="polite">
+    <h3>Plantel Atual</h3>
+    {% if players %}
+      <div class="table-wrapper">
+        <table aria-label="Lista de jogadores">
+          <thead>
+            <tr>
+              <th>Foto</th>
+              <th>#</th>
+              <th>Nome</th>
+              <th>Posição</th>
+              <th>Escalão</th>
+              <th>Nascimento</th>
+              <th>Contacto</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for player in players %}
+              <tr>
+                <td data-label="Foto">
+                  {% set player_photo = player.photo_url|photo_path %}
+                  {% if player_photo %}
+                    <img src="{{ player_photo }}" alt="Fotografia de {{ player.name }}" class="avatar-thumb" />
+                  {% else %}
+                    <span class="avatar-placeholder" aria-hidden="true">{{ player.name[:2]|upper }}</span>
+                  {% endif %}
+                </td>
+                <td data-label="#">{{ player.shirt_number or '-' }}</td>
+                <td data-label="Nome">{{ player.name }}</td>
+                <td data-label="Posição">{{ player.position }}</td>
+                <td data-label="Escalão">{{ player.squad|title }}</td>
+                <td data-label="Nascimento">{{ player.birthdate or '-' }}</td>
+                <td data-label="Contacto">{{ player.contact or '-' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('players_page', edit=player.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_player', player_id=player.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste jogador?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem jogadores registados.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

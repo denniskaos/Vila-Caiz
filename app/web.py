@@ -446,7 +446,7 @@ def create_app() -> Flask:
             create_user_url=(
                 url_for("setup_admin")
                 if not has_users
-                else url_for("login_view", next=url_for("users_page"))
+                else url_for("users_page")
             ),
         )
 

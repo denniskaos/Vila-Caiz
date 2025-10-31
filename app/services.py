@@ -5,6 +5,8 @@ from collections import defaultdict
 from datetime import date
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from . import models, storage
 
 
@@ -38,6 +40,52 @@ class ClubService:
         self._active_season_id: Optional[int] = None
         self._ensure_season_setup()
         self._migrate_legacy_fields()
+        self._ensure_user_bootstrap()
+
+    def _ensure_user_bootstrap(self) -> None:
+        users = self._data.setdefault("users", [])
+        if users:
+            return
+        defaults = [
+            ("admin", "Administrador", "admin", "admin123"),
+            ("treinador", "Treinador", "coach", "treinador123"),
+            ("fisioterapeuta", "Fisioterapeuta", "physio", "fisioterapeuta123"),
+            ("financeiro", "Financeiro", "finance", "financeiro123"),
+        ]
+        for username, full_name, role, password in defaults:
+            payload = {
+                "id": storage.next_id(users),
+                "username": username,
+                "password_hash": generate_password_hash(password),
+                "role": role,
+                "full_name": full_name,
+            }
+            users.append(payload)
+        self._persist()
+
+    # User helpers ---------------------------------------------------
+    def list_users(self) -> List[models.User]:
+        users = self._data.setdefault("users", [])
+        return [storage.instantiate(models.User, item) for item in users]
+
+    def get_user(self, user_id: int) -> models.User:
+        users = self._data.setdefault("users", [])
+        for item in users:
+            if int(item.get("id", 0)) == user_id:
+                return storage.instantiate(models.User, item)
+        raise ValueError(f"Utilizador com id {user_id} não encontrado")
+
+    def authenticate_user(self, username: str, password: str) -> Optional[models.User]:
+        users = self._data.setdefault("users", [])
+        normalized = username.strip().lower()
+        for item in users:
+            stored_username = str(item.get("username", "")).strip().lower()
+            if stored_username != normalized:
+                continue
+            password_hash = item.get("password_hash", "")
+            if password_hash and check_password_hash(password_hash, password):
+                return storage.instantiate(models.User, item)
+        return None
 
     def _migrate_legacy_fields(self) -> None:
         changed = False

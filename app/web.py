@@ -7,11 +7,104 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
-from flask import Flask, abort, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
 from werkzeug.utils import secure_filename
 
 from .services import ClubService, YOUTH_SQUADS
 from .storage import parse_date
+
+ROLE_LABELS = {
+    "admin": "Administrador",
+    "coach": "Treinador",
+    "physio": "Fisioterapeuta",
+    "finance": "Financeiro",
+}
+
+ROLE_PERMISSIONS = {
+    "admin": {
+        "dashboard",
+        "seasons",
+        "players",
+        "coaches",
+        "match_plans",
+        "match_plan_print",
+        "physios",
+        "treatments",
+        "youth",
+        "members",
+        "member_card",
+        "finances_overview",
+        "finances_revenue",
+        "finances_expense",
+    },
+    "coach": {
+        "dashboard",
+        "players",
+        "match_plans",
+        "match_plan_print",
+        "treatments",
+        "youth",
+    },
+    "physio": {
+        "dashboard",
+        "players",
+        "physios",
+        "treatments",
+    },
+    "finance": {
+        "dashboard",
+        "members",
+        "member_card",
+        "finances_overview",
+        "finances_revenue",
+        "finances_expense",
+    },
+}
+
+ENDPOINT_PERMISSIONS = {
+    "dashboard": "dashboard",
+    "seasons_page": "seasons",
+    "save_season": "seasons",
+    "set_active_season_route": "dashboard",
+    "activate_season": "seasons",
+    "delete_season": "seasons",
+    "players_page": "players",
+    "add_player": "players",
+    "delete_player": "players",
+    "coaches_page": "coaches",
+    "add_coach": "coaches",
+    "delete_coach": "coaches",
+    "match_plans_page": "match_plans",
+    "save_match_plan": "match_plans",
+    "delete_match_plan": "match_plans",
+    "print_match_plan": "match_plan_print",
+    "physios_page": "physios",
+    "add_physio": "physios",
+    "delete_physio": "physios",
+    "treatments_page": "treatments",
+    "save_treatment": "treatments",
+    "delete_treatment": "treatments",
+    "youth_page": "youth",
+    "add_youth_team": "youth",
+    "delete_youth_team": "youth",
+    "members_page": "members",
+    "member_card_preview": "member_card",
+    "add_member": "members",
+    "delete_member": "members",
+    "create_membership_type": "members",
+    "delete_membership_type": "members",
+    "record_membership_payment": "members",
+    "delete_membership_payment": "members",
+    "finances_page": "finances_overview",
+    "finances_revenue_page": "finances_revenue",
+    "finances_expense_page": "finances_expense",
+    "add_revenue": "finances_revenue",
+    "delete_revenue": "finances_revenue",
+    "add_expense": "finances_expense",
+    "delete_expense": "finances_expense",
+}
+
+PUBLIC_ENDPOINTS = {"login_view", "login_submit", "static"}
 
 
 def create_app() -> Flask:
@@ -31,6 +124,59 @@ def create_app() -> Flask:
 
     def get_service() -> ClubService:
         return ClubService()
+
+    def _user_can(permission: Optional[str]) -> bool:
+        user = g.get("current_user")
+        if user is None:
+            return False
+        if user.role == "admin":
+            return True
+        if permission is None:
+            return True
+        allowed = ROLE_PERMISSIONS.get(user.role, set())
+        return permission in allowed
+
+    def _sanitize_next_url(candidate: Optional[str]) -> Optional[str]:
+        if not candidate:
+            return None
+        cleaned = candidate.strip()
+        if not cleaned:
+            return None
+        if cleaned.startswith(("http://", "https://", "//")):
+            return None
+        if not cleaned.startswith("/"):
+            cleaned = f"/{cleaned.lstrip('/')}"
+        return cleaned
+
+    @app.before_request
+    def enforce_authentication():
+        user_id = session.get("user_id")
+        g.current_user = None
+        if user_id is not None:
+            try:
+                g.current_user = get_service().get_user(int(user_id))
+            except (ValueError, TypeError):
+                session.pop("user_id", None)
+        endpoint = request.endpoint
+        if not endpoint:
+            return None
+        if endpoint in PUBLIC_ENDPOINTS or endpoint == "static":
+            return None
+        if g.current_user is None:
+            next_url = _sanitize_next_url(request.full_path if request.query_string else request.path)
+            if next_url:
+                return redirect(url_for("login_view", next=next_url))
+            return redirect(url_for("login_view"))
+        permission = ENDPOINT_PERMISSIONS.get(endpoint)
+        if permission is None:
+            return None
+        if g.current_user.role == "admin":
+            return None
+        allowed = ROLE_PERMISSIONS.get(g.current_user.role, set())
+        if permission not in allowed:
+            flash("Não tem permissões para aceder a esta secção.", "error")
+            return redirect(url_for("dashboard"))
+        return None
 
     @app.context_processor
     def inject_season_context():
@@ -52,6 +198,64 @@ def create_app() -> Flask:
             "season_options": seasons,
             "active_season": active_season,
         }
+
+    @app.context_processor
+    def inject_user_context():
+        user = g.get("current_user")
+
+        def can_access(section: str) -> bool:
+            return _user_can(section)
+
+        def has_access_to_any(sections: Tuple[str, ...] | list[str]) -> bool:
+            return any(can_access(section) for section in sections)
+
+        role_label = ROLE_LABELS.get(user.role, user.role) if user else None
+        return {
+            "current_user": user,
+            "role_label": role_label,
+            "can_access": can_access,
+            "has_access_to_any": has_access_to_any,
+            "role_labels": ROLE_LABELS,
+        }
+
+    @app.get("/login")
+    def login_view():
+        if g.get("current_user") is not None:
+            return redirect(url_for("dashboard"))
+        next_url = _sanitize_next_url(request.args.get("next"))
+        return render_template(
+            "login.html",
+            title="Iniciar Sessão",
+            next_url=next_url,
+        )
+
+    @app.post("/login")
+    def login_submit():
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        next_url = _sanitize_next_url(request.form.get("next")) or url_for("dashboard")
+        if not username or not password:
+            flash("Indique utilizador e palavra-passe.", "error")
+            if next_url and next_url != url_for("dashboard"):
+                return redirect(url_for("login_view", next=next_url))
+            return redirect(url_for("login_view"))
+        service = get_service()
+        user = service.authenticate_user(username, password)
+        if user is None:
+            flash("Credenciais inválidas.", "error")
+            if next_url and next_url != url_for("dashboard"):
+                return redirect(url_for("login_view", next=next_url))
+            return redirect(url_for("login_view"))
+        session.clear()
+        session["user_id"] = user.id
+        flash(f"Bem-vindo, {user.full_name or user.username}!", "success")
+        return redirect(next_url)
+
+    @app.post("/logout")
+    def logout():
+        session.clear()
+        flash("Sessão terminada com sucesso.", "success")
+        return redirect(url_for("login_view"))
 
     @app.template_filter("format_currency")
     def format_currency(value: float) -> str:

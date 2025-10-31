@@ -58,6 +58,22 @@ gunicorn "app.web:app" --bind 0.0.0.0:8000
 
 Substitua `8000` pela porta que o ambiente disponibilizar.
 
+### Autenticação e perfis
+
+O painel web requer autenticação. A aplicação cria automaticamente quatro
+contas para os perfis principais do clube (recomendamos alterar as palavras-passe
+assim que possível):
+
+| Perfil           | Utilizador        | Palavra-passe       | Permissões principais |
+| ---------------- | ----------------- | ------------------- | --------------------- |
+| Administrador    | `admin`           | `admin123`          | Acesso total a todas as secções, épocas e configurações. |
+| Treinador        | `treinador`       | `treinador123`      | Gestão do plantel, planificações de jogo, acompanhamento de tratamentos e camadas jovens. |
+| Fisioterapeuta   | `fisioterapeuta`  | `fisioterapeuta123` | Registo e atualização de tratamentos, gestão da equipa médica e consulta do plantel. |
+| Financeiro       | `financeiro`      | `financeiro123`     | Gestão de receitas, despesas, sócios e resumo financeiro. |
+
+Cada perfil visualiza apenas os menus e formulários que lhe dizem respeito. O
+administrador é o único perfil com acesso às configurações de épocas.
+
 ### Exemplo de fluxo
 
 ```bash

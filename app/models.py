@@ -26,6 +26,20 @@ class Person:
 
 
 @dataclass
+class User:
+    """Representa um utilizador autenticado na aplicação."""
+
+    id: int
+    username: str
+    password_hash: str
+    role: str
+    full_name: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return asdict(self)
+
+
+@dataclass
 class Player(Person):
     position: str = ""
     squad: str = "senior"

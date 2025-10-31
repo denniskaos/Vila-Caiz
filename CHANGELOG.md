@@ -5,6 +5,7 @@ Todas as alterações notáveis deste projeto serão documentadas neste ficheiro
 ## [Unreleased]
 ### Adicionado
 - Campo "Sócio desde" para registar a data de adesão, visível na gestão e no cartão imprimível.
+- Sistema de autenticação com perfis distintos (administrador, treinador, fisioterapeuta e financeiro) e menus condicionados às permissões de cada função.
 
 ## [0.2.0] - 2024-11-25
 ### Adicionado

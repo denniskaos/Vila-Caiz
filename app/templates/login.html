@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="auth-wrapper">
+  <article class="card auth-card" aria-labelledby="login-title">
+    <h2 id="login-title">Iniciar Sessão</h2>
+    <p class="auth-hint">Autentique-se para gerir o clube de acordo com o seu perfil.</p>
+    <form method="post" action="{{ url_for('login_submit') }}" novalidate>
+      <label for="username">Utilizador</label>
+      <input id="username" name="username" type="text" required autofocus />
+
+      <label for="password">Palavra-passe</label>
+      <input id="password" name="password" type="password" required />
+      {% if next_url %}
+        <input type="hidden" name="next" value="{{ next_url }}" />
+      {% endif %}
+      <div class="form-actions">
+        <button type="submit">Entrar</button>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}

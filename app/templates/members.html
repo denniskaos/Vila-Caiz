@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Sócios</h2>
+  <p>Organize os diferentes perfis de associado, defina valores das quotas e mantenha um histórico transparente dos pagamentos.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="form-members">
+    <h3 id="form-members">{{ 'Editar Sócio' if editing_member else 'Adicionar Sócio' }}</h3>
+    <form method="post" action="{{ url_for('add_member') }}" enctype="multipart/form-data">
+      {% if editing_member %}
+        <input type="hidden" name="member_id" value="{{ editing_member.id }}" />
+      {% endif %}
+      <label for="member-name">Nome</label>
+      <input id="member-name" name="name" type="text" value="{{ editing_member.name if editing_member else '' }}" required />
+
+      <label for="member-number">Número de Sócio</label>
+      <input id="member-number" name="member_number" type="number" min="0" value="{{ editing_member.member_number if editing_member and editing_member.member_number is not none else '' }}" />
+
+      <label for="member-birthdate">Data de Nascimento</label>
+      <input id="member-birthdate" name="birthdate" type="date" value="{{ editing_member.birthdate.isoformat() if editing_member and editing_member.birthdate else '' }}" required />
+
+      <label for="member-type-id">Tipo de Sócio</label>
+      <select id="member-type-id" name="membership_type_id">
+        <option value="">Selecionar um tipo</option>
+        {% set selected_type = editing_member.membership_type_id if editing_member else '' %}
+        {% for membership_type in membership_types %}
+          <option value="{{ membership_type.id }}"{% if membership_type.id == selected_type %} selected{% endif %}>{{ membership_type.name }} — {{ membership_type.amount|format_currency }} / {{ membership_type.frequency }}</option>
+        {% endfor %}
+      </select>
+      <p class="form-hint">Se ainda não existir, defina um novo tipo abaixo. Pode deixar vazio se selecionar um tipo existente.</p>
+
+      <label for="member-type">Descrição da Quota</label>
+      <input id="member-type" name="membership_type" type="text" placeholder="Ex.: Sócio Efetivo" value="{{ editing_member.membership_type if editing_member else '' }}" />
+
+      <label for="member-since">Sócio desde</label>
+      <input
+        id="member-since"
+        name="membership_since"
+        type="date"
+        value="{{ editing_member.membership_since.isoformat() if editing_member and editing_member.membership_since else '' }}"
+      />
+      <p class="form-hint">Indique a data de adesão original para que apareça no cartão do sócio.</p>
+
+      <label for="member-contact">Contacto</label>
+      <input id="member-contact" name="contact" type="tel" placeholder="Telefone ou email" value="{{ editing_member.contact if editing_member else '' }}" />
+
+      <label for="member-photo">Fotografia</label>
+      <input id="member-photo" name="photo" type="file" accept="image/*" />
+      <p class="form-hint">Faça upload de uma imagem em PNG, JPG, GIF ou WEBP. Deixe vazio para manter a fotografia atual.</p>
+
+      <label for="member-dues-until">Quotas válidas até</label>
+      <input id="member-dues-until" name="dues_paid_until" type="text" placeholder="Ex.: Dez 2024" value="{{ editing_member.dues_paid_until if editing_member else '' }}" />
+
+      <label class="checkbox-label">
+        <input type="checkbox" name="dues_paid" {% if editing_member and editing_member.dues_paid %}checked{% endif %} /> Quotas em dia
+      </label>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_member else 'Gravar' }}</button>
+        {% if editing_member %}
+          <a href="{{ url_for('members_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card" aria-live="polite">
+    <h3>Comunidade Vila-Caiz</h3>
+    {% if members %}
+      <div class="entity-grid members-grid">
+        {% for member in members %}
+          {% set type_info = type_lookup.get(member.membership_type_id) if member.membership_type_id is not none else None %}
+          <article class="record-card member-card">
+            <header class="record-header">
+              <div class="record-avatar">
+                {% set member_photo = member.photo_url|photo_path %}
+                {% if member_photo %}
+                  <img src="{{ member_photo }}" alt="Fotografia de {{ member.name }}" />
+                {% else %}
+                  <span aria-hidden="true">{{ member.name[:2]|upper }}</span>
+                {% endif %}
+              </div>
+              <div class="record-title">
+                <h4>{{ member.name }}</h4>
+                <p class="record-subtitle">
+                  {{ member.membership_type or 'Tipo por definir' }}
+                  {% if type_info %}
+                    <span class="badge badge--outline">{{ type_info.amount|format_currency }} / {{ type_info.frequency or '—' }}</span>
+                  {% endif %}
+                </p>
+              </div>
+              <div class="record-extra">
+                <span class="badge badge--number">Sócio nº {{ member.member_number or member.id }}</span>
+              </div>
+            </header>
+
+            <dl class="record-meta">
+              <div>
+                <dt>Sócio desde</dt>
+                <dd>
+                  {% if member.membership_since %}
+                    {{ member.membership_since.strftime('%d/%m/%Y') }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
+                <dt>Validade</dt>
+                <dd>{{ member.dues_paid_until or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Nascimento</dt>
+                <dd>{{ member.birthdate or '—' }}</dd>
+              </div>
+              <div>
+                <dt>Contacto</dt>
+                <dd>{{ member.contact or '—' }}</dd>
+              </div>
+            </dl>
+
+            <div class="record-status">
+              <div class="status-group">
+                <span class="status-chip {{ 'success' if member.dues_paid else 'pending' }}">
+                  {{ 'Quotas em dia' if member.dues_paid else 'Quotas em atraso' }}
+                </span>
+                {% if member.dues_paid_until %}
+                  <span class="status-detail">Válidas até {{ member.dues_paid_until }}</span>
+                {% endif %}
+              </div>
+              {% if type_info and type_info.description %}
+                <div class="status-group">
+                  <span class="status-detail">{{ type_info.description }}</span>
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="record-actions">
+              <a href="{{ url_for('members_page', edit_member=member.id) }}" class="button secondary">Editar</a>
+              <a href="{{ url_for('member_card_preview', member_id=member.id) }}" class="button tertiary">Cartão</a>
+              <form method="post" action="{{ url_for('delete_member', member_id=member.id) }}" class="inline-form">
+                <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste sócio?');">Eliminar</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="empty-state">Sem sócios registados neste momento.</p>
+    {% endif %}
+  </article>
+</section>
+
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="form-membership-type">
+    <h3 id="form-membership-type">{{ 'Editar Tipo de Sócio' if editing_type else 'Tipos de Sócio' }}</h3>
+    <form method="post" action="{{ url_for('create_membership_type') }}">
+      {% if editing_type %}
+        <input type="hidden" name="type_id" value="{{ editing_type.id }}" />
+      {% endif %}
+      <label for="type-name">Nome do Tipo</label>
+      <input id="type-name" name="name" type="text" placeholder="Ex.: Sócio Juvenil" value="{{ editing_type.name if editing_type else '' }}" required />
+
+      <label for="type-amount">Valor da Quota</label>
+      <input id="type-amount" name="amount" type="number" min="0" step="0.01" placeholder="Ex.: 5.00" value="{{ editing_type.amount if editing_type else '' }}" required />
+
+      <label for="type-frequency">Periodicidade</label>
+      <input id="type-frequency" name="frequency" type="text" placeholder="Mensal, Trimestral…" value="{{ editing_type.frequency if editing_type else '' }}" />
+
+      <label for="type-description">Notas</label>
+      <textarea id="type-description" name="description" rows="2" placeholder="Benefícios, escalões etários ou outras observações">{{ editing_type.description if editing_type else '' }}</textarea>
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_type else 'Gravar' }}</button>
+        {% if editing_type %}
+          <a href="{{ url_for('members_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Catálogo de Tipos</h3>
+    {% if membership_types %}
+      <div class="table-wrapper">
+        <table aria-label="Tipos de sócio">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Valor</th>
+              <th>Periodicidade</th>
+              <th>Notas</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for membership_type in membership_types %}
+              <tr>
+                <td data-label="Nome">{{ membership_type.name }}</td>
+                <td data-label="Valor">{{ membership_type.amount|format_currency }}</td>
+                <td data-label="Periodicidade">{{ membership_type.frequency }}</td>
+                <td data-label="Notas">{{ membership_type.description or '-' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <a href="{{ url_for('members_page', edit_type=membership_type.id) }}" class="button secondary">Editar</a>
+                    <form method="post" action="{{ url_for('delete_membership_type', type_id=membership_type.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Confirma a eliminação deste tipo de sócio?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Configure os primeiros tipos para associar quotas automaticamente.</p>
+    {% endif %}
+  </article>
+</section>
+
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="form-membership-payment">
+    <h3 id="form-membership-payment">Registar Pagamento de Quotas</h3>
+    <form method="post" action="{{ url_for('record_membership_payment') }}">
+      <label for="payment-member">Sócio</label>
+      <select id="payment-member" name="member_id" required>
+        <option value="">Selecione o sócio</option>
+        {% for member in members %}
+          <option value="{{ member.id }}">[{{ member.member_number or member.id }}] {{ member.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="payment-type">Tipo de Sócio</label>
+      <select id="payment-type" name="membership_type_id">
+        <option value="">Utilizar o registado no sócio</option>
+        {% for membership_type in membership_types %}
+          <option value="{{ membership_type.id }}">{{ membership_type.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="payment-period">Período</label>
+      <input id="payment-period" name="period" type="text" placeholder="Ex.: Janeiro 2025" required />
+
+      <label for="payment-date">Data do Pagamento</label>
+      <input id="payment-date" name="record_date" type="date" required />
+
+      <label for="payment-amount">Valor Pago</label>
+      <input id="payment-amount" name="amount" type="number" min="0" step="0.01" required />
+
+      <label for="payment-notes">Notas</label>
+      <textarea id="payment-notes" name="notes" rows="2" placeholder="Referência, método de pagamento ou observações"></textarea>
+
+      <button type="submit">Gravar Pagamento</button>
+    </form>
+  </article>
+
+  <article class="card">
+    <h3>Histórico de Quotas</h3>
+    {% if payments %}
+      <ul class="totals">
+        <li>Total geral: {{ total_payments|format_currency }}</li>
+        {% for key, total in payment_totals.items() %}
+          {% if key == 'outros' %}
+            <li>Sem tipo associado: {{ total|format_currency }}</li>
+          {% else %}
+            {% set type_info = type_lookup.get(key) %}
+            <li>{{ type_info.name if type_info else 'Tipo #' ~ key }}: {{ total|format_currency }}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+      <div class="table-wrapper">
+        <table aria-label="Pagamentos de quotas">
+          <thead>
+            <tr>
+              <th>Data</th>
+              <th>Sócio</th>
+              <th>Tipo</th>
+              <th>Período</th>
+              <th>Valor</th>
+              <th>Notas</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for payment in payments|sort(attribute='paid_on', reverse=True) %}
+              {% set member = member_lookup.get(payment.member_id) %}
+              {% set type_info = type_lookup.get(payment.membership_type_id) if payment.membership_type_id is not none else None %}
+              <tr>
+                <td data-label="Data">{{ payment.paid_on }}</td>
+                <td data-label="Sócio">
+                  {% if member %}
+                    [{{ member.member_number or member.id }}] {{ member.name }}
+                  {% else %}
+                    Sócio #{{ payment.member_id }}
+                  {% endif %}
+                </td>
+                <td data-label="Tipo">{{ type_info.name if type_info else member.membership_type if member else '-' }}</td>
+                <td data-label="Período">{{ payment.period }}</td>
+                <td data-label="Valor">{{ payment.amount|format_currency }}</td>
+                <td data-label="Notas">{{ payment.notes or '-' }}</td>
+                <td data-label="Ações">
+                  <div class="actions">
+                    <form method="post" action="{{ url_for('delete_membership_payment', payment_id=payment.id) }}" class="inline-form">
+                      <button type="submit" class="button danger" onclick="return confirm('Remover este registo de pagamento?');">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p class="empty-state">Ainda não existem pagamentos registados. Quando adicionar um, fica registado aqui de imediato.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

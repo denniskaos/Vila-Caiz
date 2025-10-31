@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block content %}
+{% set theme = settings.theme %}
+{% set branding = settings.branding %}
+{% set default_logo = '0bee0246-d183-416b-8602-1124015149f1.png' %}
+{% set current_logo = (branding.logo_path or default_logo) | photo_path %}
+<section class="page-header">
+  <h2>Design do Portal</h2>
+  <p>Personalize a identidade visual para alinhar o painel com a comunicação oficial do clube.</p>
+</section>
+<section class="section-grid section-grid--sidebar">
+  <article class="card form-card" aria-labelledby="settings-title">
+    <h3 id="settings-title">Identidade</h3>
+    <form method="post" action="{{ url_for('update_settings_route') }}" enctype="multipart/form-data">
+      <label for="club-name">Nome do clube</label>
+      <input
+        id="club-name"
+        name="club_name"
+        type="text"
+        placeholder="Ex.: G.C.D. Vila Caiz"
+        value="{{ branding.club_name or '' }}"
+      />
+      <p class="form-hint">Atualize a designação apresentada no cabeçalho e nas páginas públicas.</p>
+
+      <fieldset>
+        <legend>Cores do tema</legend>
+        <div class="color-grid">
+          <label for="color-primary">Cor principal</label>
+          <input id="color-primary" name="primary_color" type="color" value="{{ theme.primary_color }}" />
+
+          <label for="color-dark">Cor de fundo</label>
+          <input id="color-dark" name="dark_color" type="color" value="{{ theme.dark_color }}" />
+
+          <label for="color-accent">Cor de destaque</label>
+          <input id="color-accent" name="accent_color" type="color" value="{{ theme.accent_color }}" />
+
+          <label for="color-menu">Cor do menu</label>
+          <input id="color-menu" name="menu_background" type="color" value="{{ theme.menu_background }}" />
+
+          <label for="color-input-bg">Fundo dos campos</label>
+          <input id="color-input-bg" name="input_background" type="color" value="{{ theme.input_background }}" />
+
+          <label for="color-input-text">Texto dos campos</label>
+          <input id="color-input-text" name="input_text_color" type="color" value="{{ theme.input_text_color }}" />
+        </div>
+        <p class="form-hint">Seleccione cores em formato hexadecimal para atualizar botões, fundos, campos de formulário e destaques.</p>
+      </fieldset>
+
+      <label for="brand-logo">Logótipo</label>
+      <input id="brand-logo" name="logo_file" type="file" accept="image/*" />
+      <p class="form-hint">Carregue um ficheiro PNG, JPG, GIF ou WEBP. Deixe vazio para manter o logótipo atual.</p>
+
+      <label class="checkbox">
+        <input type="checkbox" name="reset_logo" value="1" />
+        <span>Repor logótipo oficial do Vila Caiz</span>
+      </label>
+
+      <div class="form-actions">
+        <button type="submit">Gravar definições</button>
+      </div>
+    </form>
+  </article>
+
+  <article class="card design-preview" aria-live="polite">
+    <h3>Pré-visualização</h3>
+    <div class="preview-banner" style="background: linear-gradient(120deg, {{ theme.dark_color }}, {{ theme.primary_color }});">
+      <img src="{{ current_logo }}" alt="Pré-visualização do logótipo" />
+      <div class="preview-text">
+        <strong>{{ branding.club_name or 'G.C.D. Vila Caiz' }}</strong>
+        <span>Paleta ativa: {{ theme.primary_color }}, {{ theme.dark_color }}</span>
+      </div>
+    </div>
+    <p>A secção mostra o cabeçalho aproximado com as cores atuais. Após gravar, a alteração aplica-se a todas as páginas.</p>
+  </article>
+</section>
+{% endblock %}

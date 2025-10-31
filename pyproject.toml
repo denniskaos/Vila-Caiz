@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vila-caiz"
+version = "0.2.0"
+description = "Gestão integrada do clube de futebol Vila Caiz, com CLI e painel web."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Clube Desportivo de Vila Caiz" },
+]
+license = { text = "Proprietary" }
+dependencies = [
+    "Flask>=3.0.3,<4.0.0",
+    "gunicorn>=22.0.0,<23.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/denniskaos/Vila-Caiz"
+
+[project.scripts]
+vila-caiz = "app.cli:main"
+vila-caiz-web = "app.web:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["app"]
+
+[tool.setuptools.package-data]
+"app" = [
+    "templates/*.html",
+    "static/**/*",
+    "VERSION",
+]

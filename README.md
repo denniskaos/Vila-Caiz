@@ -74,8 +74,8 @@ Consulte os subcomandos específicos com `python -m app <secção> --help`.
 
 ## Lançamentos
 
-A primeira release oficial está identificada como **0.1.0** e encontra-se
-documentada no [CHANGELOG](CHANGELOG.md). Pode consultar a versão instalada em
+A release mais recente está identificada como **0.2.0** e encontra-se
+documentada no [CHANGELOG](CHANGELOG.md). As notas da estreia (**0.1.0**) continuam disponíveis no mesmo ficheiro para referência histórica. Pode consultar a versão instalada em
 qualquer momento com:
 
 ```bash

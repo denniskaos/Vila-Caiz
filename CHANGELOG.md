@@ -4,6 +4,10 @@ Todas as alterações notáveis deste projeto serão documentadas neste ficheiro
 
 ## [Unreleased]
 ### Adicionado
+- Nada a reportar por enquanto.
+
+## [0.2.0] - 2024-11-25
+### Adicionado
 - Gestão clínica de jogadores com registo de diagnósticos, planos de tratamento, datas de regresso e disponibilidade.
 - Página web dedicada aos tratamentos com alertas visuais no plantel, planos de jogo e versão para impressão.
 - Comandos `treatments` na CLI para criar, listar, atualizar e remover tratamentos por época.

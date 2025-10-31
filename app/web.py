@@ -196,8 +196,7 @@ def _resolve_form_squad_slug(value: Optional[str]) -> str:
     return normalized
 
 
-def _build_player_page_data(normalized_slug: str):
-    service = get_service()
+def _build_player_page_data(service: ClubService, normalized_slug: str):
     all_players = service.list_players()
     treatments_map = service.treatments_by_player(active_only=True)
     counts: Dict[str, int] = {}
@@ -221,7 +220,6 @@ def _build_player_page_data(normalized_slug: str):
         for player in filtered_players
     }
     return (
-        service,
         all_players,
         filtered_players,
         squad_config,
@@ -780,15 +778,15 @@ def create_app() -> Flask:
                 )
             )
 
+        service = get_service()
         (
-            _,
             _all_players,
             filtered_players,
             squad_config,
             canonical_value,
             squad_options,
             relevant_treatments,
-        ) = _build_player_page_data(normalized_slug)
+        ) = _build_player_page_data(service, normalized_slug)
 
         page_title = f"Plantel · {squad_config['label']}"
 
@@ -823,15 +821,15 @@ def create_app() -> Flask:
                 params["edit"] = edit_param
             return redirect(url_for("players_manage_page", squad_slug=normalized_slug, **params))
 
+        service = get_service()
         (
-            _,
             all_players,
             filtered_players,
             squad_config,
             canonical_value,
             squad_options,
             relevant_treatments,
-        ) = _build_player_page_data(normalized_slug)
+        ) = _build_player_page_data(service, normalized_slug)
 
         edit_id = _parse_optional_int(request.args.get("edit"))
         editing_player = None

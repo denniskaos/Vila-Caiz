@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Finanças</h2>
+  <p>Visão geral das contas do G.C.D. Vila Caiz com destaque para o saldo e as tendências por categoria.</p>
+  {% if active_season %}
+    <p class="season-note">Época ativa: <strong>{{ active_season.name }}</strong></p>
+  {% endif %}
+</section>
+<section class="card-grid" aria-label="Resumo financeiro">
+  <article class="card">
+    <h3>Saldo Atual</h3>
+    <p><strong>{{ summary.balance | format_currency }}</strong></p>
+    <p>Resultado acumulado entre receitas e despesas.</p>
+  </article>
+  <article class="card">
+    <h3>Total de Receitas</h3>
+    <p><strong>{{ summary.total_revenue | format_currency }}</strong></p>
+    <p>Entradas registadas na época.</p>
+  </article>
+  <article class="card">
+    <h3>Total de Despesas</h3>
+    <p><strong>{{ summary.total_expense | format_currency }}</strong></p>
+    <p>Saídas contabilizadas até ao momento.</p>
+  </article>
+</section>
+{% if revenue_categories or expense_categories %}
+<section class="card" aria-labelledby="categorias-financeiras">
+  <h3 id="categorias-financeiras">Distribuição por Categoria</h3>
+  <div style="display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+    <div>
+      <h4>Receitas</h4>
+      {% if revenue_categories %}
+        <ul>
+          {% for label, value in revenue_categories.items() %}
+            <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">Sem dados de receitas por categoria.</p>
+      {% endif %}
+    </div>
+    <div>
+      <h4>Despesas</h4>
+      {% if expense_categories %}
+        <ul>
+          {% for label, value in expense_categories.items() %}
+            <li><strong>{{ label }}</strong>: {{ value | format_currency }}</li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">Sem dados de despesas por categoria.</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

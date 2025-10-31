@@ -47,9 +47,14 @@ Também pode usar diretamente `python app.py` (sem argumentos) para arrancar o
 painel na porta predefinida (`5000`). Depois aceda a `http://localhost:8000`
 ou `http://localhost:5000`, consoante a porta escolhida, para utilizar o painel
 visual com formulários para todas as secções do clube (plantel, equipa técnica,
-tratamentos clínicos, formação, sócios e finanças). No menu Plantel & Staff o
-plantel está dividido por páginas dedicadas a Seniores, Juniores e restantes
-escalões para facilitar a gestão.
+tratamentos clínicos, formação, sócios e finanças). A consulta do plantel vive
+agora no menu **Plantéis**, enquanto a criação e edição ficam concentradas em
+**Plantel & Staff → Gestão de Jogadores**, com páginas dedicadas a Seniores,
+Juniores e restantes escalões para facilitar a gestão.
+
+As fotografias enviadas para jogadores, staff e sócios são guardadas em
+`data/uploads`, garantindo que os retratos permanecem disponíveis após futuras
+atualizações do código.
 
 Para deploys em produção (por exemplo no Render ou em qualquer plataforma que
 espere um servidor WSGI) utilize o Gunicorn apontando para a aplicação Flask

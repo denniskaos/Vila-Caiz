@@ -2246,6 +2246,7 @@
           <h1>{{ club_name }}</h1>
         </div>
         {% if current_user %}
+          {% set show_rosters = can_access('players') %}
           {% set show_plantel = has_access_to_any(('players', 'coaches', 'match_plans', 'physios', 'treatments', 'youth')) %}
           {% set show_financas = has_access_to_any(('finances_overview', 'finances_revenue', 'finances_expense', 'members')) %}
           {% set show_admin = has_access_to_any(('users', 'settings')) %}
@@ -2293,6 +2294,9 @@
               {% if can_access('seasons') %}
                 <a href="{{ url_for('seasons_page') }}" class="{{ 'active' if active_page == 'seasons' else '' }}"{% if active_page == 'seasons' %} aria-current="page"{% endif %}>Épocas</a>
               {% endif %}
+              {% if show_rosters %}
+                <button type="button" class="menu-toggle" data-menu="rosters" aria-expanded="false">Plantéis</button>
+              {% endif %}
               {% if show_plantel %}
                 <button type="button" class="menu-toggle" data-menu="plantel" aria-expanded="false">Plantel &amp; Staff</button>
               {% endif %}
@@ -2306,15 +2310,23 @@
           </div>
         {% endif %}
       </div>
-      {% if current_user and (show_plantel or show_financas or show_admin) %}
+      {% if current_user and (show_rosters or show_plantel or show_financas or show_admin) %}
         <div class="submenu-bar">
           <div class="container submenu-wrapper">
+            {% if show_rosters %}
+              <div class="submenu" data-menu="rosters">
+                <span class="submenu-title">Plantéis</span>
+                <div class="submenu-links">
+                  <a href="{{ url_for('players_page', squad_slug='seniores') }}" class="{{ 'active' if active_page == 'players-roster' else '' }}"{% if active_page == 'players-roster' %} aria-current="page"{% endif %}>Plantel Principal</a>
+                </div>
+              </div>
+            {% endif %}
             {% if show_plantel %}
               <div class="submenu" data-menu="plantel">
                 <span class="submenu-title">Plantel &amp; Staff</span>
                 <div class="submenu-links">
                   {% if can_access('players') %}
-                    <a href="{{ url_for('players_page', squad_slug='seniores') }}" class="{{ 'active' if active_page == 'players' else '' }}"{% if active_page == 'players' %} aria-current="page"{% endif %}>Jogadores</a>
+                    <a href="{{ url_for('players_manage_page', squad_slug='seniores') }}" class="{{ 'active' if active_page == 'players-manage' else '' }}"{% if active_page == 'players-manage' %} aria-current="page"{% endif %}>Gestão de Jogadores</a>
                   {% endif %}
                   {% if can_access('coaches') %}
                     <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>

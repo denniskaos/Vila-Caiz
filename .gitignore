@@ -1,5 +1,4 @@
 __pycache__/
 *.pyc
 data/club.json
-app/static/uploads/*
-!app/static/uploads/.gitignore
+data/uploads/

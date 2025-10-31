@@ -9,7 +9,18 @@ from pathlib import Path
 from typing import Dict, Optional, Tuple
 from uuid import uuid4
 
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    abort,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    send_from_directory,
+    session,
+    url_for,
+)
 from werkzeug.utils import secure_filename
 
 from .services import DEFAULT_BRANDING, ClubService, YOUTH_SQUADS
@@ -75,6 +86,7 @@ ENDPOINT_PERMISSIONS = {
     "activate_season": "seasons",
     "delete_season": "seasons",
     "players_page": "players",
+    "players_manage_page": "players",
     "add_player": "players",
     "delete_player": "players",
     "coaches_page": "coaches",
@@ -116,7 +128,7 @@ ENDPOINT_PERMISSIONS = {
     "update_settings_route": "settings",
 }
 
-PUBLIC_ENDPOINTS = {"login_view", "login_submit", "setup_admin", "static"}
+PUBLIC_ENDPOINTS = {"login_view", "login_submit", "setup_admin", "uploaded_media", "static"}
 
 PLAYER_SQUAD_OPTIONS = [
     {"slug": "seniores", "value": "senior", "label": "Seniores"},
@@ -184,6 +196,41 @@ def _resolve_form_squad_slug(value: Optional[str]) -> str:
     return normalized
 
 
+def _build_player_page_data(normalized_slug: str):
+    service = get_service()
+    all_players = service.list_players()
+    treatments_map = service.treatments_by_player(active_only=True)
+    counts: Dict[str, int] = {}
+    for player in all_players:
+        key = _canonical_player_squad(player.squad)
+        counts[key] = counts.get(key, 0) + 1
+    squad_options = []
+    for option in PLAYER_SQUAD_OPTIONS:
+        option_copy = dict(option)
+        option_copy["count"] = counts.get(option["value"], 0)
+        squad_options.append(option_copy)
+    squad_config = PLAYER_SQUAD_LOOKUP[normalized_slug]
+    canonical_value = squad_config["value"]
+    filtered_players = [
+        player
+        for player in all_players
+        if _canonical_player_squad(player.squad) == canonical_value
+    ]
+    relevant_treatments = {
+        player.id: treatments_map.get(player.id, [])
+        for player in filtered_players
+    }
+    return (
+        service,
+        all_players,
+        filtered_players,
+        squad_config,
+        canonical_value,
+        squad_options,
+        relevant_treatments,
+    )
+
+
 def create_app() -> Flask:
     """Criar e configurar a aplicação Flask."""
 
@@ -194,7 +241,7 @@ def create_app() -> Flask:
         static_folder=str(base_dir / "static"),
     )
     app.config["SECRET_KEY"] = "vila-caiz-demo"
-    upload_folder = Path(app.static_folder) / "uploads"
+    upload_folder = base_dir.parent / "data" / "uploads"
     upload_folder.mkdir(parents=True, exist_ok=True)
     app.config["UPLOAD_FOLDER"] = upload_folder
     app.config["ALLOWED_IMAGE_EXTENSIONS"] = {".png", ".jpg", ".jpeg", ".gif", ".webp"}
@@ -208,6 +255,18 @@ def create_app() -> Flask:
     def cleanup_service(_: Optional[BaseException]) -> None:
         if "club_service" in g:
             g.pop("club_service", None)
+
+    @app.get("/media/<path:filename>")
+    def uploaded_media(filename: str):
+        upload_dir = Path(app.config["UPLOAD_FOLDER"]).resolve()
+        target = (upload_dir / filename).resolve()
+        try:
+            relative = target.relative_to(upload_dir)
+        except ValueError:
+            abort(404)
+        if not target.exists() or not target.is_file():
+            abort(404)
+        return send_from_directory(upload_dir, str(relative))
 
     def _user_can(permission: Optional[str]) -> bool:
         user = g.get("current_user")
@@ -600,6 +659,14 @@ def create_app() -> Flask:
             return None
         if source.startswith(("http://", "https://", "/")):
             return source
+        if source.startswith("uploads/"):
+            _, _, relative = source.partition("/")
+            upload_dir = Path(app.config["UPLOAD_FOLDER"])
+            if relative:
+                candidate = upload_dir / relative
+                if candidate.exists():
+                    return url_for("uploaded_media", filename=relative)
+            return url_for("static", filename=source)
         return url_for("static", filename=source)
 
     def _process_photo_upload(field_name: str, *, existing: Optional[str] = None) -> Tuple[Optional[str], bool, Optional[str]]:
@@ -619,7 +686,8 @@ def create_app() -> Flask:
         destination = upload_dir / new_filename
         file.save(destination)
         if existing and existing.startswith("uploads/"):
-            old_path = Path(app.static_folder) / existing
+            relative_part = existing.split("/", 1)[1] if "/" in existing else existing
+            old_path = Path(app.config["UPLOAD_FOLDER"]) / relative_part
             if old_path.exists():
                 old_path.unlink()
         return f"uploads/{new_filename}", True, None
@@ -627,7 +695,8 @@ def create_app() -> Flask:
     def _delete_upload(relative_path: Optional[str]) -> None:
         if not relative_path or not relative_path.startswith("uploads/"):
             return
-        candidate = Path(app.static_folder) / relative_path
+        relative_part = relative_path.split("/", 1)[1] if "/" in relative_path else relative_path
+        candidate = Path(app.config["UPLOAD_FOLDER"]) / relative_part
         if candidate.exists():
             candidate.unlink()
 
@@ -701,10 +770,68 @@ def create_app() -> Flask:
             if edit_param:
                 params["edit"] = edit_param
             return redirect(url_for("players_page", squad_slug=normalized_slug, **params))
+        edit_redirect = request.args.get("edit")
+        if edit_redirect:
+            return redirect(
+                url_for(
+                    "players_manage_page",
+                    squad_slug=normalized_slug,
+                    edit=edit_redirect,
+                )
+            )
 
-        service = get_service()
-        all_players = service.list_players()
-        player_treatments_map = service.treatments_by_player(active_only=True)
+        (
+            _,
+            _all_players,
+            filtered_players,
+            squad_config,
+            canonical_value,
+            squad_options,
+            relevant_treatments,
+        ) = _build_player_page_data(normalized_slug)
+
+        page_title = f"Plantel · {squad_config['label']}"
+
+        return render_template(
+            "players.html",
+            title=page_title,
+            active_group="rosters",
+            active_page="players-roster",
+            players=filtered_players,
+            player_treatments=relevant_treatments,
+            squad_options=squad_options,
+            selected_squad_slug=normalized_slug,
+            selected_squad_label=squad_config["label"],
+            selected_squad_value=canonical_value,
+            can_manage_players=_user_can("players"),
+        )
+
+    @app.get("/gestao/jogadores", defaults={"squad_slug": None})
+    @app.get("/gestao/jogadores/<string:squad_slug>")
+    def players_manage_page(squad_slug: Optional[str]):
+        if squad_slug is None:
+            return redirect(url_for("players_manage_page", squad_slug=DEFAULT_PLAYER_SQUAD_SLUG))
+        cleaned_slug = _strip_accents(str(squad_slug)).strip().lower()
+        normalized_slug = _normalize_player_slug(squad_slug)
+        if normalized_slug is None:
+            _flash_invalid("Escalão selecionado não existe.")
+            return redirect(url_for("players_manage_page", squad_slug=DEFAULT_PLAYER_SQUAD_SLUG))
+        if normalized_slug != cleaned_slug:
+            params: Dict[str, str] = {}
+            edit_param = request.args.get("edit", "").strip()
+            if edit_param:
+                params["edit"] = edit_param
+            return redirect(url_for("players_manage_page", squad_slug=normalized_slug, **params))
+
+        (
+            _,
+            all_players,
+            filtered_players,
+            squad_config,
+            canonical_value,
+            squad_options,
+            relevant_treatments,
+        ) = _build_player_page_data(normalized_slug)
 
         edit_id = _parse_optional_int(request.args.get("edit"))
         editing_player = None
@@ -712,42 +839,22 @@ def create_app() -> Flask:
             editing_player = next((player for player in all_players if player.id == edit_id), None)
             if editing_player is None:
                 _flash_invalid("Jogador selecionado para edição não existe.")
-            else:
-                editing_slug = _slug_for_squad(editing_player.squad)
-                if editing_slug != normalized_slug:
-                    params: Dict[str, str] = {"edit": str(edit_id)}
-                    return redirect(url_for("players_page", squad_slug=editing_slug, **params))
+                return redirect(url_for("players_manage_page", squad_slug=normalized_slug))
+            editing_slug = _slug_for_squad(editing_player.squad)
+            if editing_slug != normalized_slug:
+                params = {"edit": str(edit_id)}
+                return redirect(url_for("players_manage_page", squad_slug=editing_slug, **params))
 
-        squad_config = PLAYER_SQUAD_LOOKUP[normalized_slug]
-        canonical_value = squad_config["value"]
-        filtered_players = [
-            player
-            for player in all_players
-            if _canonical_player_squad(player.squad) == canonical_value
-        ]
-        counts: Dict[str, int] = {}
-        for player in all_players:
-            key = _canonical_player_squad(player.squad)
-            counts[key] = counts.get(key, 0) + 1
-        squad_options = []
-        for option in PLAYER_SQUAD_OPTIONS:
-            option_copy = dict(option)
-            option_copy["count"] = counts.get(option["value"], 0)
-            squad_options.append(option_copy)
-        relevant_treatments = {
-            player.id: player_treatments_map.get(player.id, [])
-            for player in filtered_players
-        }
         form_squad_value = _canonical_player_squad(
             editing_player.squad if editing_player is not None else canonical_value
         )
-        page_title = f"Jogadores · {squad_config['label']}"
+        page_title = f"Gestão do Plantel · {squad_config['label']}"
 
         return render_template(
-            "players.html",
+            "players_manage.html",
             title=page_title,
             active_group="plantel",
-            active_page="players",
+            active_page="players-manage",
             players=filtered_players,
             editing_player=editing_player,
             player_treatments=relevant_treatments,
@@ -1290,15 +1397,19 @@ def create_app() -> Flask:
     @app.post("/players")
     def add_player():
         current_slug = _resolve_form_squad_slug(request.form.get("current_slug"))
+        origin = request.form.get("origin", "manage").strip().lower()
+        if origin not in {"manage", "view"}:
+            origin = "manage"
         player_id_raw = request.form.get("player_id")
         player_id = _parse_optional_int(player_id_raw)
+        target_endpoint = "players_manage_page" if origin == "manage" else "players_page"
         if player_id_raw and player_id is None:
             _flash_invalid("Jogador selecionado é inválido para edição.")
-            return redirect(url_for("players_page", squad_slug=current_slug))
+            return redirect(url_for(target_endpoint, squad_slug=current_slug))
         target_kwargs = {"squad_slug": current_slug}
         if player_id is not None:
             target_kwargs["edit"] = player_id
-        target = url_for("players_page", **target_kwargs)
+        target = url_for(target_endpoint, **target_kwargs)
         name = request.form.get("name", "").strip()
         position = request.form.get("position", "").strip()
         squad = request.form.get("squad", "senior").strip()
@@ -1402,7 +1513,8 @@ def create_app() -> Flask:
                 return redirect(target)
             flash("Jogador atualizado com sucesso!", "success")
         destination_slug = _slug_for_squad(squad_value)
-        return redirect(url_for("players_page", squad_slug=destination_slug))
+        destination_endpoint = "players_manage_page" if origin == "manage" else "players_page"
+        return redirect(url_for(destination_endpoint, squad_slug=destination_slug))
 
     @app.post("/players/<int:player_id>/delete")
     def delete_player(player_id: int):
@@ -1410,13 +1522,17 @@ def create_app() -> Flask:
         existing_players = service.list_players()
         player = next((item for item in existing_players if item.id == player_id), None)
         redirect_slug = _slug_for_squad(player.squad if player else None)
+        origin = request.form.get("origin", "manage").strip().lower()
+        if origin not in {"manage", "view"}:
+            origin = "manage"
         try:
             service.remove_player(player_id)
         except ValueError as exc:
             _flash_invalid(str(exc))
         else:
             flash("Jogador eliminado.", "success")
-        return redirect(url_for("players_page", squad_slug=redirect_slug))
+        endpoint = "players_manage_page" if origin == "manage" else "players_page"
+        return redirect(url_for(endpoint, squad_slug=redirect_slug))
 
     @app.post("/coaches")
     def add_coach():

@@ -4,6 +4,8 @@ Todas as alterações notáveis deste projeto serão documentadas neste ficheiro
 
 ## [Unreleased]
 ### Adicionado
+- Plantéis com página dedicada de consulta e menu próprio separado da área de criação/edição de jogadores.
+- Uploads de fotografias guardados na pasta de dados persistente, mantendo retratos após atualizações do código.
 - Navegação do plantel dividida por escalão com páginas dedicadas a seniores, juniores e restantes equipas de formação.
 - Formulários com fundo escuro por omissão e novas definições para personalizar as cores dos campos e do texto inserido.
 - Campo "Sócio desde" para registar a data de adesão, visível na gestão e no cartão imprimível.

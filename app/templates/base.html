@@ -2406,11 +2406,20 @@
       const activeGroup = body.dataset.activeGroup;
       const toggles = Array.from(document.querySelectorAll('.menu-toggle'));
       const submenus = Array.from(document.querySelectorAll('.submenu'));
+      const header = document.querySelector('header');
       const openMenus = new Set();
+      let closeTimer;
 
       if (activeGroup) {
         openMenus.add(activeGroup);
       }
+
+      const clearCloseTimer = () => {
+        if (closeTimer) {
+          clearTimeout(closeTimer);
+          closeTimer = undefined;
+        }
+      };
 
       const syncMenus = () => {
         submenus.forEach((submenu) => {
@@ -2424,16 +2433,70 @@
         });
       };
 
+      const closeMenus = () => {
+        openMenus.clear();
+        if (activeGroup) {
+          openMenus.add(activeGroup);
+        }
+        syncMenus();
+      };
+
+      const openMenu = (menu) => {
+        clearCloseTimer();
+        if (!menu) {
+          closeMenus();
+          return;
+        }
+        openMenus.clear();
+        openMenus.add(menu);
+        syncMenus();
+      };
+
       toggles.forEach((toggle) => {
-        toggle.addEventListener('click', () => {
-          const target = toggle.dataset.menu;
-          if (openMenus.has(target)) {
-            openMenus.delete(target);
-          } else {
-            openMenus.add(target);
+        const target = toggle.dataset.menu;
+        toggle.addEventListener('mouseenter', () => openMenu(target));
+        toggle.addEventListener('focus', () => openMenu(target));
+        toggle.addEventListener('click', (event) => {
+          if (openMenus.has(target) && target !== activeGroup) {
+            event.preventDefault();
+            closeMenus();
+            return;
           }
-          syncMenus();
+          openMenu(target);
         });
+        toggle.addEventListener('mouseleave', () => {
+          clearCloseTimer();
+          closeTimer = setTimeout(closeMenus, 180);
+        });
+        toggle.addEventListener('blur', () => {
+          closeTimer = setTimeout(() => {
+            if (!header.contains(document.activeElement)) {
+              closeMenus();
+            }
+          }, 180);
+        });
+      });
+
+      submenus.forEach((submenu) => {
+        const menuName = submenu.dataset.menu;
+        submenu.addEventListener('mouseenter', () => openMenu(menuName));
+        submenu.addEventListener('focusin', () => openMenu(menuName));
+        submenu.addEventListener('mouseleave', () => {
+          clearCloseTimer();
+          closeTimer = setTimeout(closeMenus, 180);
+        });
+      });
+
+      header.addEventListener('mouseenter', clearCloseTimer);
+      header.addEventListener('mouseleave', () => {
+        clearCloseTimer();
+        closeTimer = setTimeout(closeMenus, 200);
+      });
+
+      document.addEventListener('focusin', (event) => {
+        if (!header.contains(event.target)) {
+          closeMenus();
+        }
       });
 
       syncMenus();

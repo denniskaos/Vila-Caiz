@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-header">
+  <h2>Utilizadores</h2>
+  <p>Defina credenciais exclusivas e atribua o cargo correto a cada colaborador do clube.</p>
+</section>
+<section class="section-grid">
+  <article class="card form-card" aria-labelledby="user-form-title">
+    <h3 id="user-form-title">{{ 'Editar Utilizador' if editing_user else 'Novo Utilizador' }}</h3>
+    <form
+      method="post"
+      action="{{ url_for('update_user_route', user_id=editing_user.id) if editing_user else url_for('create_user_route') }}"
+      novalidate
+    >
+      <label for="user-full-name">Nome completo</label>
+      <input
+        id="user-full-name"
+        name="full_name"
+        type="text"
+        placeholder="Nome e apelido"
+        value="{{ editing_user.full_name if editing_user and editing_user.full_name else '' }}"
+      />
+
+      <label for="user-username">Utilizador</label>
+      <input
+        id="user-username"
+        name="username"
+        type="text"
+        required
+        value="{{ editing_user.username if editing_user else '' }}"
+      />
+      {% if editing_user %}
+        <p class="form-hint">Atualize o identificador apenas se precisar de renomear o login.</p>
+      {% else %}
+        <p class="form-hint">Escolha um nome único sem espaços. Será utilizado no login.</p>
+      {% endif %}
+
+      <label for="user-role">Cargo</label>
+      <select id="user-role" name="role" required>
+        {% set current_role = editing_user.role if editing_user else 'coach' %}
+        {% for role_value, role_label in role_options %}
+          <option value="{{ role_value }}"{% if current_role == role_value %} selected{% endif %}>{{ role_label }}</option>
+        {% endfor %}
+      </select>
+
+      <label for="user-password">Palavra-passe{% if editing_user %} (opcional){% endif %}</label>
+      <input id="user-password" name="password" type="password" {% if not editing_user %}required{% endif %} />
+
+      <label for="user-confirm">Confirmar palavra-passe{% if editing_user %} (opcional){% endif %}</label>
+      <input id="user-confirm" name="confirm_password" type="password" {% if not editing_user %}required{% endif %} />
+      {% if editing_user %}
+        <p class="form-hint">Preencha apenas se pretender definir uma nova palavra-passe.</p>
+      {% endif %}
+
+      <div class="form-actions">
+        <button type="submit">{{ 'Atualizar' if editing_user else 'Criar' }}</button>
+        {% if editing_user %}
+          <a href="{{ url_for('users_page') }}" class="button secondary">Cancelar</a>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+
+  <article class="card" aria-live="polite">
+    <h3>Contas existentes</h3>
+    {% if users %}
+      <div class="table-wrapper">
+        <table aria-label="Utilizadores registados">
+          <thead>
+            <tr>
+              <th>Nome</th>
+              <th>Utilizador</th>
+              <th>Cargo</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for user in users %}
+              <tr{% if editing_user and editing_user.id == user.id %} class="is-active"{% endif %}>
+                <td data-label="Nome">{{ user.full_name or '—' }}</td>
+                <td data-label="Utilizador">{{ user.username }}</td>
+                <td data-label="Cargo">{{ role_labels.get(user.role, user.role) }}</td>
+                <td data-label="Ações">
+                  <div class="table-actions">
+                    <a href="{{ url_for('users_page', edit=user.id) }}" class="button tertiary">Editar</a>
+                    <form
+                      method="post"
+                      action="{{ url_for('delete_user_route', user_id=user.id) }}"
+                      onsubmit="return confirm('Confirma a eliminação deste utilizador?');"
+                    >
+                      <button type="submit" class="button danger">Eliminar</button>
+                    </form>
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <p>Ainda não existem contas configuradas para este clube.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

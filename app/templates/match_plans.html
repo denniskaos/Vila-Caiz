@@ -71,53 +71,91 @@
       <label for="plan-notes">Observações</label>
       <textarea id="plan-notes" name="notes" rows="3" placeholder="Notas adicionais para a equipa ou delegado.">{{ editing_plan.notes if editing_plan and editing_plan.notes else '' }}</textarea>
 
-      <div class="dual-selects" role="group" aria-label="Selecionar jogadores">
-        <div>
-          <label for="plan-starters">Titulares</label>
-          <select id="plan-starters" name="starters" multiple size="10">
+      <div class="lineup-groups" role="group" aria-label="Selecionar jogadores">
+        <section class="lineup-group" aria-labelledby="lineup-starters-heading">
+          <div>
+            <h4 id="lineup-starters-heading">Titulares</h4>
+            <p class="select-note">Selecione até 11 titulares. Basta marcar as caixas correspondentes.</p>
+          </div>
+          <div class="lineup-options" role="list">
             {% for player in players %}
               {% set selected = editing_plan and player.id in editing_plan.starters %}
               {% set warnings = active_treatments.get(player.id, []) %}
-              <option value="{{ player.id }}"{% if selected %} selected{% endif %}>
-                {% if player.shirt_number is not none %}
-                  Nº {{ '%02d'|format(player.shirt_number) }} - {{ player.name }}
-                {% else %}
-                  {{ player.name }}
-                {% endif %}
-                {% if player.af_porto_id %}
-                  (ID AF Porto: {{ player.af_porto_id }})
-                {% endif %}
-                {% if warnings %}
-                  ⚠ Em tratamento: {{ warnings[0].diagnosis }}
-                {% endif %}
-              </option>
+              <label class="lineup-option" role="listitem">
+                <input type="checkbox" name="starters" value="{{ player.id }}"{% if selected %} checked{% endif %} />
+                <span class="lineup-option__body">
+                  <span class="lineup-option__name">
+                    {% if player.shirt_number is not none %}
+                      Nº {{ '%02d'|format(player.shirt_number) }} ·
+                    {% endif %}
+                    {{ player.name }}
+                  </span>
+                  {% set has_meta = player.position or player.af_porto_id or player.contact %}
+                  {% if has_meta %}
+                    <span class="lineup-option__meta">
+                      {% if player.position %}
+                        <span>{{ player.position }}</span>
+                      {% endif %}
+                      {% if player.af_porto_id %}
+                        <span class="lineup-option__badge">AF Porto {{ player.af_porto_id }}</span>
+                      {% endif %}
+                      {% if player.contact %}
+                        <span>{{ player.contact }}</span>
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                  {% if warnings %}
+                    <span class="lineup-option__badges">
+                      <span class="lineup-option__badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                    </span>
+                  {% endif %}
+                </span>
+              </label>
             {% endfor %}
-          </select>
-          <p class="select-note">Escolha até 11 titulares. Utilize Ctrl/Cmd + clique para selecionar múltiplos jogadores.</p>
-        </div>
-        <div>
-          <label for="plan-substitutes">Suplentes</label>
-          <select id="plan-substitutes" name="substitutes" multiple size="10">
+          </div>
+        </section>
+        <section class="lineup-group" aria-labelledby="lineup-subs-heading">
+          <div>
+            <h4 id="lineup-subs-heading">Suplentes</h4>
+            <p class="select-note">Marque os jogadores que iniciam no banco.</p>
+          </div>
+          <div class="lineup-options" role="list">
             {% for player in players %}
               {% set selected = editing_plan and player.id in editing_plan.substitutes %}
               {% set warnings = active_treatments.get(player.id, []) %}
-              <option value="{{ player.id }}"{% if selected %} selected{% endif %}>
-                {% if player.shirt_number is not none %}
-                  Nº {{ '%02d'|format(player.shirt_number) }} - {{ player.name }}
-                {% else %}
-                  {{ player.name }}
-                {% endif %}
-                {% if player.af_porto_id %}
-                  (ID AF Porto: {{ player.af_porto_id }})
-                {% endif %}
-                {% if warnings %}
-                  ⚠ Em tratamento: {{ warnings[0].diagnosis }}
-                {% endif %}
-              </option>
+              <label class="lineup-option" role="listitem">
+                <input type="checkbox" name="substitutes" value="{{ player.id }}"{% if selected %} checked{% endif %} />
+                <span class="lineup-option__body">
+                  <span class="lineup-option__name">
+                    {% if player.shirt_number is not none %}
+                      Nº {{ '%02d'|format(player.shirt_number) }} ·
+                    {% endif %}
+                    {{ player.name }}
+                  </span>
+                  {% set has_meta = player.position or player.af_porto_id or player.contact %}
+                  {% if has_meta %}
+                    <span class="lineup-option__meta">
+                      {% if player.position %}
+                        <span>{{ player.position }}</span>
+                      {% endif %}
+                      {% if player.af_porto_id %}
+                        <span class="lineup-option__badge">AF Porto {{ player.af_porto_id }}</span>
+                      {% endif %}
+                      {% if player.contact %}
+                        <span>{{ player.contact }}</span>
+                      {% endif %}
+                    </span>
+                  {% endif %}
+                  {% if warnings %}
+                    <span class="lineup-option__badges">
+                      <span class="lineup-option__badge danger">Em tratamento — {{ warnings[0].diagnosis }}</span>
+                    </span>
+                  {% endif %}
+                </span>
+              </label>
             {% endfor %}
-          </select>
-          <p class="select-note">Indique os jogadores que iniciam no banco.</p>
-        </div>
+          </div>
+        </section>
       </div>
 
       <div class="form-actions">

@@ -1192,6 +1192,114 @@
         color: rgba(24, 24, 24, 0.65);
       }
 
+      .lineup-groups {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        align-items: stretch;
+      }
+
+      .lineup-group {
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(24, 24, 24, 0.12);
+        border-radius: 14px;
+        padding: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+
+      .lineup-group h4 {
+        margin: 0;
+        font-size: 1rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: rgba(24, 24, 24, 0.82);
+      }
+
+      .lineup-group .select-note {
+        margin: 0;
+        font-size: 0.78rem;
+        color: rgba(24, 24, 24, 0.7);
+      }
+
+      .lineup-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 0.25rem;
+      }
+
+      .lineup-option {
+        display: flex;
+        gap: 0.55rem;
+        align-items: flex-start;
+        padding: 0.55rem 0.7rem;
+        border-radius: 12px;
+        border: 1px solid rgba(24, 24, 24, 0.1);
+        background: rgba(255, 255, 255, 0.85);
+        cursor: pointer;
+        transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+      }
+
+      .lineup-option:hover,
+      .lineup-option:focus-within {
+        border-color: rgba(24, 24, 24, 0.28);
+        background: rgba(255, 255, 255, 0.95);
+        transform: translateY(-1px);
+      }
+
+      .lineup-option input[type="checkbox"] {
+        margin-top: 0.25rem;
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--primary-dark);
+      }
+
+      .lineup-option__body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+      }
+
+      .lineup-option__name {
+        font-weight: 600;
+        letter-spacing: 0.01em;
+      }
+
+      .lineup-option__meta {
+        font-size: 0.78rem;
+        color: rgba(24, 24, 24, 0.68);
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+        align-items: center;
+      }
+
+      .lineup-option__badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+      }
+
+      .lineup-option__badge {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(24, 24, 24, 0.08);
+        border: 1px solid rgba(24, 24, 24, 0.18);
+      }
+
+      .lineup-option__badge.danger {
+        background: rgba(198, 40, 40, 0.12);
+        border-color: rgba(198, 40, 40, 0.45);
+        color: #8b1111;
+      }
+
       .color-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -1215,6 +1323,50 @@
       }
 
       @media (prefers-color-scheme: dark) {
+        .lineup-group {
+          background: rgba(20, 20, 20, 0.85);
+          border-color: rgba(245, 196, 0, 0.2);
+        }
+
+        .lineup-group h4 {
+          color: rgba(245, 196, 0, 0.88);
+        }
+
+        .lineup-group .select-note {
+          color: rgba(245, 245, 245, 0.68);
+        }
+
+        .lineup-option {
+          background: rgba(12, 12, 12, 0.88);
+          border-color: rgba(245, 196, 0, 0.18);
+        }
+
+        .lineup-option:hover,
+        .lineup-option:focus-within {
+          border-color: rgba(245, 196, 0, 0.35);
+          background: rgba(18, 18, 18, 0.95);
+        }
+
+        .lineup-option__name {
+          color: rgba(255, 255, 255, 0.9);
+        }
+
+        .lineup-option__meta {
+          color: rgba(245, 245, 245, 0.68);
+        }
+
+        .lineup-option__badge {
+          background: rgba(245, 196, 0, 0.12);
+          border-color: rgba(245, 196, 0, 0.28);
+          color: rgba(245, 222, 112, 0.92);
+        }
+
+        .lineup-option__badge.danger {
+          background: rgba(198, 40, 40, 0.2);
+          border-color: rgba(198, 40, 40, 0.48);
+          color: rgba(255, 205, 205, 0.85);
+        }
+
         .color-grid label {
           color: rgba(245, 196, 0, 0.8);
         }

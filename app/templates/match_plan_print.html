@@ -191,6 +191,13 @@
                 {% if player.af_porto_id %}
                   — ID AF Porto: {{ player.af_porto_id }}
                 {% endif %}
+                {% set warnings = active_treatments.get(player.id, []) %}
+                {% if warnings %}
+                  — ⚠ Em tratamento ({{ warnings[0].diagnosis }})
+                  {% if warnings[0].expected_return %}
+                    – Regresso previsto {{ warnings[0].expected_return.strftime('%d/%m/%Y') }}
+                  {% endif %}
+                {% endif %}
               </li>
             {% endfor %}
           </ol>
@@ -211,6 +218,13 @@
                 {% if player.af_porto_id %}
                   — ID AF Porto: {{ player.af_porto_id }}
                 {% endif %}
+                {% set warnings = active_treatments.get(player.id, []) %}
+                {% if warnings %}
+                  — ⚠ Em tratamento ({{ warnings[0].diagnosis }})
+                  {% if warnings[0].expected_return %}
+                    – Regresso previsto {{ warnings[0].expected_return.strftime('%d/%m/%Y') }}
+                  {% endif %}
+                {% endif %}
               </li>
             {% endfor %}
           </ol>
@@ -223,6 +237,29 @@
     <div class="notes">
       <strong>Notas para o delegado / equipa</strong>
       <p>{{ plan.notes or '—' }}</p>
+      {% if active_treatments %}
+        <strong>Alertas Clínicos</strong>
+        <ul>
+          {% for player_id, treatments in active_treatments|dictsort %}
+            {% set player = player_lookup.get(player_id) %}
+            {% if treatments %}
+              {% set treatment = treatments[0] %}
+              <li>
+                {{ player.name if player else 'Jogador #' ~ player_id }} — {{ treatment.diagnosis }}
+                {% if treatment.expected_return %}
+                  (Regresso {{ treatment.expected_return.strftime('%d/%m/%Y') }})
+                {% endif %}
+                {% if treatment.physio_id %}
+                  {% set physio = physio_lookup.get(treatment.physio_id) %}
+                  {% if physio %}
+                    – Fisioterapeuta: {{ physio.name }}
+                  {% endif %}
+                {% endif %}
+              </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      {% endif %}
     </div>
 
     <footer>

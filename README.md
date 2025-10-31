@@ -6,6 +6,7 @@ Vila-Caiz.
 ## Funcionalidades
 
 * Gestão de jogadores, treinadores e fisioterapeutas.
+* Registo clínico com diagnósticos, planos de tratamento e disponibilidade dos atletas.
 * Registo de equipas das camadas jovens e associação de jogadores.
 * Gestão de sócios e do estado de quotas.
 * Registo de receitas e despesas com resumo financeiro automático.
@@ -45,7 +46,7 @@ Também pode usar diretamente `python app.py` (sem argumentos) para arrancar o
 painel na porta predefinida (`5000`). Depois aceda a `http://localhost:8000`
 ou `http://localhost:5000`, consoante a porta escolhida, para utilizar o painel
 visual com formulários para todas as secções do clube (plantel, equipa técnica,
-saúde, formação, sócios e finanças).
+tratamentos clínicos, formação, sócios e finanças).
 
 Para deploys em produção (por exemplo no Render ou em qualquer plataforma que
 espere um servidor WSGI) utilize o Gunicorn apontando para a aplicação Flask
@@ -66,6 +67,7 @@ python -m app youth add "Sub-17" "Sub-17" --coach-id 1
 python -m app youth assign-player 1 1
 python -m app finance add-revenue "Bilheteira jogo 1" 1540.50 Bilheteira 2024-09-01
 python -m app finance summary
+python -m app treatments add 1 "Entorse no tornozelo" "Fisioterapia 3x semana" --start-date 2024-11-20 --expected-return 2024-12-05
 ```
 
 Consulte os subcomandos específicos com `python -m app <secção> --help`.

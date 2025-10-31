@@ -5,9 +5,9 @@ import argparse
 import shlex
 import sys
 from datetime import date
-from typing import Callable, Dict, Optional
+from typing import Callable, Dict, Optional, Tuple
 
-from . import __version__, services, storage
+from . import __version__, models, services, storage
 
 DATE_HELP = "Formato ISO (AAAA-MM-DD)."
 
@@ -23,6 +23,34 @@ def parse_date(value: Optional[str]) -> Optional[date]:
         return date.fromisoformat(value)
     except ValueError as exc:  # pragma: no cover - defensive branch
         raise CommandError(f"Data inválida: {value}") from exc
+
+
+def _treatment_lookups(service: services.ClubService) -> Tuple[Dict[int, models.Player], Dict[int, models.Physiotherapist]]:
+    players = {player.id: player for player in service.list_players()}
+    physios = {physio.id: physio for physio in service.list_physiotherapists()}
+    return players, physios
+
+
+def _format_treatment_line(
+    service: services.ClubService,
+    treatment: models.Treatment,
+    *,
+    players: Optional[Dict[int, models.Player]] = None,
+    physios: Optional[Dict[int, models.Physiotherapist]] = None,
+) -> str:
+    if players is None or physios is None:
+        players, physios = _treatment_lookups(service)
+    player = players.get(treatment.player_id)
+    physio = physios.get(treatment.physio_id) if treatment.physio_id else None
+    player_label = player.name if player else f"Jogador #{treatment.player_id}"
+    physio_label = physio.name if physio else "—"
+    expected = treatment.expected_return.isoformat() if treatment.expected_return else "—"
+    status = "Indisponível" if treatment.unavailable else "Disponível"
+    return (
+        f"[{treatment.id}] {player_label} | {treatment.diagnosis} | {treatment.treatment_plan} | "
+        f"Início: {treatment.start_date.isoformat()} | Regresso: {expected} | "
+        f"Fisioterapeuta: {physio_label} | Estado: {status}"
+    )
 
 
 def _configure_player_commands(subparsers: argparse._SubParsersAction, service: services.ClubService) -> None:
@@ -192,6 +220,129 @@ def _configure_physio_commands(subparsers: argparse._SubParsersAction, service: 
     list_physio.set_defaults(func=handle_list)
 
 
+def _configure_treatment_commands(subparsers: argparse._SubParsersAction, service: services.ClubService) -> None:
+    treatment_parser = subparsers.add_parser("treatments", help="Gestão clínica e tratamentos")
+    treatment_sub = treatment_parser.add_subparsers(dest="treatments_command", required=True)
+
+    add_treatment = treatment_sub.add_parser("add", help="Registar novo tratamento clínico")
+    add_treatment.add_argument("player_id", type=int, help="ID do jogador em tratamento")
+    add_treatment.add_argument("diagnosis", help="Descrição da lesão ou problema clínico")
+    add_treatment.add_argument("treatment", help="Plano de tratamento em curso")
+    add_treatment.add_argument("--physio-id", type=int, dest="physio_id", help="ID do fisioterapeuta responsável")
+    add_treatment.add_argument("--start-date", dest="start_date", help=DATE_HELP)
+    add_treatment.add_argument("--expected-return", dest="expected_return", help="Data prevista de regresso (AAAA-MM-DD)")
+    add_treatment.add_argument(
+        "--available",
+        dest="available",
+        action="store_true",
+        help="Indica que o atleta está apto a competir",
+    )
+    add_treatment.add_argument("--notes", help="Observações adicionais")
+
+    def handle_add(args: argparse.Namespace) -> None:
+        try:
+            start_date = parse_date(args.start_date) or date.today()
+            expected_return = parse_date(args.expected_return)
+        except CommandError as exc:
+            print(f"Erro: {exc}")
+            return
+        try:
+            treatment = service.add_treatment(
+                player_id=args.player_id,
+                physio_id=args.physio_id,
+                diagnosis=args.diagnosis,
+                treatment_plan=args.treatment,
+                start_date=start_date,
+                expected_return=expected_return,
+                unavailable=not args.available,
+                notes=args.notes,
+            )
+        except ValueError as exc:
+            print(f"Erro: {exc}")
+            return
+        print("Tratamento registado:")
+        players, physios = _treatment_lookups(service)
+        print(_format_treatment_line(service, treatment, players=players, physios=physios))
+
+    add_treatment.set_defaults(func=handle_add)
+
+    list_treatments = treatment_sub.add_parser("list", help="Listar tratamentos registados")
+
+    def handle_list(_: argparse.Namespace) -> None:
+        treatments = service.list_treatments()
+        if not treatments:
+            print("Sem tratamentos registados para a época ativa.")
+            return
+        print("Tratamentos ativos e históricos:")
+        players, physios = _treatment_lookups(service)
+        for treatment in treatments:
+            print(_format_treatment_line(service, treatment, players=players, physios=physios))
+
+    list_treatments.set_defaults(func=handle_list)
+
+    update_treatment = treatment_sub.add_parser("update", help="Atualizar um tratamento")
+    update_treatment.add_argument("treatment_id", type=int, help="ID do tratamento")
+    update_treatment.add_argument("--physio-id", dest="physio_id", help="ID do fisioterapeuta ou 0 para remover")
+    update_treatment.add_argument("--diagnosis", help="Nova descrição da lesão")
+    update_treatment.add_argument("--treatment", dest="treatment_plan", help="Atualizar plano terapêutico")
+    update_treatment.add_argument("--start-date", help=DATE_HELP)
+    update_treatment.add_argument("--expected-return", help="Data prevista de regresso (AAAA-MM-DD)")
+    status_group = update_treatment.add_mutually_exclusive_group()
+    status_group.add_argument("--available", action="store_true", help="Marcar jogador como disponível")
+    status_group.add_argument("--unavailable", action="store_true", help="Marcar jogador como indisponível")
+    update_treatment.add_argument("--notes", help="Atualizar observações")
+
+    def handle_update(args: argparse.Namespace) -> None:
+        kwargs: Dict[str, object] = {}
+        if args.physio_id is not None:
+            kwargs["physio_id"] = args.physio_id
+        if args.diagnosis is not None:
+            kwargs["diagnosis"] = args.diagnosis
+        if args.treatment_plan is not None:
+            kwargs["treatment_plan"] = args.treatment_plan
+        if args.start_date is not None:
+            try:
+                kwargs["start_date"] = parse_date(args.start_date)
+            except CommandError as exc:
+                print(f"Erro: {exc}")
+                return
+        if args.expected_return is not None:
+            try:
+                kwargs["expected_return"] = parse_date(args.expected_return)
+            except CommandError as exc:
+                print(f"Erro: {exc}")
+                return
+        if args.available:
+            kwargs["unavailable"] = False
+        if args.unavailable:
+            kwargs["unavailable"] = True
+        if args.notes is not None:
+            kwargs["notes"] = args.notes
+        try:
+            treatment = service.update_treatment(args.treatment_id, **kwargs)
+        except ValueError as exc:
+            print(f"Erro: {exc}")
+            return
+        print("Tratamento atualizado:")
+        players, physios = _treatment_lookups(service)
+        print(_format_treatment_line(service, treatment, players=players, physios=physios))
+
+    update_treatment.set_defaults(func=handle_update)
+
+    remove_treatment = treatment_sub.add_parser("remove", help="Eliminar um tratamento")
+    remove_treatment.add_argument("treatment_id", type=int, help="ID do tratamento a eliminar")
+
+    def handle_remove(args: argparse.Namespace) -> None:
+        try:
+            service.remove_treatment(args.treatment_id)
+        except ValueError as exc:
+            print(f"Erro: {exc}")
+            return
+        print("Tratamento removido.")
+
+    remove_treatment.set_defaults(func=handle_remove)
+
+
 def _configure_youth_commands(subparsers: argparse._SubParsersAction, service: services.ClubService) -> None:
     youth_parser = subparsers.add_parser("youth", help="Gerir camadas jovens")
     youth_sub = youth_parser.add_subparsers(dest="youth_command", required=True)
@@ -342,6 +493,7 @@ def build_parser(service: services.ClubService) -> argparse.ArgumentParser:
     _configure_player_commands(subparsers, service)
     _configure_coach_commands(subparsers, service)
     _configure_physio_commands(subparsers, service)
+    _configure_treatment_commands(subparsers, service)
     _configure_youth_commands(subparsers, service)
     _configure_member_commands(subparsers, service)
     _configure_finance_commands(subparsers, service)

@@ -110,6 +110,7 @@ def create_app() -> Flask:
         youth_teams = service.list_youth_teams()
         members = service.list_members()
         summary = service.financial_summary()
+        active_treatments = service.list_active_treatments()
         return render_template(
             "dashboard.html",
             title="Centro Operacional",
@@ -120,6 +121,7 @@ def create_app() -> Flask:
             youth_teams=youth_teams,
             members=members,
             summary=summary,
+            active_treatments=active_treatments,
         )
 
     @app.get("/epocas")
@@ -144,6 +146,7 @@ def create_app() -> Flask:
     def players_page():
         service = get_service()
         players = service.list_players()
+        player_treatments = service.treatments_by_player(active_only=True)
         editing_player = None
         edit_id = _parse_optional_int(request.args.get("edit"))
         if edit_id is not None:
@@ -155,6 +158,7 @@ def create_app() -> Flask:
             active_page="players",
             players=players,
             editing_player=editing_player,
+            player_treatments=player_treatments,
         )
 
     @app.post("/epocas")
@@ -256,6 +260,7 @@ def create_app() -> Flask:
     def match_plans_page():
         service = get_service()
         players = service.list_players()
+        active_treatments = service.treatments_by_player(active_only=True)
         plans = service.list_match_plans()
         squad_options = sorted(
             {player.squad or "senior" for player in players}
@@ -299,6 +304,7 @@ def create_app() -> Flask:
             plans=squad_plans,
             editing_plan=editing_plan,
             player_lookup=player_lookup,
+            active_treatments=active_treatments,
         )
 
     @app.post("/planificacao-equipa")
@@ -405,6 +411,8 @@ def create_app() -> Flask:
             return redirect(url_for("match_plans_page"))
         players = service.list_players()
         player_lookup = {player.id: player for player in players}
+        physio_lookup = {physio.id: physio for physio in service.list_physiotherapists()}
+        active_treatments = service.treatments_by_player(active_only=True)
         starters = [player_lookup[pid] for pid in plan.starters if pid in player_lookup]
         substitutes = [
             player_lookup[pid]
@@ -419,6 +427,9 @@ def create_app() -> Flask:
             starters=starters,
             substitutes=substitutes,
             generated_at=generated_at,
+            active_treatments=active_treatments,
+            physio_lookup=physio_lookup,
+            player_lookup=player_lookup,
         )
 
     @app.get("/departamento-medico")
@@ -436,6 +447,33 @@ def create_app() -> Flask:
             active_page="physios",
             physios=physios,
             editing_physio=editing_physio,
+        )
+
+    @app.get("/departamento-medico/tratamentos")
+    def treatments_page():
+        service = get_service()
+        treatments = service.list_treatments()
+        players = sorted(service.list_players(), key=lambda player: player.name)
+        physios = sorted(service.list_physiotherapists(), key=lambda physio: physio.name)
+        player_lookup = {player.id: player for player in players}
+        physio_lookup = {physio.id: physio for physio in physios}
+        editing_treatment = None
+        edit_id = _parse_optional_int(request.args.get("edit"))
+        if edit_id is not None:
+            editing_treatment = next((t for t in treatments if t.id == edit_id), None)
+            if editing_treatment is None:
+                _flash_invalid("Tratamento selecionado para edição não existe.")
+        return render_template(
+            "treatments.html",
+            title="Tratamentos Clínicos",
+            active_group="plantel",
+            active_page="treatments",
+            treatments=treatments,
+            players=players,
+            physios=physios,
+            player_lookup=player_lookup,
+            physio_lookup=physio_lookup,
+            editing_treatment=editing_treatment,
         )
 
     @app.get("/camadas-jovens")
@@ -862,6 +900,76 @@ def create_app() -> Flask:
         else:
             flash("Profissional eliminado.", "success")
         return redirect(url_for("physios_page"))
+
+    @app.post("/departamento-medico/tratamentos")
+    def save_treatment():
+        treatment_id_raw = request.form.get("treatment_id")
+        treatment_id = _parse_optional_int(treatment_id_raw)
+        if treatment_id_raw and treatment_id is None:
+            _flash_invalid("Tratamento selecionado para edição é inválido.")
+            return redirect(url_for("treatments_page"))
+        player_id = _parse_optional_int(request.form.get("player_id"))
+        if player_id is None:
+            _flash_invalid("Selecione o jogador em tratamento.")
+            target = url_for("treatments_page", edit=treatment_id) if treatment_id is not None else url_for("treatments_page")
+            return redirect(target)
+        physio_id = _parse_optional_int(request.form.get("physio_id"))
+        diagnosis = request.form.get("diagnosis", "").strip()
+        treatment_plan = request.form.get("treatment_plan", "").strip()
+        ok_start, start_date = _handle_date("start_date")
+        if not ok_start or start_date is None:
+            _flash_invalid("Data de início do tratamento inválida.")
+            target = url_for("treatments_page", edit=treatment_id) if treatment_id is not None else url_for("treatments_page")
+            return redirect(target)
+        ok_expected, expected_return = _handle_date("expected_return")
+        if not ok_expected:
+            _flash_invalid("Data prevista de regresso inválida.")
+            target = url_for("treatments_page", edit=treatment_id) if treatment_id is not None else url_for("treatments_page")
+            return redirect(target)
+        unavailable = request.form.get("unavailable") == "on"
+        notes = request.form.get("notes", "").strip() or None
+        service = get_service()
+        try:
+            if treatment_id is None:
+                service.add_treatment(
+                    player_id=player_id,
+                    physio_id=physio_id,
+                    diagnosis=diagnosis,
+                    treatment_plan=treatment_plan,
+                    start_date=start_date,
+                    expected_return=expected_return,
+                    unavailable=unavailable,
+                    notes=notes,
+                )
+                flash("Tratamento registado com sucesso!", "success")
+            else:
+                service.update_treatment(
+                    treatment_id,
+                    physio_id=physio_id,
+                    diagnosis=diagnosis,
+                    treatment_plan=treatment_plan,
+                    start_date=start_date,
+                    expected_return=expected_return,
+                    unavailable=unavailable,
+                    notes=notes,
+                )
+                flash("Tratamento atualizado com sucesso!", "success")
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+            target = url_for("treatments_page", edit=treatment_id) if treatment_id is not None else url_for("treatments_page")
+            return redirect(target)
+        return redirect(url_for("treatments_page"))
+
+    @app.post("/departamento-medico/tratamentos/<int:treatment_id>/eliminar")
+    def delete_treatment(treatment_id: int):
+        service = get_service()
+        try:
+            service.remove_treatment(treatment_id)
+        except ValueError as exc:
+            _flash_invalid(str(exc))
+        else:
+            flash("Tratamento eliminado.", "success")
+        return redirect(url_for("treatments_page"))
 
     @app.post("/youth-teams")
     def add_youth_team():

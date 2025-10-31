@@ -50,6 +50,27 @@ class Physiotherapist(Person):
 
 
 @dataclass
+class Treatment:
+    id: int
+    player_id: int
+    physio_id: Optional[int] = None
+    diagnosis: str = ""
+    treatment_plan: str = ""
+    start_date: date = field(default_factory=date.today)
+    expected_return: Optional[date] = None
+    unavailable: bool = True
+    notes: Optional[str] = None
+    season_id: Optional[int] = None
+
+    def to_dict(self) -> Dict:
+        data = asdict(self)
+        data["start_date"] = self.start_date.isoformat()
+        if self.expected_return is not None:
+            data["expected_return"] = self.expected_return.isoformat()
+        return data
+
+
+@dataclass
 class MatchPlan:
     id: int
     squad: str

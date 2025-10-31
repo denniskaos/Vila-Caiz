@@ -14,6 +14,7 @@ SEASONAL_COLLECTIONS = {
     "players",
     "coaches",
     "physiotherapists",
+    "treatments",
     "match_plans",
     "youth_teams",
     "members",
@@ -571,6 +572,15 @@ class ClubService:
             ]
             plan["starters"] = starters
             plan["substitutes"] = substitutes
+        treatments = self._data.setdefault("treatments", [])
+        removed = [
+            idx
+            for idx, treatment in enumerate(list(treatments))
+            if self._coerce_int(treatment.get("player_id")) == player_id
+        ]
+        if removed:
+            treatments[:] = [treatment for treatment in treatments if self._coerce_int(treatment.get("player_id")) != player_id]
+            self._persist()
         self._remove_entity("players", player_id)
 
     # Coaches ---------------------------------------------------------
@@ -816,6 +826,123 @@ class ClubService:
 
     def remove_physiotherapist(self, physio_id: int) -> None:
         self._remove_entity("physiotherapists", physio_id)
+        treatments = self._data.setdefault("treatments", [])
+        changed = False
+        for treatment in treatments:
+            if self._coerce_int(treatment.get("physio_id")) == physio_id:
+                treatment["physio_id"] = None
+                changed = True
+        if changed:
+            self._persist()
+
+    # Treatments -----------------------------------------------------
+    def add_treatment(
+        self,
+        *,
+        player_id: int,
+        physio_id: Optional[int],
+        diagnosis: str,
+        treatment_plan: str,
+        start_date: date,
+        expected_return: Optional[date] = None,
+        unavailable: bool = True,
+        notes: Optional[str] = None,
+    ) -> models.Treatment:
+        if self._find_entity("players", player_id) is None:
+            raise ValueError("Jogador selecionado para tratamento não existe.")
+        if physio_id is not None and self._find_entity("physiotherapists", physio_id) is None:
+            raise ValueError("Fisioterapeuta selecionado não existe.")
+        if not diagnosis.strip():
+            raise ValueError("Descreva o problema clínico do jogador.")
+        if not treatment_plan.strip():
+            raise ValueError("Indique o tratamento em curso.")
+
+        if start_date is None:
+            raise ValueError("Indique a data de início do tratamento.")
+
+        payload = storage.serialize_entity(
+            models.Treatment(
+                id=0,
+                player_id=player_id,
+                physio_id=physio_id,
+                diagnosis=diagnosis.strip(),
+                treatment_plan=treatment_plan.strip(),
+                start_date=start_date,
+                expected_return=expected_return,
+                unavailable=bool(unavailable),
+                notes=notes.strip() if notes else None,
+                season_id=self.active_season_id,
+            )
+        )
+        stored = self._create_entity("treatments", payload)
+        return storage.instantiate(models.Treatment, stored)
+
+    def list_treatments(self) -> List[models.Treatment]:
+        treatments = [
+            storage.instantiate(models.Treatment, item) for item in self._list_entities("treatments")
+        ]
+        return sorted(treatments, key=lambda entry: (entry.start_date, entry.id), reverse=True)
+
+    def update_treatment(
+        self,
+        treatment_id: int,
+        *,
+        physio_id: object = UNSET,
+        diagnosis: Optional[str] = None,
+        treatment_plan: Optional[str] = None,
+        start_date: Optional[date] = None,
+        expected_return: object = UNSET,
+        unavailable: Optional[bool] = None,
+        notes: object = UNSET,
+    ) -> models.Treatment:
+        record = self._find_entity("treatments", treatment_id)
+        if record is None:
+            raise ValueError("Tratamento não encontrado.")
+        updates: Dict[str, Any] = {}
+        if physio_id is not UNSET:
+            physio_value = self._coerce_int(physio_id)
+            if physio_value is not None and physio_value != 0 and self._find_entity("physiotherapists", physio_value) is None:
+                raise ValueError("Fisioterapeuta selecionado não existe.")
+            updates["physio_id"] = physio_value or None
+        if diagnosis is not None:
+            if not diagnosis.strip():
+                raise ValueError("A descrição clínica não pode ficar vazia.")
+            updates["diagnosis"] = diagnosis.strip()
+        if treatment_plan is not None:
+            if not treatment_plan.strip():
+                raise ValueError("O plano de tratamento não pode ficar vazio.")
+            updates["treatment_plan"] = treatment_plan.strip()
+        if start_date is not None:
+            updates["start_date"] = start_date.isoformat()
+        if expected_return is not UNSET:
+            if expected_return:
+                if not isinstance(expected_return, date):
+                    raise ValueError("Data de regresso prevista inválida.")
+                updates["expected_return"] = expected_return.isoformat()
+            else:
+                updates["expected_return"] = None
+        if unavailable is not None:
+            updates["unavailable"] = bool(unavailable)
+        if notes is not UNSET:
+            updates["notes"] = notes.strip() if isinstance(notes, str) and notes.strip() else None
+        record = self._update_entity("treatments", treatment_id, updates)
+        return storage.instantiate(models.Treatment, record)
+
+    def remove_treatment(self, treatment_id: int) -> None:
+        self._remove_entity("treatments", treatment_id)
+
+    def list_active_treatments(self) -> List[models.Treatment]:
+        return [treatment for treatment in self.list_treatments() if treatment.unavailable]
+
+    def treatments_by_player(self, *, active_only: bool = False) -> Dict[int, List[models.Treatment]]:
+        mapping: Dict[int, List[models.Treatment]] = defaultdict(list)
+        for treatment in self.list_treatments():
+            if active_only and not treatment.unavailable:
+                continue
+            mapping[treatment.player_id].append(treatment)
+        for treatments in mapping.values():
+            treatments.sort(key=lambda entry: (entry.start_date, entry.id), reverse=True)
+        return mapping
 
     # Youth teams -----------------------------------------------------
     def add_youth_team(

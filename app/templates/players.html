@@ -121,6 +121,7 @@
               <th>Kit Treino</th>
               <th>Nascimento</th>
               <th>Contacto</th>
+              <th>Estado Clínico</th>
               <th>Ações</th>
             </tr>
           </thead>
@@ -168,6 +169,22 @@
                 </td>
                 <td data-label="Nascimento">{{ player.birthdate or '-' }}</td>
                 <td data-label="Contacto">{{ player.contact or '-' }}</td>
+                <td data-label="Estado Clínico">
+                  {% set treatments = player_treatments.get(player.id, []) %}
+                  {% if treatments %}
+                    {% for treatment in treatments %}
+                      <div class="status-group">
+                        <span class="status-chip danger">Em tratamento</span>
+                        <span class="status-detail">{{ treatment.diagnosis }}</span>
+                        {% if treatment.expected_return %}
+                          <span class="status-detail">Regresso: {{ treatment.expected_return.strftime('%d/%m/%Y') }}</span>
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  {% else %}
+                    <span class="status-chip success">Disponível</span>
+                  {% endif %}
+                </td>
                 <td data-label="Ações">
                   <div class="actions">
                     <a href="{{ url_for('players_page', edit=player.id) }}" class="button secondary">Editar</a>

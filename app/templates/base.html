@@ -356,10 +356,19 @@
         backdrop-filter: blur(8px);
       }
 
+      .alert-card {
+        border-color: rgba(183, 28, 28, 0.35);
+        background: linear-gradient(160deg, rgba(255, 235, 238, 0.95), rgba(183, 28, 28, 0.12));
+      }
+
       @media (prefers-color-scheme: dark) {
         .card {
           background: linear-gradient(160deg, rgba(18, 18, 18, 0.95), rgba(245, 196, 0, 0.18));
           border-color: rgba(245, 196, 0, 0.35);
+        }
+        .alert-card {
+          background: linear-gradient(160deg, rgba(32, 0, 0, 0.92), rgba(183, 28, 28, 0.22));
+          border-color: rgba(255, 82, 82, 0.55);
         }
       }
 
@@ -762,6 +771,11 @@
         text-transform: uppercase;
       }
 
+      .plan-badge.danger {
+        background: #b71c1c;
+        color: #fff;
+      }
+
       @media (prefers-color-scheme: dark) {
         .list-tags li {
           background: rgba(245, 196, 0, 0.32);
@@ -770,6 +784,10 @@
         .plan-badge {
           background: rgba(245, 196, 0, 0.42);
           color: #101010;
+        }
+        .plan-badge.danger {
+          background: rgba(183, 28, 28, 0.85);
+          color: #fff;
         }
       }
 
@@ -971,10 +989,24 @@
         color: #f9f6ea;
       }
 
+      .status-chip.danger {
+        background: rgba(183, 28, 28, 0.85);
+        color: #fff;
+        border-color: rgba(183, 28, 28, 0.35);
+      }
+
       .status-chip.pending {
         background: rgba(245, 196, 0, 0.55);
         color: #181818;
         border-color: rgba(24, 24, 24, 0.2);
+      }
+
+      .status-group {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+        margin-top: 0.25rem;
       }
 
       .status-detail {
@@ -1000,10 +1032,19 @@
           color: #eef7eb;
         }
 
+        .status-chip.danger {
+          background: rgba(229, 57, 53, 0.95);
+          color: #fff;
+        }
+
         .status-chip.pending {
           background: rgba(245, 196, 0, 0.75);
           color: #050505;
           border-color: rgba(0, 0, 0, 0.35);
+        }
+
+        .status-group {
+          gap: 0.25rem;
         }
 
         .status-detail {
@@ -1142,6 +1183,7 @@
               <a href="{{ url_for('coaches_page') }}" class="{{ 'active' if active_page == 'coaches' else '' }}"{% if active_page == 'coaches' %} aria-current="page"{% endif %}>Equipa Técnica</a>
               <a href="{{ url_for('match_plans_page') }}" class="{{ 'active' if active_page == 'match-plans' else '' }}"{% if active_page == 'match-plans' %} aria-current="page"{% endif %}>Planificação de Jogo</a>
               <a href="{{ url_for('physios_page') }}" class="{{ 'active' if active_page == 'physios' else '' }}"{% if active_page == 'physios' %} aria-current="page"{% endif %}>Departamento Médico</a>
+              <a href="{{ url_for('treatments_page') }}" class="{{ 'active' if active_page == 'treatments' else '' }}"{% if active_page == 'treatments' %} aria-current="page"{% endif %}>Tratamentos Clínicos</a>
               <a href="{{ url_for('youth_page') }}" class="{{ 'active' if active_page == 'youth' else '' }}"{% if active_page == 'youth' %} aria-current="page"{% endif %}>Camadas Jovens</a>
             </div>
           </div>

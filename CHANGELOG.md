@@ -2,6 +2,12 @@
 
 Todas as alterações notáveis deste projeto serão documentadas neste ficheiro.
 
+## [Unreleased]
+### Adicionado
+- Gestão clínica de jogadores com registo de diagnósticos, planos de tratamento, datas de regresso e disponibilidade.
+- Página web dedicada aos tratamentos com alertas visuais no plantel, planos de jogo e versão para impressão.
+- Comandos `treatments` na CLI para criar, listar, atualizar e remover tratamentos por época.
+
 ## [0.1.0] - 2024-11-24
 ### Adicionado
 - Primeira versão pública da aplicação Vila-Caiz com linha de comandos interativa e painel web.
